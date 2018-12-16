@@ -11,4 +11,4 @@ THe generated parser will use [recursive ascent](https://en.wikipedia.org/wiki/R
 - [Lemon](http://www.hwaci.com/sw/lemon/)
 - [LR on Wikipedia](https://en.wikipedia.org/wiki/LR_parser)
 - [GLR on Wikipedia](https://en.wikipedia.org/wiki/GLR_parser)
-- [Boost::Spirit::X3](http://boost-spirit.com/home/)
+- [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
