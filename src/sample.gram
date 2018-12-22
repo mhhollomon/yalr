@@ -1,0 +1,40 @@
+parser class "MyParser";
+
+/*
+AExp ::= n                  // integer literal
+       | x                  // variable name
+       | AExp + AExp        // addition
+       | AExp - AExp        // subtraction
+       | AExp * AExp        // multiplication
+       | (AExp)             // grouping parentheses
+
+BExp ::= true
+       | false
+       | AExp = AExp        // equality test
+       | AExp < AExp        // less than
+       | !BExp              // boolean negation
+       | BExp /\ BExp       // and
+       | BExp \/ BExp       // or
+       | (BExp)             // grouping
+
+Stmt ::= skip               // do nothing
+       | abort              // terminate execution unsuccessfully
+       | print x            // print variable value
+       | x := AExp          // variable assignment
+       | Stmt ; Stmt        // sequential execution
+       | if GCom fi         // guarded command
+       | do GCom od         // loop
+
+GCom ::= BExp -> Stmt       // run command if expression is true
+       | GCom # GCom        // nondeterministic choice (using "#" for "fatbar")
+*/
+
+
+rule AExp {
+    => NUMBER ;
+    => IDENTIFIER ;
+    => AExp PLUS AExp ;
+    => AExp MINUS AExp ;
+    => AExp START AExp ;
+    => LPAREN AExp RPAREN ;
+}
