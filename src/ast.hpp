@@ -11,7 +11,7 @@
 namespace yalr { namespace ast {
 
     struct alternative {
-        std::string kw;
+        std::string phony;
         std::vector<std::string>pieces;
         //std::string pieces;
     };
@@ -22,13 +22,14 @@ namespace yalr { namespace ast {
     };
 
     struct terminal {
+        int phony;
         std::string name;
     };
 
     struct grammar
     {
         std::optional<std::string>parser_class;
-        std::vector<std::string> terms;
+        std::vector<ast::terminal> terms;
         std::vector<rule_def>rules;
     };
 
@@ -36,9 +37,9 @@ namespace yalr { namespace ast {
 
 }}
 
-BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, kw, pieces);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, phony, pieces);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, name, alts);
-BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, name);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, phony, name);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, terms, rules);
 
 

@@ -1,5 +1,5 @@
 #include "ast.hpp"
-#include "grammar.hpp"
+#include "parser.hpp"
 
 
 #include <iostream>

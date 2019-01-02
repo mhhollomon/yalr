@@ -1,4 +1,4 @@
-#include "grammar.hpp"
+#include "parser.hpp"
 #include "skipparser.hpp"
 
 namespace x3 = boost::spirit::x3;
@@ -17,7 +17,7 @@ namespace yalr {
         x3::rule<class parser_class_tag, std::string> const parser_class = "parser_class";
         x3::rule<class rule_stmt_tag, ast::rule_def> const rule_stmt = "rule_stmt";
         x3::rule<class alternative_tag, ast::alternative> const alternative = "alternative";
-        x3::rule<class term_tag, std::string> const terminal = "terminal";
+        x3::rule<class term_tag, ast::terminal> const terminal = "terminal";
         x3::rule<class ident_tag, std::string> const ident = "ident";
 
         auto const ualnum = alnum | char_('_');
@@ -44,7 +44,7 @@ namespace yalr {
                 ident  >> ';' ;
 
         /* term Z ; */
-        auto const terminal_def = kw_term >> ident >> x3::lit(';') ;
+        auto const terminal_def = kw_term >> x3::attr(3) >> ident >> x3::lit(';') ;
 
         /* rule X { => A B C ; => X Y Z ; } */
         /* I don't really want to capture the fat arrow, but without it, Spirit
@@ -59,7 +59,9 @@ namespace yalr {
 
         /* Top Level Grammar */
         auto const grammar_def =
-            -parser_class >> +terminal >> +rule_stmt
+            -parser_class >> 
+            +terminal >> 
+            +rule_stmt
             ;
 
         BOOST_SPIRIT_DEFINE(ident);

@@ -15,19 +15,10 @@ struct ast_print_visitor {
             strm << "parser class \"" << *g.parser_class << "\"\n";
         }
 
-        for (const std::string &t : g.terms) {
-            strm << "term -- " << t << "\n";
-        }
-
-        /*
         for ( const terminal& t : g.terms ) {
-            (*this)(r);
+            (*this)(t);
         }
-        */
 
-        //strm << "This is a term >" << g.terms << "<\n";
-
-        
         for ( const rule_def& r : g.rules ) {
             (*this)(r);
         }
@@ -57,11 +48,9 @@ struct ast_print_visitor {
 
     }
 
-    /*
     void operator()(const terminal &t) {
         strm << "term " << t.name << ";\n";
     }
-    */
 
 };
 

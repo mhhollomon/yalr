@@ -1,5 +1,5 @@
-#if !defined(YALR_GRAMMAR_HPP)
-#define YALR_GRAMMAR_HPP
+#if !defined(YALR_PARSER_HPP)
+#define YALR_PARSER_HPP
 
 #include "ast.hpp"
 
