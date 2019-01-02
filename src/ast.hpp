@@ -7,6 +7,7 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <variant>
 
 namespace yalr { namespace ast {
 
@@ -29,8 +30,7 @@ namespace yalr { namespace ast {
     struct grammar
     {
         std::optional<std::string>parser_class;
-        std::vector<ast::terminal> terms;
-        std::vector<rule_def>rules;
+        std::vector<std::variant<terminal, rule_def>> defs;
     };
 
     void pretty_print(grammar& g, std::ostream& strm);
@@ -40,7 +40,7 @@ namespace yalr { namespace ast {
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, phony, pieces);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, name, alts);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, phony, name);
-BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, terms, rules);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, defs);
 
 
 

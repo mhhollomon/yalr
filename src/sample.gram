@@ -41,6 +41,8 @@ rule AExp {
     => LPAREN AExp RPAREN ;
 }
 
+term BANG ;
+
 rule BExp {
     => TRUE ;
     => FALSE ;

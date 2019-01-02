@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "parser.hpp"
+#include "analyzer.hpp"
 
 
 #include <iostream>
@@ -59,6 +60,7 @@ int main(int argc, char**argv)
         std::cout << "Good input\n";
 
         yalr::ast::pretty_print(tree, std::cout);
+        yalr::analyzer::analyze(tree);
         return 0;
     }
 }

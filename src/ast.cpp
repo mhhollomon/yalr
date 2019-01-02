@@ -15,15 +15,9 @@ struct ast_print_visitor {
             strm << "parser class \"" << *g.parser_class << "\"\n";
         }
 
-        for ( const terminal& t : g.terms ) {
-            (*this)(t);
+        for ( const auto& d : g.defs ) {
+            std::visit(*this, d);
         }
-
-        for ( const rule_def& r : g.rules ) {
-            (*this)(r);
-        }
-
-
     }
 
     void operator()(const rule_def& r) {
