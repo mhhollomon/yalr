@@ -4,7 +4,7 @@ C++ will be generated.
 
 Targetting LALR at first but GLR as the end goal.
 
-THe generated parser will use [recursive ascent](https://en.wikipedia.org/wiki/Recursive_ascent_parser) (_is this posiible for GLR with its split stack?_)
+The generated parser will use [recursive ascent](https://en.wikipedia.org/wiki/Recursive_ascent_parser) (_is this possible for GLR with its split stack?_)
 
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
