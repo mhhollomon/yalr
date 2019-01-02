@@ -12,7 +12,7 @@ namespace yalr
     namespace parser
     {
         using iterator_type = boost::spirit::istream_iterator;
-        using ast_tree_type = boost::spirit::x3::unused_type;
+        using ast_tree_type = ast::grammar;
     } 
     std::pair<bool, parser::ast_tree_type>do_parse(
             parser::iterator_type &first, parser::iterator_type const &last);

@@ -18,7 +18,7 @@ struct skipparser: x3::parser<char> {
         auto save = first;
         bool in_comment = false;
         while (first != last) {
-            std::cerr << "Char = " << *first << "\n";
+            // std::cerr << "Char = " << *first << "\n";
             if (in_comment) {
                 if (*first == '*') {
                     // start of closing marker. check if we have the second character.

@@ -1,4 +1,4 @@
-parser class "MyParser";
+parser class MyParser;
 
 /*
 AExp ::= n                  // integer literal
@@ -30,11 +30,23 @@ GCom ::= BExp -> Stmt       // run command if expression is true
 */
 
 
+term NUMBER ;
+
 rule AExp {
     => NUMBER ;
     => IDENTIFIER ;
     => AExp PLUS AExp ;
     => AExp MINUS AExp ;
-    => AExp START AExp ;
+    => AExp STAR AExp ;
     => LPAREN AExp RPAREN ;
+}
+
+rule BExp {
+    => TRUE ;
+    => FALSE ;
+    => AExp EQUALS AExp ;
+    => BANG BExp ;
+    => BExp AND BExp ;
+    => BExp OR BExp;
+    => LPAREN BExp RPAREN ;
 }

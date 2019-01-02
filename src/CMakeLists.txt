@@ -27,7 +27,7 @@ include(cmake/clang-tidy.cmake)
 
 add_compile_options("-g" "-O0" "-Wall" "-Wextra")
 
-add_executable(yalr main.cpp grammar.cpp)
+add_executable(yalr main.cpp grammar.cpp ast.cpp)
 
 #target_link_libraries(yalr boost_system)
 

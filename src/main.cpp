@@ -31,6 +31,16 @@ int main(int argc, char**argv)
 
     if (!r) {
         std::cout << "Parse failed\n";
+        std::cout << "Stopped at : ";
+        for (int i =0; i < 20; ++i) {
+            if (iter == eof)
+                break;
+
+            std::cout << *iter;
+            ++iter;
+        }
+        std::cout << std::endl;
+
         return 1;
     } else if (iter != eof) {
         std::cout << "Failed: didn't parse everything\n";
@@ -47,6 +57,8 @@ int main(int argc, char**argv)
         return 1;
     } else {
         std::cout << "Good input\n";
+
+        yalr::ast::pretty_print(tree, std::cout);
         return 0;
     }
 }
