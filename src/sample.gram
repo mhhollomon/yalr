@@ -31,6 +31,18 @@ GCom ::= BExp -> Stmt       // run command if expression is true
 
 
 term NUMBER ;
+term IDENTIFIER ;
+term PLUS ;
+term MINUS ;
+term STAR ;
+term LPAREN ;
+term RPAREN ;
+term FALSE ;
+term TRUE  ;
+term EQUALS;
+term AND   ;
+term OR    ;
+
 
 rule AExp {
     => NUMBER ;
@@ -43,7 +55,7 @@ rule AExp {
 
 term BANG ;
 
-rule BExp {
+goal rule BExp {
     => TRUE ;
     => FALSE ;
     => AExp EQUALS AExp ;

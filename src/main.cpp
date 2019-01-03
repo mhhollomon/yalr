@@ -59,8 +59,16 @@ int main(int argc, char**argv)
     } else {
         std::cout << "Good input\n";
 
+        std::cout << "------ AST ------\n";
         yalr::ast::pretty_print(tree, std::cout);
-        yalr::analyzer::analyze(tree);
+        std::cout << "------ AST ------\n";
+
+        auto ana_tree = yalr::analyzer::analyze(tree);
+
+        std::cout << "------ ANALYZE ------\n";
+        yalr::analyzer::pretty_print(*ana_tree, std::cout);
+        std::cout << "------ ANALYZE ------\n";
+
         return 0;
     }
 }

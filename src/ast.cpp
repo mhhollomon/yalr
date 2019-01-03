@@ -21,6 +21,9 @@ struct ast_print_visitor {
     }
 
     void operator()(const rule_def& r) {
+        if (r.isgoal) {
+            strm << "goal ";
+        }
         strm << "rule " << r.name << " {\n";
         indent += 2;
         for (const alternative& a: r.alts) {

@@ -33,9 +33,11 @@ namespace yalr {
         auto const kw_class = mkkw("class");
         auto const kw_rule = mkkw("rule");
         auto const kw_term = mkkw("term");
+        auto const kw_goal = mkkw("goal");
 
         auto const reserved = lexeme[symtab >> !ualnum];
 
+        /* Identifiers */
         auto const ident_def = 
             lexeme[ *char_('_') >> x3::alpha >> *ualnum ] - reserved ;
 
@@ -52,7 +54,7 @@ namespace yalr {
          */
         auto const alternative_def = x3::string("=>") >> +ident >> x3::lit(';') ;
 
-        auto const rule_stmt_def = kw_rule >> ident  >>
+        auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> kw_rule >> ident  >>
             x3::lit('{') >> +alternative >> x3::lit('}')
             ;
 
