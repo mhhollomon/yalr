@@ -1,5 +1,7 @@
 #include "analyzer.hpp"
 
+#include <variant>
+
 namespace yalr { namespace analyzer {
 
 int terminal::next_value = -1;
@@ -118,6 +120,11 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
         error_count += 1;
     }
 
+    if (error_count > 0) {
+        std::cerr << "Errors discovered. Halting\n";
+        return nullptr;
+    }
+
     /* Now, iterate through the rules and alts and
      * check that all the items are defined.
      * Create the map of productions at the same time.
@@ -145,6 +152,11 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
     ts.emplace_back(symbol::ruleSymbol, goal_rule_id);
 
     retval->productions.emplace_back(0, std::move(ts));
+
+    if (error_count > 0) {
+        std::cerr << "Errors discovered. Halting\n";
+        return nullptr;
+    }
 
     return retval;
 }

@@ -63,7 +63,7 @@ namespace yalr { namespace analyzer {
 
     std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree);
 
-    void pretty_print(const grammar &g, std::ostream& strm);
+    void pretty_print(const grammar& g, std::ostream& strm);
 }}
 
 #endif

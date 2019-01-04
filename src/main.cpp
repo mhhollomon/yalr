@@ -1,26 +1,25 @@
-#include "ast.hpp"
 #include "parser.hpp"
 #include "analyzer.hpp"
 
+#include <gsl/span>
 
 #include <iostream>
-//#include <string>
 #include <fstream>
 #include <ios>
-
-namespace x3 = boost::spirit::x3;
 
 //****************************
 // Main
 //****************************
-int main(int argc, char**argv)
+int main(int argc, char* argv[])
 {
     if (argc < 2) {
         std::cerr << "Need something to parse\n";
         return 1;
     }
 
-    std::ifstream in(argv[1], std::ios_base::in);
+    gsl::span<char *> args{argv, argc};
+
+    std::ifstream in(args[1], std::ios_base::in);
     in.unsetf(std::ios_base::skipws);
 
 
@@ -34,8 +33,9 @@ int main(int argc, char**argv)
         std::cout << "Parse failed\n";
         std::cout << "Stopped at : ";
         for (int i =0; i < 20; ++i) {
-            if (iter == eof)
+            if (iter == eof) {
                 break;
+            }
 
             std::cout << *iter;
             ++iter;
@@ -43,12 +43,15 @@ int main(int argc, char**argv)
         std::cout << std::endl;
 
         return 1;
-    } else if (iter != eof) {
+    } 
+    
+    if (iter != eof) {
         std::cout << "Failed: didn't parse everything\n";
         std::cout << "Stopped at : ";
         for (int i =0; i < 20; ++i) {
-            if (iter == eof)
+            if (iter == eof) {
                 break;
+            }
 
             std::cout << *iter;
             ++iter;
@@ -56,19 +59,19 @@ int main(int argc, char**argv)
         std::cout << std::endl;
 
         return 1;
-    } else {
-        std::cout << "Good input\n";
+    } 
 
-        std::cout << "------ AST ------\n";
-        yalr::ast::pretty_print(tree, std::cout);
-        std::cout << "------ AST ------\n";
+    std::cout << "Good input\n";
 
-        auto ana_tree = yalr::analyzer::analyze(tree);
+    std::cout << "------ AST ------\n";
+    yalr::ast::pretty_print(tree, std::cout);
+    std::cout << "------ AST ------\n";
 
-        std::cout << "------ ANALYZE ------\n";
-        yalr::analyzer::pretty_print(*ana_tree, std::cout);
-        std::cout << "------ ANALYZE ------\n";
+    auto ana_tree = yalr::analyzer::analyze(tree);
 
-        return 0;
-    }
+    std::cout << "------ ANALYZE ------\n";
+    yalr::analyzer::pretty_print(*ana_tree, std::cout);
+    std::cout << "------ ANALYZE ------\n";
+
+    return 0;
 }
