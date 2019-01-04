@@ -18,28 +18,47 @@ namespace yalr { namespace analyzer {
         terminal(const std::string n) :name{n} {}
     };
 
-    struct alternative {
-        std::vector<std::string> pieces;
+    struct symbol {
+        enum symbol_type { unknownSymbol, ruleSymbol, termSymbol };
+        symbol_type stype;
+        int symbol_id;
+        symbol(symbol_type t, int id) : stype(t), symbol_id(id) {};
+        symbol() = default;
 
-        alternative(const ast::alternative& ast) : pieces(ast.pieces) {}
+        std::string type_name() const {
+            switch(stype) {
+                case unknownSymbol:
+                    return "Unknown";
+                case ruleSymbol:
+                    return "Rule";
+                case termSymbol:
+                    return "Term";
+                default:
+                    assert(false);
+            }
+
+            assert(false);
+        }
     };
 
-    struct rule_def {
-        std::string name;
-        std::vector<alternative>alts;
+    struct production {
+        static int next_value;
 
-        rule_def(const ast::rule_def& ast) : name(ast.name) {
-            for (const auto& a : ast.alts) {
-                alts.push_back(a);
-            }
-        }
+        int prod_id = ++next_value;
+        int rule_id;
+        std::vector<symbol> syms;
+        production(int id, std::vector<symbol>&& s) :
+            rule_id(id), syms(std::move(s))
+        {}
     };
 
     struct grammar {
         std::string parser_class;
         std::string goal;
         std::map<std::string, terminal>terms;
-        std::map<std::string, rule_def>rules;
+        std::map<std::string, int>rules_by_name;
+        std::map<int, std::string>rules_by_id;
+        std::vector<production> productions;
     };
 
     std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree);
