@@ -14,21 +14,14 @@ struct sorting_visitor {
     sorting_visitor(grammar &g_) : out(g_) {};
 
     void operator()(const ast::rule_def &r) {
-        if (out.terms.count(r.name) > 0) {
-            std::cerr << "'" << r.name << "' has already been defined as a terminal\n";
-            error_count += 1;
-            return;
-        }
-        if (out.rules_by_name.count(r.name) > 0) {
-            std::cerr << "'" << r.name << "' has already been defined as a rule\n";
-            error_count += 1;
-            return;
-        }
+        auto [ inserted, new_sym ] = out.syms.insert(r);
 
-        int rule_num = ++rule_count;
-
-        out.rules_by_name.insert(std::make_pair(r.name, rule_num));
-        out.rules_by_id.insert(std::make_pair(rule_num, r.name));
+        if (! inserted ) {
+            std::cerr << "'" << r.name << 
+                "' has already been defined as a " <<
+                new_sym.type_name() << "\n";
+            error_count += 1;
+        }
 
         if (r.isgoal) {
             if (out.goal != "") {
@@ -43,17 +36,15 @@ struct sorting_visitor {
     }
 
     void operator()(const ast::terminal &t) {
-        if (out.terms.count(t.name) > 0) {
-            std::cerr << "'" << t.name << "' has already been defined as a terminal\n";
+        auto [ inserted, new_sym ] = out.syms.insert(t);
+
+        if (! inserted ) {
+            std::cerr << "'" << t.name << 
+                "' has already been defined as a " <<
+                new_sym.type_name() << "\n";
             error_count += 1;
-            return;
         }
-        if (out.rules_by_name.count(t.name) > 0) {
-            std::cerr << "'" << t.name << "' has already been defined as a rule\n";
-            error_count += 1;
-            return;
-        }
-        out.terms.insert(std::make_pair(t.name, terminal{t.name}));
+
     }
 };
 
@@ -66,24 +57,23 @@ struct prod_visitor {
         /* run through each alternative and generate a production.
          * Make sure every referenced item exists.
          */
-        for (const auto& a : r.alts) {
-            std::vector<symbol> s;
-            for (const auto& p : a.pieces) {
-                auto rule_iter = out.rules_by_name.find(p);
-                if (rule_iter != out.rules_by_name.end()) {
-                    // we have a rule
-                    s.emplace_back(symbol::ruleSymbol, rule_iter->second);
-                } else {
-                    auto term_iter  = out.terms.find(p);
-                    // earlier processing made sure things were defined.
-                    assert(term_iter != out.terms.end());
+        auto [rfound, rsym] = out.syms.find(r.name);
+        assert(rfound); // if not found, something went wrong up above.
 
-                    s.emplace_back(symbol::termSymbol, term_iter->second.value);
+        for (const auto& a : r.alts) {
+            std::vector<SymbolTable::symbol> s;
+            for (const auto& p : a.pieces) {
+                auto [found, sym] = out.syms.find(p);
+                if (found) {
+                    s.push_back(sym);
+                } else {
+                    error_count += 1;
+                    std::cerr << "alternative requires gammar symbol '" <<
+                        p << "' that does not exist.\n";
                 }
             }
 
-            auto rule_id = out.rules_by_name.find(r.name)->second;
-            out.productions.emplace_back(rule_id, std::move(s));
+            out.productions.emplace_back(rsym, std::move(s));
         }
     }
 
@@ -142,16 +132,27 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
      */
 
     // add the rule.
-    std::string aug_rule = retval->goal + "_prime";
-    retval->rules_by_name.insert(std::make_pair(aug_rule, 0));
-    retval->rules_by_id.insert(std::make_pair(0, aug_rule));
+    std::string aug_rule_name = retval->goal + "_prime";
+
+    ast::rule_def aug_rule;
+    aug_rule.isgoal = false;
+    aug_rule.name = aug_rule_name;
+
+    auto [ _, new_sym ] = retval->syms.insert(aug_rule);
 
     // add the production.
-    std::vector<symbol>ts;
-    int goal_rule_id = retval->rules_by_name.find(retval->goal)->second;
-    ts.emplace_back(symbol::ruleSymbol, goal_rule_id);
+    std::vector<SymbolTable::symbol>ts;
+    ts.push_back(retval->syms.find(retval->goal).second);
 
-    retval->productions.emplace_back(0, std::move(ts));
+    retval->productions.emplace_back(new_sym, std::move(ts));
+
+    retval->target_prod = retval->productions.size()-1;
+
+    // add the psuedo terminal '$' to represent the
+    // end of input.
+    ast::terminal eoi;
+    eoi.name = "$";
+    retval->syms.insert(eoi);
 
     if (error_count > 0) {
         std::cerr << "Errors discovered. Halting\n";
@@ -168,15 +169,11 @@ struct pp {
     void operator()(const grammar &g) {
         strm << "class " << g.parser_class << " {};\n";
 
-        strm << "TERMS ==\n";
-        for (const auto &p : g.terms) {
-            auto &t = p.second;
-            strm << "  " << t.name << " (" << t.value << ")" << "\n";
-        }
-
-        strm << "RULES ==\n";
-        for (const auto &r : g.rules_by_name) {
-            strm << "  " << r.first << "(" << r.second << ")\n";
+        strm << "Symbols ==\n";
+        for (const auto &iter : g.syms) {
+            auto &s = iter.second;
+            strm << "  " << s.name() << " (" << 
+                s.type_name() << " " << s.id() << ")" << "\n";
         }
 
         strm << "GOAL == " << g.goal << "\n";
@@ -184,12 +181,14 @@ struct pp {
         strm << "PRODUCTIONS ==\n";
 
         for (const auto& p : g.productions) {
-            strm << "  [" << p.prod_id << "] Rule " << p.rule_id << " =>";
+            strm << "  [" << p.prod_id << "] Rule " << p.rule.id() << " =>";
             for (const auto& s : p.syms) {
-                strm << " " << s.type_name() << " " << s.symbol_id;
+                strm << " " << s.type_name() << " " << s.id();
             }
             strm << ";\n";
         }
+
+        strm << "TARGET == " << g.target_prod << "\n";
     }
 };
 

@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include "analyzer.hpp"
+#include "tablegen.hpp"
 
 #include <gsl/span>
 
@@ -72,6 +73,12 @@ int main(int argc, char* argv[])
     std::cout << "------ ANALYZE ------\n";
     yalr::analyzer::pretty_print(*ana_tree, std::cout);
     std::cout << "------ ANALYZE ------\n";
+
+    auto lrtbl = yalr::tablegen::generate_table(*ana_tree);
+
+    std::cout << "------ TABLEGEN ------\n";
+    yalr::tablegen::pretty_print(*lrtbl, std::cout);
+    std::cout << "------ TABLEGEN ------\n";
 
     return 0;
 }
