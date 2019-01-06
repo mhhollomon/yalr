@@ -181,6 +181,8 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
         /* Reduce Actions
          * Look for items with the position on the right edge.
          * Need to be on the look out for shift/reduce conflicts
+         *
+         * TODO - pull this out into a function to help with the nesting.
          */
         for (const auto& item : state.items) {
             const auto& prod = g.productions[item.prod_id];
@@ -191,10 +193,29 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
                             action(action_type::accept, 0, 0));
                 } else {
                     /* add reduce */
+                    for (const auto& sym_iter : g.syms) {
+                        auto sym = sym_iter.second;
+                        if (sym.stype() == SymbolTable::symbol_type::term) {
+                            auto [ new_iter, placed ] = state.actions.try_emplace(sym,
+                                    action(action_type::reduce, 0, item.prod_id));
+                            if (!placed) {
+                                if (new_iter->first.stype() == SymbolTable::symbol_type::term) {
+                                    std::cerr << "Shift/reduce conflict in state ";
+                                } else {
+                                    std::cerr << "Reduce/reduce conflict in state ";
+                                }
+                                std::cerr << state.id << " for symbol " << sym.name() << "\n";
+                                std::cerr << "Forcing the reduce for now\n";
+                                state.actions.erase(sym);
+                                auto [ act, placed ] = state.actions.try_emplace(sym,
+                                        action(action_type::reduce, 0, item.prod_id));
+                                assert(placed);
+                            }
+                        }
+                    }
                 }
             }
         }
-
     }
 
 
