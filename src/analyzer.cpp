@@ -163,34 +163,36 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
 }
 
 
-struct pp {
-    std::ostream& strm;
+void pp::operator()(const grammar &g) {
+    strm << "class " << g.parser_class << " {};\n";
 
-    void operator()(const grammar &g) {
-        strm << "class " << g.parser_class << " {};\n";
-
-        strm << "Symbols ==\n";
-        for (const auto &iter : g.syms) {
-            auto &s = iter.second;
-            strm << "  " << s.name() << " (" << 
-                s.type_name() << " " << s.id() << ")" << "\n";
-        }
-
-        strm << "GOAL == " << g.goal << "\n";
-
-        strm << "PRODUCTIONS ==\n";
-
-        for (const auto& p : g.productions) {
-            strm << "  [" << p.prod_id << "] Rule " << p.rule.id() << " =>";
-            for (const auto& s : p.syms) {
-                strm << " " << s.type_name() << " " << s.id();
-            }
-            strm << ";\n";
-        }
-
-        strm << "TARGET == " << g.target_prod << "\n";
+    strm << "Symbols ==\n";
+    for (const auto &iter : g.syms) {
+        auto &s = iter.second;
+        strm << "  " << s.name() << " (" << 
+            s.type_name() << " " << s.id() << ")" << "\n";
     }
-};
+
+    strm << "GOAL == " << g.goal << "\n";
+
+    strm << "PRODUCTIONS ==\n";
+
+    for (const auto& p : g.productions) {
+        strm << "  ";
+        (*this)(p);
+        strm << ";\n";
+    }
+
+    strm << "TARGET == " << g.target_prod << "\n";
+}
+
+void pp::operator()(const production& p) {
+    strm << "[" << p.prod_id << "] " << 
+        p.rule.name() << "(" << p.rule.id() << ") =>";
+    for (const auto& s : p.syms) {
+        strm << " " << s.name() << "(" << s.id() << ")";
+    }
+}
 
 void pretty_print(const grammar &g, std::ostream& strm) {
     pp mypp{strm};

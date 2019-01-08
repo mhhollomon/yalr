@@ -76,6 +76,7 @@ namespace yalr { namespace tablegen {
         SymbolTable syms;
         std::vector<analyzer::production>productions;
         int target_prod_id;
+        std::string parser_class;
     };
 
 

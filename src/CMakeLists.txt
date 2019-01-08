@@ -15,7 +15,7 @@ find_program(
 
 add_compile_options("-g" "-O0" "-Wall" "-Wextra")
 
-add_executable(yalr SymbolTable.cpp tablegen.cpp parser.cpp analyzer.cpp ast.cpp main.cpp)
+add_executable(yalr codegen.cpp SymbolTable.cpp tablegen.cpp parser.cpp analyzer.cpp ast.cpp main.cpp)
 
 if(CLANG_TIDY_EXE)
     set_target_properties(

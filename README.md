@@ -12,10 +12,14 @@ Current sub-goal is to have yalr generate a language recognizer - that is, the
 generated code will simply give a yes/no answer to the question "does the input
 string match the grammar?"
 
-- Specification parser - complete for a the limited features set.
+- Specification parser - complete for the limited features set.
 - Syntax analyzer - complete for the limited feature set.
-- LR Parser Table generator - in progress.
-- Code generator - not started.
+- LR Parser Table generator - complete. - SLR(0) for the moment. Hard codes
+  reduce as priority over shift in shift/reduce conflicts. Fails on
+  reduce/reduce conflicts.
+- Code generator - complete.
+- lexer - not started. Haven't finalized an approach. May use regex for the
+  short term.
 
 After the sub-goal is complete, I will probably stop to tidy up the place - add
 unit tests, make the parser a bit better about error reporting, etc.

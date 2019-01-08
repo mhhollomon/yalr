@@ -1,6 +1,7 @@
 #include "parser.hpp"
 #include "analyzer.hpp"
 #include "tablegen.hpp"
+#include "codegen.hpp"
 
 #include <gsl/span>
 
@@ -79,6 +80,17 @@ int main(int argc, char* argv[])
     std::cout << "------ TABLEGEN ------\n";
     yalr::tablegen::pretty_print(*lrtbl, std::cout);
     std::cout << "------ TABLEGEN ------\n";
+
+    std::string outfilename;
+    if (argc > 3) {
+        outfilename = args[2];
+    } else {
+        outfilename = ana_tree->parser_class + ".hpp";
+    }
+
+    std::cout << "--- Generating code into " << outfilename << "\n";
+    std::ofstream code_out(outfilename, std::ios_base::out);
+    yalr::codegen::generate_code(*lrtbl, code_out);
 
     return 0;
 }

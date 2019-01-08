@@ -44,12 +44,16 @@ term AND   ;
 term OR    ;
 
 
-rule AExp {
+rule Simple {
     => NUMBER ;
     => IDENTIFIER ;
-    => AExp PLUS AExp ;
-    => AExp MINUS AExp ;
-    => AExp STAR AExp ;
+}
+
+rule AExp {
+    => Simple ;
+    => AExp PLUS Simple ;
+    => AExp MINUS Simple ;
+    => AExp STAR Simple ;
     => LPAREN AExp RPAREN ;
 }
 

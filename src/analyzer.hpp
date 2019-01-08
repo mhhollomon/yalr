@@ -42,6 +42,14 @@ namespace yalr { namespace analyzer {
 
     std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree);
 
+    struct pp {
+        std::ostream& strm;
+        pp(std::ostream& s) : strm(s) {}
+
+        void operator()(const grammar &g);
+        void operator()(const production& p);
+    };
+
     void pretty_print(const grammar& g, std::ostream& strm);
 }}
 

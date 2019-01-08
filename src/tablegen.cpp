@@ -231,6 +231,7 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
     retval->syms = g.syms;
     retval->productions = g.productions;
     retval->target_prod_id = g.target_prod;
+    retval->parser_class = g.parser_class;
 
     return retval;
 
@@ -284,6 +285,7 @@ void pretty_print(const lrstate& lr,
 }
 
 void pretty_print(const lrtable& lt, std::ostream& strm) {
+    strm << "parser_class = '" << lt.parser_class << "'\n";
     for (const auto& state : lt.states) {
         pretty_print(state, lt.productions, strm);
     }
