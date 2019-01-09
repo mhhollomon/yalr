@@ -1,0 +1,91 @@
+goal rule StatementList {
+    => StatementList SEMICOLON Statement ;
+    => Statement ;
+}
+
+rule IfStmt {
+    => IF GuardedStmtList FI ;
+}
+
+rule DoStmt {
+    => DO GuardedStmtList OD ;
+}
+
+rule GuardedStmtList {
+    => GuardedStmt ;
+    => GuardedStmtList PIPE GuardedStmt ;
+}
+
+rule GuardedStmt {
+    => BoolExp ARROW Statement ;
+}
+
+rule Statement {
+    => Assignment ;
+    => IfStmt ;
+    => DoStmt ;
+    => LBRACE StatementList RBRACE ;
+    => SKIP ;
+}
+
+rule Assignment {
+    => IdentList ASSIGN ExpList ;
+}
+
+rule IdentList {
+    => IdentList COMMA IDENT ;
+    => IDENT ;
+}
+
+rule ExpList {
+    => ExpList COMMA MathExp ;
+    => MathExp ;
+}
+
+rule MathTerm {
+    => NUMBER ;
+    => IDENT ;
+    => LPAREN MathExp RPAREN ;
+}
+
+rule Divide {
+    => MathTerm SLASH MathTerm ;
+    => MathTerm ;
+}
+
+rule Factor {
+    => Factor MULTIPLY Divide ;
+    => Divide ;
+}
+
+rule MathExp {
+    => MathExp PLUS Factor ;
+    => MathExp MINUS Factor ;
+    => Factor ;
+}
+
+rule BoolTerm {
+    => TRUE ;
+    => FALSE ;
+    => LPAREN BoolExp RPAREN ;
+    => BANG BoolTerm ;
+}
+
+rule RelOp {
+    => LT ;
+    => LE ;
+    => GT ;
+    => GE ;
+    => EQ ;
+    => NE ;
+
+rule Compare {
+    => MathExp RelOp MathExp ;
+}
+
+rule BoolExp {
+    => BoolTerm ;
+    => Compare ;
+    => BoolExp OR Compare ;
+    => BoolExp OR BoolTerm ;
+}
