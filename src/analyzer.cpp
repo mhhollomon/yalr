@@ -2,7 +2,7 @@
 
 #include <variant>
 
-namespace yalr { namespace analyzer {
+namespace yalr::analyzer {
 
 int terminal::next_value = -1;
 int production::next_value = -1;
@@ -11,7 +11,7 @@ struct sorting_visitor {
     grammar &out;
     int error_count = 0;
     int rule_count = 0;
-    sorting_visitor(grammar &g_) : out(g_) {};
+    explicit sorting_visitor(grammar &g_) : out(g_) {};
 
     void operator()(const ast::rule_def &r) {
         auto [ inserted, new_sym ] = out.syms.insert(r);
@@ -24,7 +24,7 @@ struct sorting_visitor {
         }
 
         if (r.isgoal) {
-            if (out.goal != "") {
+            if (out.goal.empty()) {
                 std::cerr << "'" << r.name <<
                     "' is marked as a goal rule, but '" << 
                     out.goal << "' is already marked\n";
@@ -51,13 +51,14 @@ struct sorting_visitor {
 struct prod_visitor {
     grammar &out;
     int error_count = 0;
-    prod_visitor(grammar &g_) : out(g_) {};
+    explicit prod_visitor(grammar &g_) : out(g_) {};
 
     void operator()(const ast::rule_def &r) {
         /* run through each alternative and generate a production.
          * Make sure every referenced item exists.
          */
         auto [rfound, rsym] = out.syms.find(r.name);
+        //NOLINTNEXTLINE
         assert(rfound); // if not found, something went wrong up above.
 
         for (const auto& a : r.alts) {
@@ -77,7 +78,7 @@ struct prod_visitor {
         }
     }
 
-    void operator()(const ast::terminal &) {
+    void operator()(const ast::terminal & _) {
         /* don't care about terminals this time */
     }
 
@@ -105,7 +106,7 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
     error_count += sv.error_count;
 
     // Make sure there is a goal defined
-    if (retval->goal == "") {
+    if (retval->goal.empty()) {
         std::cerr << "No goal rule was declared.\n";
         error_count += 1;
     }
@@ -200,4 +201,4 @@ void pretty_print(const grammar &g, std::ostream& strm) {
     mypp(g);
 }
 
-}}
+} // namespace yalr::analyzer

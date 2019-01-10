@@ -1,13 +1,13 @@
 #include "ast.hpp"
 
 
-namespace yalr { namespace ast {
+namespace yalr::ast {
 
 struct ast_print_visitor {
     std::ostream& strm;
     int indent = 0;
 
-    ast_print_visitor(std::ostream& s = std::cout) : strm(s) {}
+    explicit ast_print_visitor(std::ostream& s = std::cout) : strm(s) {}
 
     void operator()(const grammar& g) {
 
@@ -59,4 +59,4 @@ void pretty_print(grammar& g, std::ostream& strm) {
 
 }
 
-}}
+} // namespace yalr::ast

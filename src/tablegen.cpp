@@ -16,7 +16,7 @@
  * Aho, Sethi, Ullman
  * Copyright 1986
  */
-namespace yalr { namespace tablegen {
+namespace yalr::tablegen {
 
 using state_set = std::set<item_set>;
 
@@ -76,6 +76,7 @@ item_set closure(const analyzer::grammar& g, const item_set& items) {
             default :
                 std::cerr << "This isn't right -- " << curr_item.prod_id << 
                     ":"<< curr_item.position << " -- " << prod.syms.size() << "\n";
+                //NOLINTNEXTLINE
                 assert(false);
                 break;
         }
@@ -88,7 +89,7 @@ item_set closure(const analyzer::grammar& g, const item_set& items) {
  * For each item in the set, assume that symbol X has just been seen. Advance
  * the position or drop the item.
  */
-item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
+item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X) {
     item_set retval;
 
     for (const auto& curr_item : I) {
@@ -175,6 +176,7 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
                 state.actions.emplace(t_iter.first, action(action_type::shift, 
                             t_iter.second.state_id, 0));
             } else {
+                //NOLINTNEXTLINE
                 assert(false);
             }
         }
@@ -209,6 +211,7 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, symbol X) {
                                 state.actions.erase(sym);
                                 auto [ act, placed ] = state.actions.try_emplace(sym,
                                         action(action_type::reduce, 0, item.prod_id));
+                                //NOLINTNEXTLINE
                                 assert(placed);
                             }
                         }
@@ -241,6 +244,7 @@ void pretty_print(const item_set& is,
        const std::vector<analyzer::production>& productions, std::ostream& strm) {
     for (const auto &i : is) {
         const auto prod = productions[i.prod_id];
+        //NOLINTNEXTLINE
         assert(i.prod_id == prod.prod_id);
 
         strm << "   [" << i.prod_id << "] ";
@@ -291,4 +295,4 @@ void pretty_print(const lrtable& lt, std::ostream& strm) {
     }
 }
 
-}}
+} // namespace yalr::tablegen

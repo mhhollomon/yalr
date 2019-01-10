@@ -1,15 +1,14 @@
 #include "parser.hpp"
 #include "skipparser.hpp"
 
-namespace x3 = boost::spirit::x3;
+//namespace x3 = boost::spirit::x3;
 
-namespace yalr { 
+namespace yalr {
     namespace parser {
 
-        using x3::int_;
         using x3::alnum;
+        using x3::alpha;
         using x3::lit;
-        using x3::double_;
         using x3::lexeme;
         using x3::ascii::char_;
 
@@ -24,9 +23,9 @@ namespace yalr {
 
         x3::symbols<int> symtab;
 
-        auto mkkw = [](std::string kw) { 
+        auto mkkw = [](const std::string & kw) { 
             symtab.add(kw);
-            return lexeme[x3::lit(kw) >> !ualnum]; 
+            return lexeme[lit(kw) >> !ualnum]; 
         };
 
         auto const kw_prsr = mkkw("parser");
@@ -39,7 +38,7 @@ namespace yalr {
 
         /* Identifiers */
         auto const ident_def = 
-            lexeme[ *char_('_') >> x3::alpha >> *ualnum ] - reserved ;
+            lexeme[ *char_('_') >> alpha >> *ualnum ] - reserved ;
 
         /* parser class "xyz" ; */
         auto const parser_class_def = kw_prsr >> kw_class >> 
@@ -76,7 +75,8 @@ namespace yalr {
 		using context_type = x3::phrase_parse_context<skipparser>::type;
 
         BOOST_SPIRIT_INSTANTIATE(grammar_type, iterator_type, context_type);
-    }
+
+    } // namespace parser
 
 	std::pair<bool, parser::ast_tree_type>do_parse(
 			parser::iterator_type &first, parser::iterator_type const &last) {
@@ -89,4 +89,5 @@ namespace yalr {
 
         return std::make_pair(r, e);
     }
-}
+
+} // namespace yalr

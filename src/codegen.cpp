@@ -2,7 +2,7 @@
 
 #include "analyzer.hpp"
 
-namespace yalr { namespace codegen {
+namespace yalr::codegen {
 
     using tablegen::action_type;
 
@@ -57,6 +57,7 @@ void generate_state_function( const tablegen::lrstate& state,
 
         // there should only ever be reduce or accept on the
         // end-of-input symbol.
+        // NOLINTNEXTLINE
         assert(false);
     }
 
@@ -88,7 +89,7 @@ void generate_state_function( const tablegen::lrstate& state,
             }
 )T";
 
-    if (state.gotos.size() > 0) {
+    if (state.gotos.empty()) {
         outstrm << pfx << pfx << pfx << "switch(retval.symbol) {\n";
         for (const auto& g_iter : state.gotos) {
             outstrm << pfx << pfx << pfx << pfx <<
@@ -175,4 +176,4 @@ public:
 
 }
 
-}}
+} //namespace yalr::codegen
