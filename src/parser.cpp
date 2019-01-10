@@ -51,7 +51,7 @@ namespace yalr {
         /* I don't really want to capture the fat arrow, but without it, Spirit
          * tries to hoist the vector of idents into the alternatives struct itself.
          */
-        auto const alternative_def = x3::string("=>") >> +ident >> x3::lit(';') ;
+        auto const alternative_def = x3::string("=>") >> *ident >> x3::lit(';') ;
 
         auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> kw_rule >> ident  >>
             x3::lit('{') >> +alternative >> x3::lit('}')

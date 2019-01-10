@@ -24,7 +24,7 @@ struct sorting_visitor {
         }
 
         if (r.isgoal) {
-            if (out.goal.empty()) {
+            if (not out.goal.empty()) {
                 std::cerr << "'" << r.name <<
                     "' is marked as a goal rule, but '" << 
                     out.goal << "' is already marked\n";
