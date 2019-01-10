@@ -27,10 +27,12 @@ unit tests, make the parser a bit better about error reporting, etc.
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
 - [Lemon](http://www.hwaci.com/sw/lemon/)
-- [LR on Wikipedia](https://en.wikipedia.org/wiki/LR_parser)
-- [GLR on Wikipedia](https://en.wikipedia.org/wiki/GLR_parser)
 - [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
 - [Grammophone](http://mdaines.github.io/grammophone/) - explore grammars.
+- [LR on Wikipedia](https://en.wikipedia.org/wiki/LR_parser)
+- [GLR on Wikipedia](https://en.wikipedia.org/wiki/GLR_parser)
+- [Parser Notes](http://www.cs.ecu.edu/karl/5220/spr16/Notes/Bottom-up/index.html)
+- [LALR(1) "Tutorial"](https://web.cs.dal.ca/~sjackson/lalr1.html)
 - Recursive ascent-descent parsers
   - [Recursive ascent-descent
     Parsers](https://link.springer.com/content/pdf/10.1007/3-540-53669-8_70.pdf)
