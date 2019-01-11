@@ -71,10 +71,24 @@ namespace yalr { namespace tablegen {
             id(id), items(i), initial(init) {}
     };
 
+    struct symbolset : std::set<symbol> {
+        using std::set<symbol>::set;
+        bool addset(const symbolset& o) {
+            auto n = size();
+            this->insert(o.begin(), o.end());
+
+            return n != size();
+        }
+    };
+
+
     struct lrtable {
         std::vector<lrstate> states;
         SymbolTable syms;
         std::vector<analyzer::production>productions;
+        std::map<symbol, symbolset>firstset;
+        std::map<symbol, symbolset>followset;
+        symbolset epsilon; /* those symbols that have epsilon productions */
         int target_prod_id;
         std::string parser_class;
     };

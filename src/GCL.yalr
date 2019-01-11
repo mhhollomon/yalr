@@ -1,3 +1,23 @@
+term SEMICOLON ;
+term IF; term FI;
+term DO; term OD;
+term PIPE;
+term ARROW;
+term LBRACE; term RBRACE;
+term SKIP;
+term ASSIGN;
+term COMMA;
+term IDENT;
+term NUMBER;
+term LPAREN; term RPAREN;
+term BANG; term OR; term AND;
+term LT; term LE; term GT; term GE;
+term EQ; term NE;
+term SLASH; term MULTIPLY;
+term PLUS; term MINUS;
+term TRUE; term FALSE;
+
+
 goal rule StatementList {
     => StatementList SEMICOLON Statement ;
     => Statement ;
@@ -78,6 +98,7 @@ rule RelOp {
     => GE ;
     => EQ ;
     => NE ;
+}
 
 rule Compare {
     => MathExp RelOp MathExp ;

@@ -60,7 +60,6 @@ namespace yalr {
             imp_ptr m_sym;
 
             friend class SymbolTable;
-            symbol() : m_id(-9999), m_stype(symbol_type::unknown), m_sym(nullptr) {}
             symbol(const imp_ptr sym) :
                 m_id(sym->id), m_stype(sym->stype), m_sym(sym) {}
 
@@ -71,6 +70,7 @@ namespace yalr {
 
         public:
 
+            symbol() : m_id(-9999), m_stype(symbol_type::unknown), m_sym(nullptr) {}
             int id() const { return m_id; }
             symbol_type stype() const { return m_stype; }
             std::string name() const { return m_sym->name; }

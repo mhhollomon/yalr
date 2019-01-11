@@ -1,4 +1,4 @@
-project('yalr', 'cpp', default_options : ['cpp_std=c++17'])
+project('yalr', 'cpp', default_options : ['cpp_std=c++17', 'b_pch=false'])
 
 # use subdir for this instead
 # http://mesonbuild.com/Reference-manual.html#include_directories

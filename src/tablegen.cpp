@@ -108,6 +108,82 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X
     return closure(g, retval);
 }
 
+/*
+ * Cribbed from : https://medium.com/100-days-of-algorithms/day-93-first-follow-cfe283998e3e
+ */
+void compute_first_and_follow(const analyzer::grammar& g, lrtable& lt) {
+    // initialize firstset with the sets for each terminal just themselves
+    for (const auto& iter : lt.syms) {
+        if (iter.second.stype() == SymbolTable::symbol_type::term) {
+            lt.firstset.emplace(iter.second, symbolset{iter.second});
+            // no follow set for terminals
+        } else {
+            lt.firstset.emplace(iter.second, symbolset{});
+            auto [ m_iter, _ ] = lt.followset.emplace(iter.second, symbolset{});
+
+            if (iter.second == lt.productions[lt.target_prod_id].rule) {
+                auto [ _, endsym ] = lt.syms.find("$");
+                m_iter->second.insert(endsym);
+            }
+        }
+    }
+
+    bool updated = true;
+
+    while (updated) {
+        updated = false;
+        for (const auto& prod : lt.productions) {
+            bool is_epsilon = true;
+
+            for (const auto& symb : prod.syms) {
+                const auto &symfirst = lt.firstset[symb];
+
+                if (not symfirst.empty()) {
+                    updated |= lt.firstset[prod.rule].addset(symfirst);
+                }
+
+                if (lt.epsilon.count(symb) == 0) {
+                    is_epsilon = false;
+                    break;
+                }
+            }
+
+            if (is_epsilon) {
+                auto [_, inserted] = lt.epsilon.insert(prod.rule);
+                updated |= inserted;
+            }
+
+            decltype(prod.syms) reversed(prod.syms.size());
+            //reversed.reserve(prod.syms.size());
+            std::reverse_copy(std::begin(prod.syms), std::end(prod.syms),
+                    std::begin(reversed));
+
+            std::cerr << "---- REVERSED = " << reversed.size();
+            for (const auto &x : reversed) {
+                std::cerr << " " << x.name();
+            }
+
+            std::cerr << "\n";
+
+            auto *aux = &(lt.followset[prod.rule]);
+            for (const auto& symb : reversed) {
+                if (symb.stype() == SymbolTable::symbol_type::rule) {
+                    updated |= lt.followset[symb].addset(*aux);
+                }
+
+                if (lt.epsilon.count(symb) > 0) {
+                    updated |= (*aux).addset(lt.firstset[symb]);
+                } else {
+                    aux = &(lt.firstset[symb]);
+                }
+            }
+        }
+    }
+}
+
+/*
+ * Main computation
+ */
  std::unique_ptr<lrtable> generate_table(const analyzer::grammar& g) {
     // generate unique ids for lrstates
     int state_id = -1;
@@ -159,6 +235,17 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X
 
     auto retval = std::make_unique<lrtable>();
 
+    retval->syms = g.syms;
+    retval->productions = g.productions;
+    retval->target_prod_id = g.target_prod;
+    retval->parser_class = g.parser_class;
+    
+    /*
+     * compute first and follw sets
+     */
+
+    compute_first_and_follow(g, *retval);
+
     /* Compute Actions 
      *
      */
@@ -195,8 +282,7 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X
                             action(action_type::accept, 0, 0));
                 } else {
                     /* add reduce */
-                    for (const auto& sym_iter : g.syms) {
-                        auto sym = sym_iter.second;
+                    for (const auto& sym : retval->followset[prod.rule]) {
                         if (sym.stype() == SymbolTable::symbol_type::term) {
                             auto [ new_iter, placed ] = state.actions.try_emplace(sym,
                                     action(action_type::reduce, 0, item.prod_id));
@@ -231,10 +317,6 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X
             [](const lrstate& a, const lrstate& b) { return (a.id < b.id); }
             );
 
-    retval->syms = g.syms;
-    retval->productions = g.productions;
-    retval->target_prod_id = g.target_prod;
-    retval->parser_class = g.parser_class;
 
     return retval;
 
@@ -288,8 +370,28 @@ void pretty_print(const lrstate& lr,
 
 }
 
+void pretty_print(const std::string desc, const std::map<symbol, symbolset>& s, 
+        std::ostream& strm) {
+    strm << desc << "\n";
+    std::string pfx = "    ";
+
+    for (const auto& m_iter : s) {
+        strm << pfx << m_iter.first.name() << " :";
+        for(const auto& symb : m_iter.second) {
+            strm << " " << symb.name();
+        }
+        strm << "\n";
+    }
+}
+
 void pretty_print(const lrtable& lt, std::ostream& strm) {
     strm << "parser_class = '" << lt.parser_class << "'\n";
+    pretty_print("First Set", lt.firstset, strm);
+    pretty_print("Follow Set", lt.followset, strm);
+    strm << "Epsilons:\n";
+    for (const auto& symb : lt.epsilon) {
+        strm << "    " << symb.name() << "\n";
+    }
     for (const auto& state : lt.states) {
         pretty_print(state, lt.productions, strm);
     }

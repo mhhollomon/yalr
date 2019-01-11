@@ -14,7 +14,7 @@ string match the grammar?"
 
 - Specification parser - complete for the limited features set.
 - Syntax analyzer - complete for the limited feature set.
-- LR Parser Table generator - complete. - SLR(0) for the moment. Hard codes
+- LR Parser Table generator - complete. - SLR(1) for the moment. Hard codes
   reduce as priority over shift in shift/reduce conflicts. Fails on
   reduce/reduce conflicts.
 - Code generator - complete.
