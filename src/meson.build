@@ -4,7 +4,12 @@ project('yalr', 'cpp', default_options : ['cpp_std=c++17', 'b_pch=false'])
 # http://mesonbuild.com/Reference-manual.html#include_directories
 add_project_arguments('-I../lib', language: ['cpp'])
 
-srcfiles = files('codegen.cpp','SymbolTable.cpp', 'tablegen.cpp','parser.cpp','analyzer.cpp','ast.cpp','main.cpp')
+srcfiles = files(
+    'codegen.cpp','SymbolTable.cpp',
+    'tablegen.cpp','parser.cpp',
+    'analyzer.cpp','ast.cpp',
+    'main.cpp', 'translate.cpp'
+    )
 executable('yalr', srcfiles)
 
 clangtidy = find_program('clang-tidy', required: false)
