@@ -1,0 +1,51 @@
+term PARSER;
+term CLASS;
+term RULE;
+term GOAL;
+term TERM;
+term IDENT;
+term SEMI;
+term ARROW;
+term LBRACE;
+term RBRACE;
+
+
+rule ParserClass {
+    => PARSER CLASS IDENT SEMI ;
+}
+
+rule Term {
+    => TERM ID SEMI ;
+}
+
+/* A Possibly empty list of symbols (terms and rules) */
+rule SymbolList {
+    => ;
+    => SymbolList ID ;
+}
+
+rule Alt {
+    => ARROW SymbolList SEMI ;
+}
+
+/* An AltList cannot be empty */
+rule AltList {
+    => Alt ;
+    => AltList Alt ;
+}
+
+rule Rule {
+    => GOAL RULE LBRACE AltList RBRACE ;
+    =>      RULE LBRACE AltList RBRACE ;
+}
+
+rule Statement {
+    => ParserClass ;
+    => Term ;
+    => Rule ;
+}
+
+goal rule StatementList {
+    => Statement ;
+    => StatmenentList Statement ;
+}
