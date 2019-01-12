@@ -24,6 +24,91 @@ string match the grammar?"
 After the sub-goal is complete, I will probably stop to tidy up the place - add
 unit tests, make the parser a bit better about error reporting, etc.
 
+## Building
+
+Yalr requires boost, meson, ninja, and a c++17 compliant compiler. Assuming you have those, then building is:
+```bash
+git clone https://github.com/mhhollomon/yalr
+cd yalr
+mkdir build
+cd build
+meson ../src
+ninja
+```
+
+The new executable will be in the build directory.
+
+## Running
+
+At the simplest, it is:
+
+```
+yalr my_grammar.yalr
+```
+
+This will generate a file `YalrParser.hpp` that has the generated parser in it.
+
+Other options:
+
+```
+# get help
+yalr -h
+yalr --help
+
+# Rename the output file
+yalr -o foo.hpp my_grammar.yalr
+
+# Instead of outputting the parser,
+# translate the grammer for use on grammophone
+# (see references)
+yalr -t grammophone my_grammar.yalr
+```
+
+## Grammar Spec
+
+The follow types of statements may appear in any order.
+
+whitespace is generally not significant. `C` style `/* ... */` comments are supported.
+
+### Parser Class Name
+
+The parser is normally put in `class YalrParser`. This can be changed by using the statement:
+```
+parser class MyClass;
+```
+This *also* changes the default name for the output to `MyClass.hpp`. 
+This can be overriden by the `--output-file` option on the command line.
+
+This statement may only appear once in the file.
+
+### Terminals
+
+All terminals must be explicitly declared:
+
+```
+term MYTERM;
+```
+
+### Non-terminals
+Rules are declared with the `rule` keyword.
+Each alternate is intrduced with `=>` and terminated with a semicolon.
+
+One rule must be marked as the starting or "goal" rule, by preceeding it with the `goal` keyword.
+
+```
+rule MyRule {
+  => MYTERM MyRule ;
+  => ;  /* an empty alternative */
+}
+
+/* compact rule */
+rule Compact { => A B ; => C Compact ; }
+
+/* goal rule */
+goal rule Program {
+  => Program Statement ;
+}
+```
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
 - [Lemon](http://www.hwaci.com/sw/lemon/)
