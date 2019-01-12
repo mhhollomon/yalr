@@ -11,52 +11,75 @@
 #include <fstream>
 #include <ios>
 
-cxxopts::Options create_options() {
-    cxxopts::Options options("yalr", "Parser Generator");
-
-    options.positional_help("<input-file>");
-
-    options.add_options()
-        ("h,help", "Print help message")
-        ("o,output-file", "File in which to put the main output", 
-            cxxopts::value<std::string>())
-        ("t,translate", "Output the grammar in another format",
-            cxxopts::value<std::string>())
-        ;
-    options.add_options("positionals")
-        ("input-file", "grammar file to process",  cxxopts::value<std::string>())
-        ;
+// I'm not in love with the fact that
+// you have to wrap the enitre script body into a try {}.
+// And that you have no choice but to do everything up here.
+// The reason is that cxxopts::ParseResult doesn't have a default
+// constructor, so that you cannot do:
+// cxxopts::ParseResult foo;
+// try {
+//    foo = options.parse(...);
+// } catch ...
 
 
-    options.parse_positional({"input-file"});
+struct CLIOptions {
+    std::string output_file;
+    std::string translate;
+    std::string input_file;
+    bool help = false;
+};
+
+CLIOptions parse_commandline(int argc, char**argv) {
+  
+    CLIOptions clopts;
+
+    try {
+        cxxopts::Options options("yalr", "Parser Generator");
+
+        options.positional_help("<input-file>");
+
+        options.add_options()
+            ("h,help", "Print help message", cxxopts::value(clopts.help))
+            ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
+            ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
+            ;
+        options.add_options("positionals")
+            ("input-file", "grammar file to process",  cxxopts::value(clopts.input_file))
+            ;
 
 
-    return options;
+        options.parse_positional({"input-file"});
+
+        auto results = options.parse(argc, argv);
+
+        // Grrr. have to handle help here because we need the options object.
+        if (clopts.help) {
+            std::cout << options.help() << "\n";
+            exit(1);
+        }
+
+    } catch (const cxxopts::OptionException& e) {
+        std::cerr << "Well, that didn't work: " << e.what() << "\n";
+        exit(1);
+    }
+
+    return clopts;
+
 }
 
 //****************************
 // Main
 //****************************
-int main(int argc, char* argv[])
-{
-    auto options = create_options();
+int main(int argc, char* argv[]) {
 
-    auto results = options.parse(argc, argv);
+    auto clopts = parse_commandline(argc, argv);
 
-    if (results.count("help"))
-    {
-      std::cout << options.help() << std::endl;
-      exit(0);
-    }
-
-    if (not results.count("input-file")) {
+    if (clopts.input_file.empty()) {
         std::cerr << "Need something to parse\n";
         return 1;
     }
 
-    //gsl::span<char *> args{argv, argc};
-
-    std::ifstream in(results["input-file"].as<std::string>(), std::ios_base::in);
+    std::ifstream in(clopts.input_file, std::ios_base::in);
     in.unsetf(std::ios_base::skipws);
 
 
@@ -111,14 +134,14 @@ int main(int argc, char* argv[])
     std::cout << "------ ANALYZE ------\n";
 
     std::string outfilename;
-    if (results.count("output-file")) {
-        outfilename = results["output-file"].as<std::string>();
+    if (not clopts.output_file.empty()) {
+        outfilename = clopts.output_file;
     } else {
         outfilename = ana_tree->parser_class + ".hpp";
     }
 
-    if (results.count("translate")) {
-        const auto format = results["translate"].as<std::string>();
+    if (not clopts.translate.empty()) {
+        const auto format = clopts.translate;
 
         if (format == "grammophone") {
             std::ofstream code_out(outfilename, std::ios_base::out);

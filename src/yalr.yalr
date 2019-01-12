@@ -1,3 +1,4 @@
+term ID;
 term PARSER;
 term CLASS;
 term RULE;
@@ -47,5 +48,5 @@ rule Statement {
 
 goal rule StatementList {
     => Statement ;
-    => StatmenentList Statement ;
+    => StatementList Statement ;
 }

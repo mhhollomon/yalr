@@ -21,4 +21,4 @@ void grammophone::output(std::ostream& strm) const {
 
 }
 
-} // yalr::translate
+} // namespace yalr::translate

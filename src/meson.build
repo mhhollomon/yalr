@@ -20,7 +20,7 @@ if clangtidy.found()
             '../scripts/run-clang-tidy.sh',
             clangtidy.path(),
             meson.build_root(),
-            '-checks=*,-llvm-include-order,-cert-err58-cpp,-fuchsia-*,-google-runtime-references',
+            '-checks=*,-llvm-include-order,-cert-err58-cpp,-fuchsia-*,-google-runtime-references,-google-readability-todo',
             '-header-filter=\''+ meson.source_root() + '/*\'',
             '-warnings-as-errors=*',
         ] + srcfiles)

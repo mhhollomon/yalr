@@ -28,7 +28,7 @@ void pretty_print(const lrstate& lr, std::ostream& strm);
  * For each item in `items`, add to the return value.
  * If the position is just before a rule in the production,
  * Add all the productions with that LHS rule to the set.
- * But thse may also need to introduce other proudctions as well.
+ * But these may also need to introduce other productions as well.
  */
 item_set closure(const analyzer::grammar& g, const item_set& items) {
     item_set retval;
@@ -108,11 +108,18 @@ item_set goto_set(const analyzer::grammar& g, const item_set& I, const symbol& X
     return closure(g, retval);
 }
 
-/*
- * Cribbed from : https://medium.com/100-days-of-algorithms/day-93-first-follow-cfe283998e3e
- */
-void compute_first_and_follow(const analyzer::grammar& g, lrtable& lt) {
-    // initialize firstset with the sets for each terminal just themselves
+// Cribbed from : https://medium.com/100-days-of-algorithms/day-93-first-follow-cfe283998e3e
+void compute_first_and_follow(lrtable& lt) {
+
+    /* Initialize the sets.
+     * For first :
+     *      terminals get a set consisting of themselves
+     *      non-terminals get an empty set.
+     * For Follow :
+     *      terminals do not get anything.
+     *      non-terminals get an empty set.
+     *          except the start symbol, which gets a set with '$' (end-of-input).
+     */
     for (const auto& iter : lt.syms) {
         if (iter.second.stype() == SymbolTable::symbol_type::term) {
             lt.firstset.emplace(iter.second, symbolset{iter.second});
@@ -130,40 +137,75 @@ void compute_first_and_follow(const analyzer::grammar& g, lrtable& lt) {
 
     bool updated = true;
 
+    // Keep running through the productions until nothing changes.
     while (updated) {
         updated = false;
         for (const auto& prod : lt.productions) {
+
+            // can the lhs symbol produce epsilon?
+            // Assume it can until we prove otherwise.
             bool is_epsilon = true;
 
             for (const auto& symb : prod.syms) {
                 const auto &symfirst = lt.firstset[symb];
 
+                // Add the first set of the symbol in the production to
+                // the first set of the symbol this is a rule for.
+                // As an optimization, only do it if there is something
+                // in the set we're adding.
                 if (not symfirst.empty()) {
                     updated |= lt.firstset[prod.rule].addset(symfirst);
                 }
 
+                // check to see if our current symbol can produce epsilon.
+                // If it can't, we're done with this production.
                 if (lt.epsilon.count(symb) == 0) {
+                    // if the current symbol cannot produce epsilon, then
+                    // neither can the lhs symbol.
                     is_epsilon = false;
                     break;
                 }
             }
 
+            // Add the lhs to epsilon if necessary.
+            // Note: since epsilon starts out empty, this is conservative.
             if (is_epsilon) {
+                // bleah. add a method to symbolset to make this more graceful.
                 auto [_, inserted] = lt.epsilon.insert(prod.rule);
                 updated |= inserted;
             }
 
+            /****** Follow set computation ********
+             *
+             * Consider a rule such as 
+             * LHS => A B C
+             * 
+             * Starting at the end:
+             * consider C.
+             * If C is a non-terminal, then follow(LHS) needs to be added to
+             * follow(C). 
+             * If C can produce epsilson, then first(C) needs to be added to
+             * follow(LHS)
+             * Now consider B.
+             * If B is a non-terminal, then if epsilon(C) then follow(LHS)
+             * needs to added to follow(B), otherwise First(C) needs to added
+             * to follow(B).
+             *
+             * In other words, follow(LHS) needs to propagate backwards until
+             * a non-epsilon symbol is found. When that happens, the first set
+             * of THAT symbol needs to propagate backwards until we hit another
+             * non-epsilon symbol.
+             *
+             * The `aux` variable contains the set we need to propagate.
+             */
+
+            // For follow, we need to walk through each symbol in the production
+            // starting at the end. So, reverse the symbols.
+            // TODO - maybe use rend()/rbegin() instead. Doing the reverse each
+            // time through is wasteful.
             decltype(prod.syms) reversed(prod.syms.size());
-            //reversed.reserve(prod.syms.size());
             std::reverse_copy(std::begin(prod.syms), std::end(prod.syms),
                     std::begin(reversed));
-
-            std::cerr << "---- REVERSED = " << reversed.size();
-            for (const auto &x : reversed) {
-                std::cerr << " " << x.name();
-            }
-
-            std::cerr << "\n";
 
             auto *aux = &(lt.followset[prod.rule]);
             for (const auto& symb : reversed) {
@@ -174,6 +216,8 @@ void compute_first_and_follow(const analyzer::grammar& g, lrtable& lt) {
                 if (lt.epsilon.count(symb) > 0) {
                     updated |= (*aux).addset(lt.firstset[symb]);
                 } else {
+                    // symb is non-epsilon. So start propagating
+                    // its first set.
                     aux = &(lt.firstset[symb]);
                 }
             }
@@ -241,10 +285,10 @@ void compute_first_and_follow(const analyzer::grammar& g, lrtable& lt) {
     retval->parser_class = g.parser_class;
     
     /*
-     * compute first and follw sets
+     * compute first and follow sets
      */
 
-    compute_first_and_follow(g, *retval);
+    compute_first_and_follow(*retval);
 
     /* Compute Actions 
      *
@@ -370,7 +414,7 @@ void pretty_print(const lrstate& lr,
 
 }
 
-void pretty_print(const std::string desc, const std::map<symbol, symbolset>& s, 
+void pretty_print(const std::string& desc, const std::map<symbol, symbolset>& s, 
         std::ostream& strm) {
     strm << desc << "\n";
     std::string pfx = "    ";
