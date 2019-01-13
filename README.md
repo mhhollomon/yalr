@@ -89,6 +89,14 @@ All terminals must be explicitly declared:
 term MYTERM;
 ```
 
+A "pattern" can be associated with the terminal. Nothing is currently done with
+this, but it will help form the lexer at some point. The pattern must be
+surronded by double quotes.
+
+```
+term MYTERM "fo+" ;
+```
+
 ### Non-terminals
 Rules are declared with the `rule` keyword.
 Each alternate is intrduced with `=>` and terminated with a semicolon.
