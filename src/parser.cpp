@@ -12,7 +12,7 @@ namespace yalr {
         {
             template <typename Iterator, typename Exception, typename Context>
             x3::error_handler_result on_error(
-                Iterator& first, Iterator const& last
+                Iterator& /*first*/, Iterator const& /*last*/
               , Exception const& x, Context const& context)
             {
                 auto& error_handler = x3::get<x3::error_handler_tag>(context).get();
@@ -95,11 +95,11 @@ namespace yalr {
 
         using grammar_type = x3::rule<grammar_tag, ast::grammar>;
 		using phrase_context_type = x3::phrase_parse_context<skipparser>::type;
-        typedef x3::context<
+        using context_type =  x3::context<
             x3::error_handler_tag,
             std::reference_wrapper<x3::error_handler<iterator_type>> const,
             phrase_context_type>
-        context_type;
+                ;
 
 
         BOOST_SPIRIT_INSTANTIATE(grammar_type, iterator_type, context_type);
