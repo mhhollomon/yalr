@@ -82,8 +82,9 @@ namespace yalr {
 
         /* Top Level Grammar */
         auto const grammar_def =
-            -parser_class >> 
-            +( terminal | rule_stmt )
+            (-parser_class >> 
+            +( terminal | rule_stmt )) >
+            x3::eoi
             ;
 
         BOOST_SPIRIT_DEFINE(ident);

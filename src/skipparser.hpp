@@ -10,49 +10,72 @@ struct skipparser: x3::parser<char> {
 
     using attribute_type = x3::unused_type;
     
+    enum { INIT, COMMENT_B1, BLOCK, BLOCK_E1, LINE };
     template<typename Iterator, typename Context, typename RContext, typename Attribute>
     bool parse(Iterator &first, Iterator const& last, Context const&, 
                RContext const&, Attribute&) const
     {
 
+        auto orig = first;
         auto save = first;
-        bool in_comment = false;
-        while (first != last) {
-            if (in_comment) {
-                if (*first == '*') {
-                    // start of closing marker. check if we have the second character.
-                    // If not, just swallow the star.
-                    ++first;
-                    if ((first != last) && (*first == '/')) {
-                        in_comment = false;
+
+        int state = INIT;
+        bool stop = false;
+
+        while (first != last and not stop) {
+            switch (state) {
+                case INIT :
+                    if (*first == '/') {
+                        save = first;
+                        state = COMMENT_B1;
                         ++first;
-                    } 
-                } else {
-                    ++first;
-                }
-            } else {
-                if ( *first == '/') {
-                    // Start of opening marker. check if we have second character.
-                    // If we don't we'll need to backup and let the "real" parser
-                    // handle it.
-                    auto restore = first;
-                    ++first;
-                    if ((first != last) && (*first == '*')) {
-                        in_comment = true;
+                    } else if (std::isspace(*first)) {
                         ++first;
                     } else {
-                        first = restore;
-                        break;
+                        stop = true;
                     }
-                } else if (std::isspace(*first)) {
-                    ++first;
-                } else {
                     break;
-                }
-            }
+                case COMMENT_B1:
+                    if (*first == '*') {
+                        state = BLOCK;
+                        ++first;
+                    } else if (*first == '/') {
+                        state = LINE;
+                        ++first;
+                    } else {
+                        first = save;
+                        stop = true;
+                        // don't advance. let the '/' be handled
+                        // by somebody else.
+                        // Make the state INIT so we can see errors.
+                        // state = INIT;
+                    }
+                    break;
+                case BLOCK :
+                    if (*first == '*') {
+                        state = BLOCK_E1;
+                    }
+                    ++first;
+                    break;
+                case BLOCK_E1 :
+                    if (*first == '*') {
+                        state = BLOCK_E1;
+                    } else if (*first == '/') {
+                        state = INIT;
+                    } else {
+                        state = BLOCK;
+                    }
+                    ++first;
+                    break;
+                case LINE :
+                    if (*first == '\n') {
+                        state = INIT;
+                    }
+                    ++first;
+                    break;
+            };
         }
-
-        return (save != first);
+        return (orig != first);
 	}
 
 
