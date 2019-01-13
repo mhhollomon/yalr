@@ -68,7 +68,10 @@ yalr -t grammophone my_grammar.yalr
 
 The follow types of statements may appear in any order.
 
-whitespace is generally not significant. `C` style `/* ... */` comments are supported.
+whitespace is generally not significant. `C` style `/* ... */` comments 
+as well as C++ `//` comments are supported.
+
+Keywords are reserved and may not be used as the name of a terminal or rule.
 
 ### Parser Class Name
 

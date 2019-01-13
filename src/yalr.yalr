@@ -1,10 +1,9 @@
-term ID;
 term PARSER "parser" ;
 term CLASS  "class"  ;
 term RULE   "rule"   ;
 term GOAL   "goal"   ;
 term TERM   "term"   ;
-term IDENT  "_*[a-zA-Z][a-zA-Z0-9]*" ;
+term ID     "_*[a-zA-Z][a-zA-Z0-9]*" ;
 term SEMI   ";"      ;
 term ARROW  "=>"     ;
 term LBRACE "{"      ;
@@ -13,7 +12,7 @@ term PATTERN;
 
 
 rule ParserClass {
-    => PARSER CLASS IDENT SEMI ;
+    => PARSER CLASS ID SEMI ;
 }
 
 rule Term {
