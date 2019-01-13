@@ -3,7 +3,7 @@
 
 #include <boost/spirit/home/x3.hpp>
 
-namespace yalr { namespace parser {
+namespace yalr::parser {
 namespace x3 = boost::spirit::x3;
 
 struct skipparser: x3::parser<char> {
@@ -18,7 +18,6 @@ struct skipparser: x3::parser<char> {
         auto save = first;
         bool in_comment = false;
         while (first != last) {
-            // std::cerr << "Char = " << *first << "\n";
             if (in_comment) {
                 if (*first == '*') {
                     // start of closing marker. check if we have the second character.
@@ -59,6 +58,6 @@ struct skipparser: x3::parser<char> {
 
 };
 
-}}
+} // namespace yalr::parser
 
 #endif

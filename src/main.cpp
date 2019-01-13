@@ -82,14 +82,16 @@ int main(int argc, char* argv[]) {
     std::ifstream in(clopts.input_file, std::ios_base::in);
     in.unsetf(std::ios_base::skipws);
 
-
-    yalr::parser::iterator_type iter(in);
-    yalr::parser::iterator_type const eof;
+    const std::string input_string(std::istreambuf_iterator<char>{in}, {});
 
 
-    auto [r, tree] = yalr::do_parse(iter, eof);
+    yalr::parser::iterator_type iter = input_string.begin();
+    yalr::parser::iterator_type const eof = input_string.end();
 
-    if (!r) {
+
+    auto tree = yalr::do_parse(iter, eof);
+
+    if (!tree.success) {
         std::cout << "Parse failed\n";
         std::cout << "Stopped at : ";
         for (int i =0; i < 20; ++i) {

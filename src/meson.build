@@ -1,27 +1,12 @@
-project('yalr', 'cpp', default_options : ['cpp_std=c++17', 'b_pch=false'])
 
-# use subdir for this instead
-# http://mesonbuild.com/Reference-manual.html#include_directories
-add_project_arguments('-I../lib', language: ['cpp'])
+parser_src = files('parser.cpp')
 
-srcfiles = files(
+yalr_srcfiles = files(
     'codegen.cpp','SymbolTable.cpp',
-    'tablegen.cpp','parser.cpp',
+    'tablegen.cpp',
     'analyzer.cpp','ast.cpp',
     'main.cpp', 'translate.cpp'
-    )
-executable('yalr', srcfiles)
+    ) + parser_src
 
-clangtidy = find_program('clang-tidy', required: false)
-if clangtidy.found()
-    run_target(
-        'tidy',
-        command: [
-            '../scripts/run-clang-tidy.sh',
-            clangtidy.path(),
-            meson.build_root(),
-            '-checks=*,-llvm-include-order,-cert-err58-cpp,-fuchsia-*,-google-runtime-references,-google-readability-todo',
-            '-header-filter=\''+ meson.source_root() + '/*\'',
-            '-warnings-as-errors=*',
-        ] + srcfiles)
-endif
+
+src_inc = include_directories('.')
