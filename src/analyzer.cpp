@@ -46,6 +46,18 @@ struct sorting_visitor {
         }
 
     }
+
+    void operator()(const ast::skip &t) {
+        auto [ inserted, new_sym ] = out.syms.insert(t);
+
+        if (! inserted ) {
+            std::cerr << "'" << t.name << 
+                "' has already been defined as a " <<
+                new_sym.type_name() << "\n";
+            error_count += 1;
+        }
+    }
+
 };
 
 struct prod_visitor {
@@ -66,6 +78,11 @@ struct prod_visitor {
             for (const auto& p : a.pieces) {
                 auto [found, sym] = out.syms.find(p);
                 if (found) {
+                    if (sym.isskip()) {
+                        error_count += 1;
+                        std::cerr << "alternative is using the skip terminal '" <<
+                            sym.name() <<"'\n";
+                    }
                     s.push_back(sym);
                 } else {
                     error_count += 1;
@@ -79,6 +96,9 @@ struct prod_visitor {
     }
 
     void operator()(const ast::terminal & _) {
+        /* don't care about terminals this time */
+    }
+    void operator()(const ast::skip & _) {
         /* don't care about terminals this time */
     }
 

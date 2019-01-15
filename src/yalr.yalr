@@ -1,14 +1,17 @@
-term PARSER "parser" ;
-term CLASS  "class"  ;
-term RULE   "rule"   ;
-term GOAL   "goal"   ;
-term TERM   "term"   ;
-term ID     "_*[a-zA-Z][a-zA-Z0-9]*" ;
-term SEMI   ";"      ;
-term ARROW  "=>"     ;
-term LBRACE "{"      ;
-term RBRACE "}"      ;
-term PATTERN;
+skip WS      "\\s+"   ;
+skip LINECOM "//.*\\n"; // dot doesn't match EOL
+term PARSER  "parser" ;
+term CLASS   "class"  ;
+term RULE    "rule"   ;
+term GOAL    "goal"   ;
+term TERM    "term"   ;
+term SKIP    "skip"   ;
+term ID      "_*[a-zA-Z][a-zA-Z0-9]*" ;
+term SEMI    ";"      ;
+term ARROW   "=>"     ;
+term LBRACE  "\\{"    ;
+term RBRACE  "}"      ;
+term PATTERN "\"[^\"]*\"" ;
 
 
 rule ParserClass {
@@ -18,6 +21,10 @@ rule ParserClass {
 rule Term {
     => TERM ID SEMI ;
     => TERM ID PATTERN SEMI ;
+}
+
+rule Skip {
+    => SKIP ID PATTERN SEMI ;
 }
 
 /* A Possibly empty list of symbols (terms and rules) */
@@ -37,12 +44,13 @@ rule AltList {
 }
 
 rule Rule {
-    => GOAL RULE LBRACE AltList RBRACE ;
-    =>      RULE LBRACE AltList RBRACE ;
+    => GOAL RULE ID LBRACE AltList RBRACE ;
+    =>      RULE ID LBRACE AltList RBRACE ;
 }
 
 rule Statement {
     => ParserClass ;
+    => Skip ;
     => Term ;
     => Rule ;
 }

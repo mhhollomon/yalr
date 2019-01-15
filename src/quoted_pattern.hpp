@@ -5,6 +5,7 @@
 #include <boost/spirit/home/x3/core/parser.hpp>
 #include <boost/spirit/home/x3/core/skip_over.hpp>
 
+#include <cassert>
 
 namespace yalr::parser {
 
@@ -17,6 +18,8 @@ struct quoted_pattern: x3::parser<char> {
 
     using attribute_type = std::string;
     
+    enum State { INIT , ESCAPE };
+
     template<typename Iterator, typename Context, typename RContext, typename Attribute>
     bool parse(Iterator &first, Iterator const& last, Context const& context, 
                RContext const&, Attribute& attr) const
@@ -32,18 +35,31 @@ struct quoted_pattern: x3::parser<char> {
 
         if ((first != last) and (*first == '"')) {
             //std::cout<< "Saw the first quote\n";
-            do {
-                //std::cout << "looping\n";
-                ++first;
-            } while ( (first != last) and (*first != '"') );
+            int state = INIT;
+            bool stop = false;
+            while (++first != last and not stop) {
+                switch (state) {
+                    case INIT :
+                        if (*first == '\\') {
+                            state = ESCAPE;
+                        } else if (*first == '"') {
+                            stop = true;
+                        }
+                        break;
+                    case ESCAPE :
+                        state = INIT;
+                        break;
+                    default :
+                        assert(false);
+                }
+            }
 
-            if (first == last) {
+            if (not stop) {
                 //std::cout << "backing up\n";
                 // backup
                 first = save;
             } else {
                 // found it
-                ++first;
                 //std::cout << "Found it!\n";
                 attr = std::string(save, first);
                 //std::cout << "attr = " << attr << "\n";

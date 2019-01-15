@@ -60,6 +60,13 @@ item_set closure(const analyzer::grammar& g, const item_set& items) {
             case SymbolTable::symbol_type::term :
                 // its a terminal, nothing to do
                 break;
+            case SymbolTable::symbol_type::skip :
+                // its a skip, this isn;t right
+                std::cerr << "There is a skip in a production, but analyze "
+                    "was supposed to take care of that\n";
+                //NOLINNEXTLINE
+                assert(false);
+                break;
             case SymbolTable::symbol_type::rule :
                 {
                 auto curr_rule_id = prod.syms[curr_item.position].id();
@@ -124,7 +131,7 @@ void compute_first_and_follow(lrtable& lt) {
         if (iter.second.stype() == SymbolTable::symbol_type::term) {
             lt.firstset.emplace(iter.second, symbolset{iter.second});
             // no follow set for terminals
-        } else {
+        } else if (iter.second.stype() == SymbolTable::symbol_type::rule) {
             lt.firstset.emplace(iter.second, symbolset{});
             auto [ m_iter, _ ] = lt.followset.emplace(iter.second, symbolset{});
 
@@ -132,6 +139,8 @@ void compute_first_and_follow(lrtable& lt) {
                 auto [ _, endsym ] = lt.syms.find("$");
                 m_iter->second.insert(endsym);
             }
+        } else {
+            /* ignore skips */
         }
     }
 
@@ -159,7 +168,7 @@ void compute_first_and_follow(lrtable& lt) {
 
                 // check to see if our current symbol can produce epsilon.
                 // If it can't, we're done with this production.
-                if (lt.epsilon.count(symb) == 0) {
+                if (lt.epsilon.contains(symb)) {
                     // if the current symbol cannot produce epsilon, then
                     // neither can the lhs symbol.
                     is_epsilon = false;
@@ -213,7 +222,7 @@ void compute_first_and_follow(lrtable& lt) {
                     updated |= lt.followset[symb].addset(*aux);
                 }
 
-                if (lt.epsilon.count(symb) > 0) {
+                if (lt.epsilon.contains(symb)) {
                     updated |= (*aux).addset(lt.firstset[symb]);
                 } else {
                     // symb is non-epsilon. So start propagating
@@ -254,8 +263,10 @@ void compute_first_and_follow(lrtable& lt) {
         q.pop();
 
         /* run through all the grammar symbols (terms and rules) */
-        for (const auto& s_iter : g.syms ) {
-            auto X = s_iter.second;
+        for (const auto& [_, X] : g.syms ) {
+            if (X.isskip()) {
+                continue;
+            }
             auto is = goto_set(g, curr_state->items, X);
 
             if (is.empty()) {
@@ -307,6 +318,8 @@ void compute_first_and_follow(lrtable& lt) {
                 state.actions.emplace(t_iter.first, action(action_type::shift, 
                             t_iter.second.state_id, 0));
             } else {
+                // Other code should make sure that skips aren't
+                // here. But trap it - just in case.
                 //NOLINTNEXTLINE
                 assert(false);
             }

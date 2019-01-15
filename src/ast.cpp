@@ -49,6 +49,10 @@ struct ast_print_visitor {
         strm << "term " << t.name << ";\n";
     }
 
+    void operator()(const skip &t) {
+        strm << "skip " << t.name << ";\n";
+    }
+
 };
 
 void pretty_print(grammar& g, std::ostream& strm) {

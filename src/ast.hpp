@@ -15,25 +15,30 @@ namespace yalr::ast {
 
     namespace x3 = boost::spirit::x3;
 
+    struct symbol : x3::position_tagged {
+        std::string name;
+    };
+
     struct alternative : x3::position_tagged {
         std::string phony;
         std::vector<std::string>pieces;
     };
 
-    struct rule_def : x3::position_tagged {
+    struct rule_def : symbol {
         bool isgoal;
-        std::string name;
         std::vector<alternative>alts;
     };
 
-    struct terminal : x3::position_tagged {
-        std::string name;
+    struct terminal : symbol {
         std::string pattern;
+    };
+
+    struct skip : terminal {
     };
 
     struct grammar : x3::position_tagged {
         std::optional<std::string>parser_class;
-        std::vector<std::variant<terminal, rule_def>> defs;
+        std::vector<std::variant<skip, terminal, rule_def>> defs;
         bool success;
     };
 
@@ -44,6 +49,7 @@ namespace yalr::ast {
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, phony, pieces);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, isgoal, name, alts);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, name, pattern);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::skip, name, pattern);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, defs);
 
 

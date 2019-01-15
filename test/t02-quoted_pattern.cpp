@@ -17,7 +17,7 @@ TEST_CASE("Quoted Pattern", "[parser]") {
     REQUIRE(tree.success);
 
     SECTION("Simple Pattern") {
-        auto tree = parse_string("term foo \"b/*ar%^$\\\" ;");
+        auto tree = parse_string("term foo \"b/*ar%^$\" ;");
 
         REQUIRE(tree.success);
         REQUIRE(tree.defs.size() == 1);
@@ -25,8 +25,17 @@ TEST_CASE("Quoted Pattern", "[parser]") {
         auto term_def = std::get<yalr::ast::terminal>(tree.defs[0]);
 
         REQUIRE(term_def.name == "foo");
-        REQUIRE(term_def.pattern == "\"b/*ar%^$\\\"");
+        REQUIRE(term_def.pattern == "\"b/*ar%^$\"");
     }
+
+    SECTION("Embedded Quotes") {
+        auto tree = parse_string(
+R"F(term foo "\"[^\"]\"" ; // quoted string)F"
+            );
+        REQUIRE(tree.success);
+        REQUIRE(tree.defs.size() == 1);
+    }
+
 
     SECTION("Bad Pattern (not terminated)") {
 

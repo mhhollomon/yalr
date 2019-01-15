@@ -25,6 +25,7 @@ namespace yalr {
         struct rule_stmt_tag : x3::annotate_on_success {};
         struct alternative_tag : x3::annotate_on_success {};
         struct term_tag : error_handler, x3::annotate_on_success {};
+        struct yskip_tag : error_handler, x3::annotate_on_success {};
         struct grammar_tag : x3::annotate_on_success {};
 
         using x3::alnum;
@@ -38,6 +39,7 @@ namespace yalr {
         x3::rule<rule_stmt_tag, ast::rule_def> const rule_stmt = "rule_stmt";
         x3::rule<alternative_tag, ast::alternative> const alternative = "alternative";
         x3::rule<term_tag, ast::terminal> const terminal = "terminal";
+        x3::rule<yskip_tag, ast::skip> const yskip = "yskip";
         x3::rule<class ident_tag, std::string> const ident = "ident";
 
         auto const ualnum = alnum | char_('_');
@@ -54,6 +56,7 @@ namespace yalr {
         auto const kw_class = mkkw("class");
         auto const kw_rule = mkkw("rule");
         auto const kw_term = mkkw("term");
+        auto const kw_skip = mkkw("skip");
         auto const kw_goal = mkkw("goal");
 
         auto const reserved = lexeme[symtab >> !ualnum];
@@ -69,6 +72,10 @@ namespace yalr {
         /* term Z "pattern" ; */
         auto const terminal_def = kw_term > ident > -quoted_pattern() > x3::lit(';') ;
 
+        /* skip Z "pattern" ;
+         * Note, that a pattern is required for a skip. */
+        auto const yskip_def = kw_skip > ident > quoted_pattern() > x3::lit(';') ;
+
         /* rule X { => A B C ; => X Y Z ; } */
         /* I don't really want to capture the fat arrow, but without it, Spirit
          * tries to hoist the vector of idents into the alternatives struct itself.
@@ -83,13 +90,14 @@ namespace yalr {
         /* Top Level Grammar */
         auto const grammar_def =
             (-parser_class >> 
-            +( terminal | rule_stmt )) >
+            +( yskip | terminal | rule_stmt )) >
             x3::eoi
             ;
 
         BOOST_SPIRIT_DEFINE(ident);
         BOOST_SPIRIT_DEFINE(parser_class);
         BOOST_SPIRIT_DEFINE(terminal);
+        BOOST_SPIRIT_DEFINE(yskip);
         BOOST_SPIRIT_DEFINE(alternative);
         BOOST_SPIRIT_DEFINE(rule_stmt);
         BOOST_SPIRIT_DEFINE(grammar);
