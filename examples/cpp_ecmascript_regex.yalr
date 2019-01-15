@@ -1,0 +1,231 @@
+/*
+ * The regex language recognized by C++11 in ecmascript mode.
+ *
+ * Translated from https://en.cppreference.com/w/cpp/regex/ecmascript
+ *
+ * Completely untested. Use at your own risk.
+ */
+
+ 
+/*
+ * Don't blindly use UPPER and LOWER terms - precedence says that
+ * e.g. L_C will capture "c" . So to truly match all lowers,
+ * you need to match all the singles and then the LOWER term.
+ * Use "rule Lower" instead.
+ */
+term L_C      "c"       ;
+term L_D      "d"       ;
+term L_F      "f"       ;
+term L_N      "n"       ;
+term L_R      "r"       ;
+term L_S      "s"       ;
+term L_T      "t"       ;
+term L_U      "u"
+term L_V      "v"       ;
+term L_W      "w"       ;
+term L_X      "x"       ;
+
+term LHEX     "[a-f]"   ;
+term LOWER    "[a-z]"   ;
+
+term U_D      "D"       ;
+term U_S      "S"       ;
+term U_W      "W"       ;
+
+term UHEX     "[A-F]"   ;
+term UPPER    "[A-Z]"   ;
+
+
+rule Lower {
+    => L_C  ; => L_D  ; => L_F  ; => L_N ;
+    => L_R  ; => L_S  ; => L_T  ; => L_U ;
+    => L_V  ; => L_W  ; => L_X  ;
+    => LHEX ;
+    => LOWER ;
+}
+
+rule Upper {
+    => U_D ; => U_S ; => U_W ;
+    => UHEX ;
+    => UPPER ;
+}
+
+term ZERO "0" ;
+term NDDIGIT "[1-9]" ;
+
+rule DecDigit {
+    => ZERO ; => NDDIGIT ;
+}
+
+rule HexDigit {
+    => DecDigit
+    => L_C ; => L_D ; => L_F ;
+    => LHEX ;
+    => U_D ;
+    => UHEX ;
+}
+
+/*************** START **********************/
+
+goal rule Pattern {
+    => Disjunction ;
+}
+
+term OR "\\|"  ; // per the rules below, this is right associative
+
+rule Disjunction {
+    => Alternative ;
+    => Alternative OR Disjunction ;
+}
+
+rule Alternative {
+    => ;
+    => Alternative Term ;
+}
+
+rule Term {
+    => Assertion ;
+    => Atom ;
+    => Atom Quantifier ;
+}
+
+term QMARK    "\?"    ;
+
+rule Quantifier {
+    => QuantifierPrefix ;
+    => QuantifierPrefix QMARK ;
+}
+
+term STAR     "*"     ;
+term PLUS     "+"     ;
+term LB       "\{"    ;
+term RB       "}"     ;
+term COMMA    ","     ;
+
+rule QuantifierPrefix {
+    => STAR ;
+    => PLUS ;
+    => QMARK ;
+    => LB DecimalDigits RB ;
+    => LB DecimalDigits COMMA RB ;
+    => LB COMMA DecimalDigits RB ;
+    => LB DecimalDigits COMMA DecimalDigits RB ;
+}
+
+
+rule DecimalDigits {
+    => DecDigit ;
+    => DecimalDigits DecDigit ;
+}
+
+term CARET    "\\^"    ;
+term DOLR     "\\$"    ;
+term ESC_L_B  "\\\\b"   ; // literal backslash followed by "b"
+term NWB      "\\\\B"   ; // literal backslash followed by "B"
+term EQUAL    "="     ;
+term NOT      "!"     ;
+term LP       "("     ;
+term RP       ")"     ;
+
+rule Assertion {
+    => CARET ;
+    => DOLR ;
+    => ESC_L_B ; // Positive Word boundary
+    => NWB ;
+    => LP QMARK EQUAL Disjunction RP ;
+    => LP QMARK NOT   Disjunction RP ;
+}
+
+term DOT      "\\."    ;
+term COLON    ":"     ;
+term DASH     "-" ;
+//term BKSL     "\\\\"    ;
+term NULESC   "\\\\0" ;
+term ESCCHAR  "\\\\[^[:alnum:]]" ;
+term ESCCNTRL "\\\\[fnrtv]" ;
+term HEXCODE  "\\\\x[a-fA-F0-9]{2}" ;
+term UNICODE  "\\\\u[a-fA-F0-9]{4}" ;
+term CCODE    "\\\\c[A-Za-z]" ;
+term BACKREF  "\\\\[1-9][0-9]*" ;
+term CHARCLSS "\\\\[dDsSwW]" ;
+
+/* All the escape sequences in AtomEscape sequences are
+ * distinquishable by the second character and don't have alternate meanings in
+ * other parts of the grammar. So, they have been hoisted directly into Atom.
+ */
+rule Atom {
+    => PatternCharacter ;
+    => DOT      ;
+    => BACKREF  ;  // DecimalEscape
+    => ESCCHAR  ;  // CharacterEscape::IdentityEscape
+    => ESCCNTRL ;  // CharacterEscape::ControlEscape
+    => HEXCODE  ;  // CharacterEscape::HexEscapeSequence
+    => UNICODE  ;  // CharacterEscape::UnicodeEscapeSequence
+    => CCODE    ;  // CharacterEscape::CharacterEscape
+    => CHARCLSS ;  // CharacterClassEscape
+    => CharacterClass ;
+    => LP Disjunction RP ;
+    => LP QMARK COLON Disjunction RP ;
+}
+
+rule PatternCharacter {
+    => Lower ; => Upper ; => DecDigit ;
+    => COLON ; => DASH  ; => NULESC ;
+    => EQUAL ; => NOT   ;
+    => PCHAR ;
+}
+
+rule CharacterClass {
+    => LBRACK CARET ClassRanges RBRACK ; // hmm do I need to do something to disambiguate this?
+    => LBRACK ClassRanges RBRACK ;
+}
+
+rule ClassRanges {
+    => ;
+    => NonemptyClassRanges ;
+    => ClassAtomExClass ;
+    => ClassAtomCollatingElement ;
+    => ClassAtomEquivalence ;
+}
+
+rule NonemptyClassRanges {
+    => ClassAtom ;
+    => ClassAtom NonemptyClassRangesNoDash ;
+    => ClassAtom DASH ClassAtom ClassRanges ;
+}
+
+rule ClassAtom {
+    => DASH ;
+    => ClassAtomNoDash ; 
+}
+
+rule ClassAtomNoDash {
+    => SourceCharacterKinda ; // SourceCharacter but not one of \ or ] or - -- need to figure this out
+    => NULESC ;
+    => ESC_L_B ; // (backspace char)
+    => CCODE ;
+    => CHARCLSS ;
+}
+
+rule ClassAtomExClass {
+    => LBRACK COLON ClassName COLON RBRACK
+}
+
+rule ClassAtomCollatingElement {
+    => LBRACK DOT ClassName DOT RBRACK ;
+}
+
+ule ClassAtomEquivalence {
+    => LBRACK EQUAL ClassName EQUAL RBRACK ;
+}
+
+rule ClassName {
+    => Lower ;
+    => ClassName Lower ;
+}
+
+
+// This needs to be close to the bottom so that it is not
+// a "first" match.
+term PCHAR    "[^$^\\\\.*+?()\\][}{|]" ;
+
