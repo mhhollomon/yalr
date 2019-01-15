@@ -64,7 +64,7 @@ item_set closure(const analyzer::grammar& g, const item_set& items) {
                 // its a skip, this isn;t right
                 std::cerr << "There is a skip in a production, but analyze "
                     "was supposed to take care of that\n";
-                //NOLINNEXTLINE
+                //NOLINTNEXTLINE
                 assert(false);
                 break;
             case SymbolTable::symbol_type::rule :

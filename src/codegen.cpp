@@ -46,7 +46,7 @@ void generate_state_function( const tablegen::lrstate& state,
                     outstrm << "\\n\";\n";
                     outstrm << pfx << pfx << pfx << pfx << "reduce(" <<
                             prod.syms.size() << ", TOK_" << prod.rule.name() << ");\n";
-                    if (prod.syms.size() > 0) {
+                    if (not prod.syms.empty()) {
                         outstrm << pfx << pfx << pfx << pfx <<
                             "return { state_action::reduce, " <<
                             (prod.syms.size()-1) << ", " << 
@@ -56,6 +56,7 @@ void generate_state_function( const tablegen::lrstate& state,
                             "retval = { state_action::reduce, 0, " <<
                             prod.rule.id() << " };\n";
                     }
+                    outstrm << pfx << pfx << pfx << pfx << "break;\n";
                 }
                 break;
 
@@ -173,7 +174,7 @@ std::vector<std::pair<std::string, token_type>> patterns = {
     for (const auto& sym : terms) {
         const ast::terminal* info_ptr = sym.getTerminalInfo();
 
-        if (! info_ptr) {
+        if (info_ptr == nullptr) {
             info_ptr = sym.getSkipInfo();
         }
 
