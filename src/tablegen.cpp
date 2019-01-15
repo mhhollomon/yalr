@@ -168,7 +168,7 @@ void compute_first_and_follow(lrtable& lt) {
 
                 // check to see if our current symbol can produce epsilon.
                 // If it can't, we're done with this production.
-                if (lt.epsilon.contains(symb)) {
+                if (not lt.epsilon.contains(symb)) {
                     // if the current symbol cannot produce epsilon, then
                     // neither can the lhs symbol.
                     is_epsilon = false;
@@ -217,13 +217,21 @@ void compute_first_and_follow(lrtable& lt) {
                     std::begin(reversed));
 
             auto *aux = &(lt.followset[prod.rule]);
+            symbolset tempset ;
             for (const auto& symb : reversed) {
                 if (symb.stype() == SymbolTable::symbol_type::rule) {
                     updated |= lt.followset[symb].addset(*aux);
                 }
 
                 if (lt.epsilon.contains(symb)) {
-                    updated |= (*aux).addset(lt.firstset[symb]);
+                    if ( aux != &tempset) {
+                        tempset.clear();
+                        tempset.addset(*aux);
+                        tempset.addset(lt.firstset[symb]);
+                        aux = &tempset;
+                    } else {
+                        tempset.addset(lt.firstset[symb]);
+                    }
                 } else {
                     // symb is non-epsilon. So start propagating
                     // its first set.
