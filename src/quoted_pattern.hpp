@@ -74,17 +74,4 @@ struct quoted_pattern: x3::parser<char> {
 
 } // namespace yalr::parser
 
-namespace boost::exception_detail {
-
-template<>
-struct boost::exception_detail::get_info<yalr::parser::quoted_pattern> {
-    typedef std::string result_type;
-    std::string operator()(yalr::parser::quoted_pattern const& p) const
-    {
-        return "quoted_pattern";
-    }
-};
-
-} // namespace boost::exception_detail
-
 #endif
