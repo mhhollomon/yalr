@@ -8,21 +8,14 @@ The generated parser will use [recursive ascent](https://en.wikipedia.org/wiki/R
 
 ## Status
 
-Current sub-goal is to have yalr generate a language recognizer - that is, the
-generated code will simply give a yes/no answer to the question "does the input
-string match the grammar?"
+Yalr currently generates a *language recognizer* - that is, the generated code
+will simply give a yes/no answer to the question "Does the input string match
+the grammar?"
 
-- Specification parser - complete for the limited features set.
-- Syntax analyzer - complete for the limited feature set.
-- LR Parser Table generator - complete. - SLR(1) for the moment. Hard codes
-  reduce as priority over shift in shift/reduce conflicts. Fails on
-  reduce/reduce conflicts.
-- Code generator - complete.
-- lexer - not started. Haven't finalized an approach. May use regex for the
-  short term.
+Both a lexer and a parser are generated.
 
-After the sub-goal is complete, I will probably stop to tidy up the place - add
-unit tests, make the parser a bit better about error reporting, etc.
+The next goal is to "tidy up" - add more unit tests, make the parser a
+bit better about error reporting, etc.
 
 ## Building
 
@@ -66,12 +59,14 @@ yalr -t grammophone my_grammar.yalr
 
 ## Grammar Spec
 
-The follow types of statements may appear in any order.
-
-whitespace is generally not significant. `C` style `/* ... */` comments 
+Whitespace is generally not significant. `C` style `/* ... */` comments 
 as well as C++ `//` comments are supported.
 
 Keywords are reserved and may not be used as the name of a terminal or rule.
+
+The [example
+directory](https://github.com/mhhollomon/yalr/tree/master/examples) contains
+some example grammars including the grammar for the yalr grammar itself.
 
 ### Parser Class Name
 
@@ -84,25 +79,62 @@ This can be overriden by the `--output-file` option on the command line.
 
 This statement may only appear once in the file.
 
+It must be the first statement in the grammar.
+
 ### Terminals
 
-All terminals must be explicitly declared:
+All terminals must be explicitly declared.
+
+There are two types of terminal - "parser" terminals and "lexer" terminals.
+
+#### Parser Terminals
+
+Parser Terminals are those terminals that are used to create the rules in
+grammar. These are the terminals that are return by the lexer.
+
+Parser Terminals are defined by the `term` keyword.
 
 ```
-term MYTERM;
+// term <ID> <"pattern"> ;
+term MYTERM "my[0-9]" ;
 ```
 
-A "pattern" can be associated with the terminal. Nothing is currently done with
-this, but it will help form the lexer at some point. The pattern must be
-surronded by double quotes.
+The `ID` is the name for the terminal that will be used in the grammar and will
+be returned in error messages. It will also be a part of the enumeration
+constant for the token type in the generated code.
+
+The pattern must be a (c++ std::regex
+pattern)[https://en.cppreference.com/w/cpp/regex/ecmascript] and must be
+enclosed in double quotes. The pattern (and the quotes) are copied verbatim
+into the generated lexer, so ust be in the same formatting (with the same
+escaping) as you would do if writing the code by hand.
+
+*TODO:* Add support for recognizing raw string literals.
+
+#### Lexer Terminals
+
+Lexer terminals are recognized by the the lexer but are not returned. They are
+a means to skip over input that you do not want the grammar to consider.
+
+Lexer terminals may not appear in rules.
+
+Lexer terminals are defined by the `skip` keyword.
 
 ```
-term MYTERM "fo+" ;
+// skip <ID> <"pattern"> ;
+skip WS "\\s+" ;
+
+// recognize line oriented comments
+skip LINEC "//.*\\n" ;
+
+// This is an ERROR!
+rule Foo { => WS ; }
 ```
+
 
 ### Non-terminals
 Rules are declared with the `rule` keyword.
-Each alternate is intrduced with `=>` and terminated with a semicolon.
+Each alternate is introduced with `=>` and terminated with a semicolon.
 
 One rule must be marked as the starting or "goal" rule, by preceeding it with the `goal` keyword.
 
@@ -120,6 +152,37 @@ goal rule Program {
   => Program Statement ;
 }
 ```
+
+## Generated Code
+
+Pre-pre-alpha. Subject to change.
+
+*TODO:* Add info about the generated code. longest match rule, first match as
+tie-breaker.
+
+### Sample Driver
+
+Here is all you need. Season to taste.
+
+```cpp
+#include "./YalrParser.hpp"
+
+int main() {
+    std::string input = "My Input";
+
+    YalrParser::Lexer l(input.cbegin(), input.cend());
+    auto parser = YalrParser::YalrParser(l);
+
+    if (parser.doparse()) {
+        std::cout << "It Worked!\n";
+    } else {
+        std::cout << "too bad!\n";
+    }
+
+    return 0;
+}
+```
+
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
 - [Lemon](http://www.hwaci.com/sw/lemon/)
@@ -134,3 +197,11 @@ goal rule Program {
     Parsers](https://link.springer.com/content/pdf/10.1007/3-540-53669-8_70.pdf)
   - [Recursive ascent-descent
     parsing](https://webhome.cs.uvic.ca/~nigelh/Publications/rad.pdf)
+
+## Technologies
+- [Meson](https://mesonbuild.com/) for build configuration.
+- [Ninja](https://ninja-build.org/) for building.
+- [Catch2](https://github.com/catchorg/Catch2) for unit testing.
+- [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
+is currently used to build the grammar spec parser.
+- [cxxopts](https://github.com/jarro2783/cxxopts) for command line handling.
