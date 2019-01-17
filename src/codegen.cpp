@@ -232,7 +232,7 @@ public:
                 auto len = mr.length(0);
                 //std::cerr << " length = " << len << "\n";
                 if ( len > max_len) {
-                    max_len = mr.length();
+                    max_len = len;
                     ret_type = tt;
                 }
             } else {
