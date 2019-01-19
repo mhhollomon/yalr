@@ -39,66 +39,50 @@ auto parse_string(const std::string& s, const Rule_T& the_rule) {
 TEST_CASE("Quoted Pattern", "[parser]") {
 
     SECTION("Simple Pattern") {
-        auto [r, dist, a] = parse_string("X  \"b/*ar%^$\" Y", top_rule);
+        auto [r, dist, a] = parse_string("X  'b/*ar%^$' Y", top_rule);
 
         REQUIRE(r);
         REQUIRE(dist == 0);
-        REQUIRE(a.x == "X"); REQUIRE(a.q == "\"b/*ar%^$\""); REQUIRE(a.y == "Y");
+        REQUIRE(a.x == "X"); REQUIRE(a.q == "'b/*ar%^$'"); REQUIRE(a.y == "Y");
 
     }
 
     SECTION("Embedded Quotes") {
         auto [r, dist, a] = parse_string(
-R"F(X "\"[^\"]\"" Y)F"
+R"F(X 'asb\'\'  ' Y)F"
             , top_rule);
         REQUIRE(r);
         REQUIRE(dist == 0);
-        REQUIRE(a.x == "X"); REQUIRE(a.q == R"F("\"[^\"]\"")F"); REQUIRE(a.y == "Y");
+        REQUIRE(a.x == "X"); REQUIRE(a.q == R"F('asb\'\'  ')F"); REQUIRE(a.y == "Y");
     }
 
 
     SECTION("Bad Pattern (not terminated)") {
 
-        auto [r, dist, a] = parse_string("X  \"xxx Y", top_rule);
+        auto [r, dist, a] = parse_string("X  'xxx Y", top_rule);
         REQUIRE(not r);
         REQUIRE(dist > 0);
     }
 
-    SECTION("Raw string - no delim") {
+    SECTION("Raw string") {
 
-        auto [r, dist, a] = parse_string(R"%(X R"(foo)" Y)%", top_rule);
+        auto [r, dist, a] = parse_string(R"%(X r:*foo Y)%", top_rule);
         REQUIRE(r);
         REQUIRE(dist == 0);
+        REQUIRE(a.q == "r:*foo");
     }
 
-    SECTION("Raw string - short delim") {
-        auto [r, dist, a] = parse_string(R"%(X R"xy(foo)xy" Y)%", top_rule);
+    SECTION("Raw string - embedded space") {
+        auto [r, dist, a] = parse_string(R"%(X r:f%:\ f Y)%", top_rule);
         REQUIRE(r);
         REQUIRE(dist == 0);
+        REQUIRE(a.q == "r:f%:\\ f");
     }
 
-    SECTION("Raw string - 16 char delim (max)") {
-        auto [r, dist, a] = parse_string(R"%(X R"xy12qwaszxerc%^&(foo)xy12qwaszxerc%^&" Y)%", top_rule);
-        REQUIRE(r);
-        REQUIRE(dist == 0);
-    }
-
-    SECTION("Raw string - 17 char delim (over)") {
-        auto [r, dist, a] = parse_string(R"%(X R"xy12qwasz!xerc%^&(foo)xy12qwasz!xerc%^&" Y)%", top_rule);
+    SECTION("Raw string - double escape before space (should fail)") {
+        auto [r, dist, a] = parse_string(R"%(X r:f)([]\\ erf Y)%", top_rule);
         REQUIRE(not r);
         REQUIRE(dist > 0);
     }
-
-    SECTION("Raw string - multiple with same delim") {
-        auto z_rule = x3::rule<class z_rule_tag, x3::unused_type>("z_rule") =
-            x3::lit("X") >> yalr::parser::quoted_pattern() >>
-                yalr::parser::quoted_pattern() >> "Y" ;
-
-        auto [r, dist, a] = parse_string(R"%(X R"xy(foo)xy"  R"xy(bar)xy" Y)%", z_rule);
-
-        REQUIRE(r);
-        REQUIRE(dist == 0);
-    }
-
 }
 

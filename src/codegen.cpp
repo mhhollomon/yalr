@@ -181,6 +181,14 @@ std::vector<std::pair<std::string, token_type>> patterns = {
         std::string pattern = info_ptr->pattern.empty() ?
             "\"\"" : info_ptr->pattern;
 
+        // tactical fix to deal with the single quoted patterns until I can
+        // write the updated lexer code.
+        if (pattern[0] == '\'') {
+            pattern = "R\"%_^xx(" + pattern.substr(1, pattern.size()-2) + ")%_^xx\"" ;
+        } else {
+            pattern = "R\"%_^xx(" + pattern.substr(2)  + ")%_^xx\"" ;
+        }
+
         outstrm << "  {"  << pattern << ", ";
         if (sym.isterm()) {
             outstrm << "TOK_" << info_ptr->name;

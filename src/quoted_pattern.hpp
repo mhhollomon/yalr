@@ -5,7 +5,6 @@
 #include <boost/spirit/home/x3/core/parser.hpp>
 #include <boost/spirit/home/x3/core/skip_over.hpp>
 
-#include <regex>
 #include <cassert>
 
 namespace yalr::parser {
@@ -22,15 +21,17 @@ struct quoted_pattern : x3::parser<char> {
     enum State { INIT , ESCAPE };
 
     template<typename Iterator>
-    bool double_quotes(Iterator& first, Iterator const& last) const {
+    bool single_quotes(Iterator& first, Iterator const& last) const {
         int state = INIT;
         bool stop = false;
+        // put the increment first. That way we consume the quote
+        // that stopped us.
         while (++first != last and not stop) {
             switch (state) {
                 case INIT :
                     if (*first == '\\') {
                         state = ESCAPE;
-                    } else if (*first == '"') {
+                    } else if (*first == '\'') {
                         stop = true;
                     }
                     break;
@@ -45,19 +46,38 @@ struct quoted_pattern : x3::parser<char> {
         return stop;
     }
 
-    std::regex raw_regex;
 
-    quoted_pattern() : raw_regex{R"%(R"([^\\ \t\n]{0,16})((.|\n)(?!\)\1))*(.|\n)?\)\1")%", 
-        std::regex_constants::optimize}  {}
-    
     template<typename Iterator>
     bool raw_string(Iterator& first, Iterator const& last) const {
-        std::match_results<std::string::const_iterator> m;
-        bool r = std::regex_search(first, last, m, raw_regex, std::regex_constants::match_continuous);
-        if (r) {
-            first += m.length(0);
+        // the caller made sure that the 'r' was there, so skip over it and
+        // check the ':'
+        if (*(++first) != ':') {
+            return false;
         }
-        return r;
+        int state = INIT;
+        bool stop = false;
+        // put stop first so we don't increment if we are stopping.
+        // We do not want the space that forced us to stop.
+        while (not stop and ++first != last) {
+            switch (state) {
+                case INIT :
+                    if (*first == '\\') {
+                        state = ESCAPE;
+                    } else if (std::isspace(*first)) {
+                        stop = true;
+                    }
+                    break;
+                case ESCAPE :
+                    if (*first == '\n') {
+                        stop = true;
+                    }
+                    state = INIT;
+                    break;
+                default :
+                    assert(false);
+            }
+        }
+        return stop;
     }
 
     template<typename Iterator, typename Context, typename RContext, typename Attribute>
@@ -75,9 +95,9 @@ struct quoted_pattern : x3::parser<char> {
         auto found_it = false;
 
         if (first != last) {
-            if (*first == '"') {
-                found_it = double_quotes(first, last);
-            } else if (*first == 'R') {
+            if (*first == '\'') {
+                found_it = single_quotes(first, last);
+            } else if (*first == 'r') {
                 found_it = raw_string(first, last);
             }
 

@@ -1,17 +1,18 @@
-skip WS      "\\s+"   ;
-skip LINECOM "//.*\\n"; // dot doesn't match EOL
-term PARSER  "parser" ;
-term CLASS   "class"  ;
-term RULE    "rule"   ;
-term GOAL    "goal"   ;
-term TERM    "term"   ;
-term SKIP    "skip"   ;
-term ID      "_*[a-zA-Z][a-zA-Z0-9]*" ;
-term SEMI    ";"      ;
-term ARROW   "=>"     ;
-term LBRACE  "\\{"    ;
-term RBRACE  "}"      ;
-term PATTERN "\"[^\"]*\"" ;
+term SEMI    ';'       ;
+
+skip WS      r:\s+     ;
+skip LINECOM r://.*\n  ; // dot doesn't match EOL
+term PARSER  'parser'  ;
+term CLASS   'class'   ;
+term RULE    'rule'    ;
+term GOAL    'goal'    ;
+term TERM    'term'    ;
+term SKIP    'skip'    ;
+term ID      r:_*[a-zA-Z]\w* ;
+term ARROW   '=>'      ;
+term LBRACE  '{'       ;
+term RBRACE  '}'       ;
+term PATTERN r:"[^"]*" ;
 
 
 rule ParserClass {

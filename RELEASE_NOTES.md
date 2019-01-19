@@ -1,5 +1,7 @@
 ## On Master
 
+token/skip patterns can now be C++ raw string literals.
+
 ## Release v0.0.1
 
 First Release. Core Lexer and Parser are functional. The parser is only SLR(1)
