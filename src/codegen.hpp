@@ -3,11 +3,11 @@
 
 #include "tablegen.hpp"
 
-namespace yalr { namespace codegen {
+namespace yalr::codegen {
 
 
     void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm);
 
-}}
+} // namespace yalr::codegen
 
 #endif

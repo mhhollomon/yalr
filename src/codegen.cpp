@@ -1,10 +1,13 @@
 #include "codegen.hpp"
+#include "template.hpp"
 
 #include "analyzer.hpp"
 
 namespace yalr::codegen {
 
-    using tablegen::action_type;
+using json = nlohmann::json;
+
+using tablegen::action_type;
 
 void generate_state_function( const tablegen::lrstate& state, 
         const tablegen::lrtable& lt, std::ostream& outstrm) {
@@ -108,35 +111,98 @@ void generate_state_function( const tablegen::lrstate& state,
 )T";
 }
 
+auto generate_state_data(const tablegen::lrstate& state,const tablegen::lrtable& lt) {
+    auto sdata = json::object();
+    sdata["id"] = state.id;
+
+    auto actions_data = json::array();
+
+    for (const auto& [sym, action] : state.actions) {
+        auto adata = json::object();
+
+        if (sym.name() == "$") {
+            adata["token"] = "eoi" ;
+        } else {
+            adata["token"] = "TOK_" + sym.name();
+        }
+
+        switch (action.atype) {
+            case action_type::shift :
+                adata["type"] = "shift";
+                adata["newstateid"] = action.new_state_id;
+                break;
+            case action_type::reduce : {
+                    const auto& prod  = lt.productions[action.prod_id];
+                    adata["type"] = "reduce";
+                    adata["production"] = "Blah";
+                    adata["count"] = prod.syms.size();
+                    adata["returnlevels"] = prod.syms.size() - 1;
+
+                    adata["symbol"] = "TOK_" + prod.rule.name() ;
+                }
+                break;
+            case action_type::accept :
+                adata["type"] = "accept";
+                break;
+            default :
+                //NOLINTNEXTLINE
+                assert(false);
+                break;
+        }
+
+        actions_data.push_back(adata);
+    }
+
+    sdata["actions"] = actions_data;
+
+    auto gotos_data = json::array();
+    for (const auto& g_iter : state.gotos) {
+        auto gdata = json::object();
+        gdata["symbol"] = "TOK_" + g_iter.first.name();
+        gdata["stateid"] = g_iter.second;
+        gotos_data.push_back(gdata);
+    }
+    sdata["gotos"] = gotos_data;
+
+    return sdata;
+}
+
 void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
 
-    outstrm << "#include <iostream>\n"
-               "#include <vector>\n"
-               "#include <regex>\n"
-               "\n"
-               ;
+    inja::Environment env;
 
-    // open the name space
-    outstrm << "namespace " << lt.parser_class << " {\n";
+    json data;
+    data["namespace"] = lt.parser_class;
 
-    std::vector<SymbolTable::symbol>terms;
+
     // dump the tokens
-    outstrm << "\nenum token_type {\n";
+    // We need two separate lists of tokens.
+    // The first is the tokens to are returned by the
+    // lexer or rule names used by the Parser.
+    // The second list is the terms and skips that the
+    // Lexer needs to generate the mathing rules.
+
+    // List of terms/skips that need to matched against.
+    std::vector<SymbolTable::symbol>terms;
+
+    // names and values for the token enum.
+    auto enum_entries = json::array();
 
     for (const auto &[sname, sym] : lt.syms) {
         if (sym.isterm()) {
             // terms go in the enum and the term list
             if (sname == "$") {
-                outstrm << "    eoi = " << sym.id() << ",\n";
+                enum_entries.push_back(json::object({ 
+                        { "name" , "eoi"}, {"value", sym.id() } }));
             } else {
-                outstrm << "    TOK_" << sname << " = " << 
-                    sym.id() << ",\n";
+                enum_entries.push_back(json::object({ 
+                        { "name" , "TOK_" + sname }, {"value", sym.id() } }));
                 terms.push_back(sym);
             }
         } else if (sym.isrule()) {
             // rules only go in the enum
-            outstrm << "    TOK_" << sname << " = " << 
-                sym.id() << ",\n";
+            enum_entries.push_back(json::object({ 
+                    { "name" , "TOK_" + sname }, {"value", sym.id() } }));
         } else if (sym.isskip()) {
             // Skips only go in the term list
             terms.push_back(sym);
@@ -146,30 +212,21 @@ void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
         }
     }
 
+    enum_entries.push_back(json::object({ 
+            { "name" , "undef"}, {"value", -1 } }));
+    enum_entries.push_back(json::object({ 
+            { "name" , "skip"}, {"value", -10 } }));
 
-    outstrm << "    undef = -1,\n"
-               "    skip  = -10\n};\n\n";
+    data["enums"] = enum_entries;
 
-    // dump the lexer
-    outstrm << R"T(
-struct Token {
-    token_type toktype;
-    Token(token_type t = undef) : toktype(t) {}
-};
 
-enum state_action { undefined, reduce, accept, error };
 
-struct rettype {
-    state_action action;
-    int depth;
-    int symbol;
-    rettype(state_action a = undefined, int d = 0, int s = 0) :
-        action(a), depth(d), symbol(s) {}
-};
-
-std::vector<std::pair<std::string, token_type>> patterns = {
-)T";
+    // Sort by id - which should be the same as 
+    // the order they were defined in the grammar
+    // spec.
     std::sort(terms.begin(), terms.end());
+
+    auto patterns = json::array();
 
     for (const auto& sym : terms) {
         const ast::terminal* info_ptr = sym.getTerminalInfo();
@@ -189,137 +246,32 @@ std::vector<std::pair<std::string, token_type>> patterns = {
             pattern = "R\"%_^xx(" + pattern.substr(2)  + ")%_^xx\"" ;
         }
 
-        outstrm << "  {"  << pattern << ", ";
+        std::string token_string;
         if (sym.isterm()) {
-            outstrm << "TOK_" << info_ptr->name;
-       } else {
-            outstrm << "skip" ;
-       }
-       outstrm << " }, \n";
-    }
-
-    outstrm << "};\n";
-
-
-
-    outstrm << R"T(
-class Lexer {
-public:
-    using iter_type = std::string::const_iterator;
-    Lexer(iter_type first, const iter_type last) :
-        current(first), last(last) {
-
-        for (const auto& [patt, tok] : patterns) {
-            try {
-                regex_list.emplace_back(
-                    std::regex{patt},
-                    tok
-                    );
-            } catch (std::regex_error &e) {
-                std::cerr << "problem compling pattern " <<
-                    patt << "\n";
-                throw e;
-            }
-        }
-    }
-
-    virtual Token next_token() {
-        if (current == last) {
-            std::cout << "Returning token eoi\n";
-            return eoi;
-        }
-
-        token_type ret_type = undef;
-        std::size_t max_len = 0;
-
-        for (const auto &[r, tt] : regex_list) {
-            std::match_results<iter_type> mr;
-            //std::cerr << "Matching for token # " << tt;
-            if (std::regex_search(current, last, mr, r, 
-                    std::regex_constants::match_continuous)) {
-                auto len = mr.length(0);
-                //std::cerr << " length = " << len << "\n";
-                if ( len > max_len) {
-                    max_len = len;
-                    ret_type = tt;
-                }
-            } else {
-                //std::cerr << " - no match\n";
-            }
-        }
-        if (max_len == 0) {
-            current = last;
-            ret_type = eoi;
+            token_string = "TOK_" + info_ptr->name;
         } else {
-            current += max_len;
-            if (ret_type == skip) {
-                //std::cerr << "recursing due to skip\n";
-                return next_token();
-            }
+            token_string = "skip" ;
         }
 
-        std::cout << "Returning token = " << ret_type << "\n";
-        return Token{ret_type};
-    }
-private:
-    std::string::const_iterator current;
-    const std::string::const_iterator last;
-    std::vector<std::pair<std::regex, token_type>> regex_list;
-};
-)T";
+        patterns.push_back(json::object({ 
+                { "pattern" , pattern}, {"token", token_string } }));
 
-    // define the class
-    outstrm << "\n\nclass " << lt.parser_class << " {\n";
-    outstrm << R"T(
-    Lexer& lexer;
-    Token la;
-    std::deque<Token> tokstack;
-
-    void printstack() {
-        for (const auto& x : tokstack) {
-            std::cerr << " " << x.toktype;
-        }
-        std::cerr << "\n";
-    }
-    void shift() {
-        std::cerr << "Shifting " << la.toktype << "\n";
-        tokstack.push_back(la);
-        printstack();
-        la = lexer.next_token();
     }
 
-    void reduce(int i, token_type t) {
-        std::cerr << "Popping " << i << " items\n";
-        for(; i>0; --i) {
-            tokstack.pop_back();
-        }
-        std::cerr << "Shifting " << t << "\n";
+    data["patterns"] = patterns;
 
-        tokstack.push_back(t);
-        
-        printstack();
-    }
-)T";
 
+    // define the Parser class
+
+    auto states_array = json::array();
     for (const auto& state : lt.states) {
-        generate_state_function(state, lt, outstrm);
+        states_array.push_back(generate_state_data(state, lt));
     }
+    data["states"] = states_array;
 
-    outstrm << "public:\n    " << lt.parser_class << "(Lexer& l) : lexer(l){};\n";
-   
-    outstrm << R"Tmplt(
-    bool doparse() {
-        la = lexer.next_token();
-        auto retval = state0();
-        if (retval.action == accept) {
-            return true;
-        }
-
-        return false;
-    }
-}; // class
-} // namespace
-)Tmplt";
+    // write the template
+    auto main_templ = env.parse(main_template);
+    env.render_to(outstrm, main_templ, data);
 
 }
 
