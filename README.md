@@ -95,21 +95,26 @@ grammar. These are the terminals that are return by the lexer.
 Parser Terminals are defined by the `term` keyword.
 
 ```
-// term <ID> <"pattern"> ;
-term MYTERM "my[0-9]" ;
+// term <ID> <pattern> ;
+term MYTERM r:my[0-9] ;
+term SEMI ';' ;
+term KEYWORD 'keyword';
 ```
 
 The `ID` is the name for the terminal that will be used in the grammar and will
 be returned in error messages. It will also be a part of the enumeration
 constant for the token type in the generated code.
 
-The pattern must be a (c++ std::regex
-pattern)[https://en.cppreference.com/w/cpp/regex/ecmascript] and must be
-enclosed in double quotes. The pattern (and the quotes) are copied verbatim
-into the generated lexer, so ust be in the same formatting (with the same
-escaping) as you would do if writing the code by hand.
+The pattern can be specified two different ways.
 
-*TODO:* Add support for recognizing raw string literals.
+1. As a single-quote delimited string.
+Patterns in this format are matched in the lexer as simple string compares.
+
+2. std::regex regular expression.
+The starting delimiter is the literal `r:`. The pattern extends to the next
+unescape space-like character. Note, this means that the semi-colon at the end
+of the definition must be separated from the pattern by at least one space (or
+tab, or newline).
 
 #### Lexer Terminals
 
@@ -120,12 +125,14 @@ Lexer terminals may not appear in rules.
 
 Lexer terminals are defined by the `skip` keyword.
 
+The patterns are specified the same way as for Parser Teminals.
+
 ```
 // skip <ID> <"pattern"> ;
-skip WS "\\s+" ;
+skip WS r:\s+ ;
 
 // recognize line oriented comments
-skip LINEC "//.*\\n" ;
+skip LINEC r://.*\n ;
 
 // This is an ERROR!
 rule Foo { => WS ; }
@@ -205,3 +212,8 @@ int main() {
 - [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
 is currently used to build the grammar spec parser.
 - [cxxopts](https://github.com/jarro2783/cxxopts) for command line handling.
+- [inja](https://github.com/pantor/inja) to help with code generation.
+
+## License
+
+MIT &copyright; 2018 Mark Hollomon

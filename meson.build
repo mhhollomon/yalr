@@ -10,7 +10,7 @@ subdir('src')
 
 linkdep = dependency('boost', modules : ['system'])
 
-executable('yalr', yalr_srcfiles, include_directories: libdir, dependencies : linkdep)
+yalr_exe = executable('yalr', yalr_srcfiles, include_directories: libdir, dependencies : linkdep)
 
 clangtidy = find_program('clang-tidy', required: false)
 if clangtidy.found()
@@ -26,4 +26,6 @@ if clangtidy.found()
         ] + yalr_srcfiles)
 endif
 
+# This order is important
+subdir('examples')
 subdir('test')

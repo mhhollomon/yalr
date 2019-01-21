@@ -1,4 +1,3 @@
-term SEMI    ';'       ;
 
 skip WS      r:\s+     ;
 skip LINECOM r://.*\n  ; // dot doesn't match EOL
@@ -12,20 +11,28 @@ term ID      r:_*[a-zA-Z]\w* ;
 term ARROW   '=>'      ;
 term LBRACE  '{'       ;
 term RBRACE  '}'       ;
-term PATTERN r:"[^"]*" ;
+term SEMI    ';'       ;
+/* These two aren't quite correct (I don't think) */
+term SQUOTE r:'(?:[^'\\]*(?:\\\\|\\'|\\)*)*' ;
+term REGEX  r:r:[^\s]* ; // Note that this does not capture the closing space.
 
 
 rule ParserClass {
     => PARSER CLASS ID SEMI ;
 }
 
+rule Pattern {
+    => SQUOTE ;
+    => REGEX ;
+}
+
 rule Term {
     => TERM ID SEMI ;
-    => TERM ID PATTERN SEMI ;
+    => TERM ID Pattern SEMI ;
 }
 
 rule Skip {
-    => SKIP ID PATTERN SEMI ;
+    => SKIP ID Pattern SEMI ;
 }
 
 /* A Possibly empty list of symbols (terms and rules) */
