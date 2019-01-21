@@ -86,7 +86,7 @@ struct prod_visitor {
                     s.push_back(sym);
                 } else {
                     error_count += 1;
-                    std::cerr << "alternative requires gammar symbol '" <<
+                    std::cerr << "alternative requires grammar symbol '" <<
                         p << "' that does not exist.\n";
                 }
             }

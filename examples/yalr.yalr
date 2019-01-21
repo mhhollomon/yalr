@@ -27,12 +27,12 @@ rule Pattern {
 }
 
 rule Term {
-    => TERM ID SEMI ;
-    => TERM ID Pattern SEMI ;
+    => 'term' ID SEMI ;
+    => 'term' ID Pattern SEMI ;
 }
 
 rule Skip {
-    => SKIP ID Pattern SEMI ;
+    => 'skip' ID Pattern SEMI ;
 }
 
 /* A Possibly empty list of symbols (terms and rules) */
@@ -52,8 +52,8 @@ rule AltList {
 }
 
 rule Rule {
-    => GOAL RULE ID LBRACE AltList RBRACE ;
-    =>      RULE ID LBRACE AltList RBRACE ;
+    => 'goal' 'rule' ID '{' AltList '}' ;
+    =>        'rule' ID '{' AltList '}' ;
 }
 
 rule Statement {

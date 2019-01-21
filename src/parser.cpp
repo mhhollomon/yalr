@@ -1,7 +1,7 @@
 #include "parser.hpp"
 #include "skipparser.hpp"
-
 #include "quoted_pattern.hpp"
+#include "single_quote.hpp"
 
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
@@ -22,11 +22,11 @@ namespace yalr {
             }
         };
 
-        struct rule_stmt_tag : x3::annotate_on_success {};
-        struct alternative_tag : x3::annotate_on_success {};
+        struct rule_stmt_tag : error_handler, x3::annotate_on_success {};
+        struct alternative_tag : error_handler, x3::annotate_on_success {};
         struct term_tag : error_handler, x3::annotate_on_success {};
         struct yskip_tag : error_handler, x3::annotate_on_success {};
-        struct grammar_tag : x3::annotate_on_success {};
+        struct grammar_tag : error_handler, x3::annotate_on_success {};
 
         using x3::alnum;
         using x3::alpha;
@@ -80,10 +80,11 @@ namespace yalr {
         /* I don't really want to capture the fat arrow, but without it, Spirit
          * tries to hoist the vector of idents into the alternatives struct itself.
          */
-        auto const alternative_def = x3::string("=>") > *ident > x3::lit(';') ;
+        auto const alternative_def = x3::string("=>") >
+            *(ident|single_quote()) > x3::lit(';') ;
 
         auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> kw_rule > ident  >
-            x3::lit('{') >> +alternative >> x3::lit('}')
+            x3::lit('{') > +alternative > x3::lit('}')
             ;
 
 

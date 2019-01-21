@@ -9,6 +9,7 @@
 #include <list>
 #include <cassert>
 #include <memory>
+#include <type_traits>
 
 namespace yalr {
     class SymbolTable {
@@ -121,6 +122,7 @@ namespace yalr {
         std::list<imp_ptr> table;
         std::map<std::string, symbol> by_name;
         std::map<int, symbol> by_id;
+        std::map<std::string, symbol> by_alias;
 
     public:
 
@@ -140,6 +142,14 @@ namespace yalr {
 
             by_name.emplace(r.name, new_sym);
             by_id.emplace(id_gen, new_sym);
+            if constexpr(std::is_same<ast::terminal, T>::value) {
+                if (r.pattern[0] == '\'') {
+                    //std::cerr << "Registering " << r.pattern << "as alias to " << r.name << "\n";
+                    by_alias.emplace(r.pattern, new_sym);
+                } else {
+                    //std::cerr << "Not a single quote pattern " << r.pattern << "\n";
+                }
+            }
 
             return std::make_pair(true, new_sym);
         }
@@ -148,6 +158,11 @@ namespace yalr {
             auto iter = by_name.find(s);
             if (iter != by_name.end()) {
                 return std::make_pair(true, iter->second);
+            }
+
+            auto iter2 = by_alias.find(s);
+            if (iter2 != by_alias.end()) {
+                return std::make_pair(true, iter2->second);
             }
 
             return std::make_pair(false, symbol::end());

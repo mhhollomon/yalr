@@ -109,6 +109,7 @@ The pattern can be specified two different ways.
 
 1. As a single-quote delimited string.
 Patterns in this format are matched in the lexer as simple string compares.
+The pattern can be used as an alias for the term in rules.
 
 2. std::regex regular expression.
 The starting delimiter is the literal `r:`. The pattern extends to the next
@@ -149,6 +150,13 @@ One rule must be marked as the starting or "goal" rule, by preceeding it with th
 rule MyRule {
   => MYTERM MyRule ;
   => ;  /* an empty alternative */
+}
+
+/* you can use single quoted patterns as aliases */
+term SEMI ';' ;
+term INT  'int';
+rule A {
+    => 'int' ID ';' ;
 }
 
 /* compact rule */
