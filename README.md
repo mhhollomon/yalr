@@ -224,4 +224,4 @@ is currently used to build the grammar spec parser.
 
 ## License
 
-MIT &copyright; 2018 Mark Hollomon
+MIT &copy; 2018 Mark Hollomon
