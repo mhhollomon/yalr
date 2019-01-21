@@ -189,12 +189,12 @@ int main() {
     auto parser = YalrParser::YalrParser(l);
 
     if (parser.doparse()) {
-        std::cout << "It Worked!\n";
+        std::cout << "Input matches grammar!\n";
+        return 0;
     } else {
-        std::cout << "too bad!\n";
+        std::cout << "Input does NOT match grammar\n";
+        return 1;
     }
-
-    return 0;
 }
 ```
 
