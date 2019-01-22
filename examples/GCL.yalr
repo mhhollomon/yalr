@@ -1,25 +1,43 @@
-term SEMICOLON ;
-term IF; term FI;
-term DO; term OD;
-term PIPE;
-term ARROW;
-term LBRACE; term RBRACE;
-term SKIP;
-term ASSIGN;
-term COMMA;
-term IDENT;
-term NUMBER;
-term LPAREN; term RPAREN;
-term BANG; term OR; term AND;
-term LT; term LE; term GT; term GE;
-term EQ; term NE;
-term SLASH; term MULTIPLY;
-term PLUS; term MINUS;
-term TRUE; term FALSE;
+
+skip WS  r:\s+ ;
+
+term IF     'if'    ;
+term FI     'fi'    ;
+term DO     'do'    ; 
+term OD     'od'    ;
+term SKIP   'skip'  ;
+term OR     'or'    ; 
+term AND    'and'   ;
+term TRUE   'true'  ;
+term FALSE  'false' ;
+
+term SEMI   ';'     ;
+term PIPE   '|'     ;
+term ARROW  '=>'    ;
+term LBR    '{'     ; 
+term RBR    '}'     ;
+term ASSIGN ':='    ;
+term COMMA  ','     ;
+term LPAR   '('     ;
+term RPAR   ')'     ;
+term BANG   '!'     ;
+term LT     '<'     ;
+term LE     '<='    ;
+term GT     '>'     ;
+term GE     '>='    ;
+term EQ     '='     ; 
+term NE     '!='    ;
+term SLASH  '/'     ;
+term STAR   '*'     ;
+term PLUS   '+'     ;
+term MINUS  '-'     ;
+
+term IDENT  r:\w+  ;
+term NUMBER r:[1-9][0-9]* ;
 
 
 goal rule StatementList {
-    => StatementList SEMICOLON Statement ;
+    => StatementList ';' Statement ;
     => Statement ;
 }
 
@@ -44,7 +62,7 @@ rule Statement {
     => Assignment ;
     => IfStmt ;
     => DoStmt ;
-    => LBRACE StatementList RBRACE ;
+    => '{' StatementList '}' ;
     => SKIP ;
 }
 
@@ -53,19 +71,19 @@ rule Assignment {
 }
 
 rule IdentList {
-    => IdentList COMMA IDENT ;
+    => IdentList ',' IDENT ;
     => IDENT ;
 }
 
 rule ExpList {
-    => ExpList COMMA MathExp ;
+    => ExpList ',' MathExp ;
     => MathExp ;
 }
 
 rule MathTerm {
     => NUMBER ;
     => IDENT ;
-    => LPAREN MathExp RPAREN ;
+    => '(' MathExp ')' ;
 }
 
 rule Divide {
@@ -74,7 +92,7 @@ rule Divide {
 }
 
 rule Factor {
-    => Factor MULTIPLY Divide ;
+    => Factor '*' Divide ;
     => Divide ;
 }
 
@@ -87,8 +105,8 @@ rule MathExp {
 rule BoolTerm {
     => TRUE ;
     => FALSE ;
-    => LPAREN BoolExp RPAREN ;
-    => BANG BoolTerm ;
+    => '(' BoolExp ')' ;
+    => '!' BoolTerm ;
 }
 
 rule RelOp {
