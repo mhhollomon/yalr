@@ -2,6 +2,7 @@
 #include "skipparser.hpp"
 #include "quoted_pattern.hpp"
 #include "single_quote.hpp"
+#include "type_name.hpp"
 
 #include <boost/spirit/home/x3/support/utility/error_reporting.hpp>
 #include <boost/spirit/home/x3/support/utility/annotate_on_success.hpp>
@@ -41,6 +42,7 @@ namespace yalr {
         x3::rule<term_tag, ast::terminal> const terminal = "terminal";
         x3::rule<yskip_tag, ast::skip> const yskip = "yskip";
         x3::rule<class ident_tag, std::string> const ident = "ident";
+        x3::rule<class action_block_tag, std::string> const action_block = "action_block";
 
         auto const ualnum = alnum | char_('_');
 
@@ -69,11 +71,17 @@ namespace yalr {
         auto const parser_class_def = kw_prsr >> kw_class > 
                 ident  > ';' ;
 
-        /* term Z "pattern" ; */
-        auto const terminal_def = kw_term > ident > -quoted_pattern() > x3::lit(';') ;
+        auto const action_block_def = 
+            x3::lit("<%{") > lexeme[*(char_ - x3::lit("}%>"))] > x3::lit("}%>");
+
+        /* term '<' type '>'  Z pattern ; */
+        auto const terminal_def = kw_term >
+            -type_name() >
+            ident > -quoted_pattern() > ( action_block |  x3::lit(';')) ;
 
         /* skip Z "pattern" ;
-         * Note, that a pattern is required for a skip. */
+         * Note, that a pattern is required for a skip.
+         * A skip cannot have a type */
         auto const yskip_def = kw_skip > ident > quoted_pattern() > x3::lit(';') ;
 
         /* rule X { => A B C ; => X Y Z ; } */
@@ -97,6 +105,7 @@ namespace yalr {
 
         BOOST_SPIRIT_DEFINE(ident);
         BOOST_SPIRIT_DEFINE(parser_class);
+        BOOST_SPIRIT_DEFINE(action_block);
         BOOST_SPIRIT_DEFINE(terminal);
         BOOST_SPIRIT_DEFINE(yskip);
         BOOST_SPIRIT_DEFINE(alternative);

@@ -3,7 +3,6 @@
 
 #include <inja/inja.hpp>
 
-
 namespace yalr::codegen {
 // Main file template
 std::string main_template =
@@ -12,6 +11,27 @@ R"DELIM(/* build time date version goes here */
 #include <vector>
 #include <regex>
 #include <algorithm>
+#include <variant>
+#include <string_view>
+
+#ifndef NDEBUG
+#define YALR_DEBUG
+#endif
+
+#if defined(YALR_DEBUG)
+#if ! defined(YALR_LDEBUG)
+#define YALR_LDEBUG(msg) { if (debug) \
+    std::cerr << msg ; }
+#else
+#define YALR_LDEBUG(msg)
+#endif
+#if ! defined(YALR_PDEBUG)
+#define YALR_PDEBUG(msg) { if (debug) \
+    std::cerr << msg ; }
+#else
+#define YALR_PDEBUG(msg)
+#endif
+#endif
 
 namespace <%namespace%> {
 
@@ -37,6 +57,35 @@ struct rettype {
 };
 
 using iter_type = std::string::const_iterator;
+
+using semantic_value = std::variant<
+    std::monostate
+## for t in types
+    , <% t %>
+## endfor
+    >;
+
+struct value_printer {
+    void operator()(const std::monostate& m) {
+        std::cerr << "(mono)";
+    }
+## for t in types
+    void operator()(const <%t%>& v) {
+        std::cerr << v;
+    }
+## endfor
+};
+
+struct token_value {
+    Token t;
+    semantic_value v;
+
+    token_value() {}
+    token_value(Token pt) : t{pt} {};
+    token_value(token_type pt) : t{Token{pt}} {};
+    token_value(token_type pt, semantic_value sv) : t{Token{pt}}, v{sv} {};
+};
+
 struct matcher {
     virtual std::pair<bool, int>
     try_match(iter_type first, const iter_type last) = 0;
@@ -91,13 +140,16 @@ std::vector<std::pair<match_ptr, token_type>> patterns = {
 
 class Lexer {
 public:
+#if defined(YALR_DEBUG)
+    bool debug = false;
+#endif
     Lexer(iter_type first, const iter_type last) :
         current(first), last(last) {
     }
 
-    virtual Token next_token() {
+    virtual token_value next_token() {
         if (current == last) {
-            std::cout << "Returning token eoi\n";
+            YALR_LDEBUG( "Returning token eoi\n");
             return eoi;
         }
 
@@ -105,31 +157,45 @@ public:
         std::size_t max_len = 0;
 
         for (const auto &[m, tt] : patterns) {
-            //std::cerr << "Matching for token # " << tt;
+            YALR_LDEBUG("Matching for token # " << tt);
             auto [matched, len] = m->try_match(current, last);
             if (matched) {
-                //std::cerr << " length = " << len << "\n";
+                YALR_LDEBUG(" length = " << len << "\n");
                 if ( len > max_len) {
                     max_len = len;
                     ret_type = tt;
                 }
             } else {
-                //std::cerr << " - no match\n";
+                YALR_LDEBUG(" - no match\n");
             }
         }
         if (max_len == 0) {
             current = last;
-            ret_type = eoi;
-        } else {
+            return token_value{eoi};
+        } else if (ret_type == skip) {
+            YALR_LDEBUG("recursing due to skip\n");
             current += max_len;
-            if (ret_type == skip) {
-                //std::cerr << "recursing due to skip\n";
-                return next_token();
-            }
+            return next_token();
+        }
+        std::string lx{current, current+max_len};
+        current += max_len;
+        semantic_value ret_sval;
+        switch (ret_type) {
+## for sa in semantic_actions 
+            case <%sa.token%> : {
+                    auto block = [](std::string&& lexeme) -> <%sa.type%>
+                    {  <%sa.block%> };
+                    ret_sval = block(std::move(lx));
+                }
+                break;
+## endfor
+            default :
+                /* do nothing */
+                break;
         }
 
-        std::cout << "Returning token = " << ret_type << "\n";
-        return Token{ret_type};
+        YALR_LDEBUG( "Returning token = " << ret_type << "\n");
+        return token_value{ret_type, ret_sval};
     }
 
     // Just needed to make it virtual
@@ -139,52 +205,60 @@ private:
     const std::string::const_iterator last;
 };
 
+
 class <%namespace%> {
     Lexer& lexer;
-    Token la;
-    std::deque<Token> tokstack;
+    token_value la;
+    std::deque<token_value> tokstack;
 
     void printstack() {
-        std::cerr << "[" << la.toktype << "]" ;
+        value_printer vp;
+        std::cerr << "[" << la.t.toktype << "]" ;
         for (const auto& x : tokstack) {
-            std::cerr << " " << x.toktype;
+            std::cerr << " " << x.t.toktype << "(";
+            std::visit(vp, x.v);
+            std::cerr << ")";
         }
         std::cerr << "\n";
     }
     void shift() {
-        std::cerr << "Shifting " << la.toktype << "\n";
+        YALR_PDEBUG("Shifting " << la.t.toktype << "\n");
         tokstack.push_back(la);
-        printstack();
+#if defined(YALR_DEBUG)
+        if (debug) printstack();
+#endif
         la = lexer.next_token();
     }
 
     void reduce(int i, token_type t) {
-        std::cerr << "Popping " << i << " items\n";
+        YALR_PDEBUG("Popping " << i << " items\n");
         for(; i>0; --i) {
             tokstack.pop_back();
         }
-        std::cerr << "Shifting " << t << "\n";
+        YALR_PDEBUG("Shifting " << t << "\n");
 
         tokstack.push_back(t);
         
-        printstack();
+#if defined(YALR_DEBUG)
+        if (debug) printstack();
+#endif
     }
 /************** states *****************/
 
 ## for state in states
 
     rettype state<%state.id%>() {
-        std::cerr << "entering state <%state.id%>\n";
+        YALR_PDEBUG("entering state <%state.id%>\n");
 
         rettype retval;
 
-        switch (la.toktype) {
+        switch (la.t.toktype) {
 ## for action in state.actions
             case <%action.token%> :
             {% if action.type == "shift" %}
                 shift(); retval = state<%action.newstateid%>(); break;
             {% else if action.type == "reduce" %}
-                std::cerr << "Reducing by : <%action.production%>\n";
+                YALR_PDEBUG( "Reducing by : <%action.production%>\n");
                 reduce(<%action.count%>, <%action.symbol%>);
               {% if action.count > 0 %}
                 return { state_action::reduce, <%action.returnlevels%>, <%action.symbol%> };
@@ -202,7 +276,7 @@ class <%namespace%> {
         while (retval.action == state_action::reduce) {
             if (retval.depth > 0) {
                 retval.depth -= 1;
-                std::cerr << "Leaving state <%state.id%> in middle of reduce\n";
+                YALR_PDEBUG( "Leaving state <%state.id%> in middle of reduce\n");
                 return retval;
             }
 ## if length(state.gotos) > 0
@@ -220,6 +294,9 @@ class <%namespace%> {
 /************** states *****************/
 
 public:
+#if defined(YALR_DEBUG)
+    bool debug = false;
+#endif
     <%namespace%>(Lexer& l) : lexer(l){};
 
     bool doparse() {

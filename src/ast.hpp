@@ -31,6 +31,8 @@ namespace yalr::ast {
 
     struct terminal : symbol {
         std::string pattern;
+        std::string type_str;
+        std::string action;
     };
 
     struct skip : terminal {
@@ -48,7 +50,7 @@ namespace yalr::ast {
 
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, phony, pieces);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, isgoal, name, alts);
-BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, name, pattern);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, type_str, name, pattern, action);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::skip, name, pattern);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, defs);
 

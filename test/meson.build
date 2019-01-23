@@ -28,6 +28,16 @@ t03_exe = executable( 't03-single-quote', t03_src,
 test('t03-single-quote', t03_exe, suite: ['parser'])
 
 ##############################
+t04_src = files('t04-type-name.cpp')
+
+t04_exe = executable( 't04-type-name', t04_src, 
+  include_directories: [src_inc, libdir],
+  dependencies : linkdep
+  )
+
+test('t04-type-name', t04_exe, suite: ['parser'])
+
+##############################
 t10_src = files('t10-grammar.cpp') + parser_src
 
 t10_exe = executable( 't10-grammar', t10_src, 

@@ -4,7 +4,6 @@
 
 namespace yalr::analyzer {
 
-int terminal::next_value = -1;
 int production::next_value = -1;
 
 struct sorting_visitor {
@@ -13,7 +12,7 @@ struct sorting_visitor {
     int rule_count = 0;
     explicit sorting_visitor(grammar &g_) : out(g_) {};
 
-    void operator()(const ast::rule_def &r) {
+    void operator()(ast::rule_def &r) {
         auto [ inserted, new_sym ] = out.syms.insert(r);
 
         if (! inserted ) {
@@ -35,7 +34,18 @@ struct sorting_visitor {
         }
     }
 
-    void operator()(const ast::terminal &t) {
+    void operator()(ast::terminal &t) {
+        if (t.type_str.empty()) {
+            t.type_str = "void";
+        }
+
+        if (t.type_str != "void" and t.action.empty()) {
+            std::cerr << "'" << t.name <<
+                "' has non-void type but no action to assign a "
+                " value\n";
+            error_count += 1;
+        }
+
         auto [ inserted, new_sym ] = out.syms.insert(t);
 
         if (! inserted ) {
@@ -45,9 +55,10 @@ struct sorting_visitor {
             error_count += 1;
         }
 
+
     }
 
-    void operator()(const ast::skip &t) {
+    void operator()(ast::skip &t) {
         auto [ inserted, new_sym ] = out.syms.insert(t);
 
         if (! inserted ) {
@@ -104,7 +115,7 @@ struct prod_visitor {
 
 };
 
-std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
+std::unique_ptr<grammar> analyze(parser::ast_tree_type &tree) {
     int error_count = 0;
     auto retval = std::make_unique<grammar>();
 
@@ -119,7 +130,7 @@ std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree) {
      */
     sorting_visitor sv{*retval};
 
-    for (const auto &d : tree.defs) {
+    for (auto &d : tree.defs) {
         std::visit(sv, d);
     }
 

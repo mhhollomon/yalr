@@ -7,14 +7,17 @@ term RULE    'rule'    ;
 term GOAL    'goal'    ;
 term TERM    'term'    ;
 term SKIP    'skip'    ;
-term ID      r:_*[a-zA-Z]\w* ;
+term<std::string> ID      r:_*[a-zA-Z]\w* <%{ return std::move(lexeme); }%>
 term ARROW   '=>'      ;
 term LBRACE  '{'       ;
 term RBRACE  '}'       ;
 term SEMI    ';'       ;
 /* These two aren't quite correct (I don't think) */
-term SQUOTE r:'(?:[^'\\]*(?:\\\\|\\'|\\)*)*' ;
-term REGEX  r:r:[^\s]* ; // Note that this does not capture the closing space.
+term<std::string> SQUOTE r:'(?:[^'\\]*(?:\\\\|\\'|\\)*)*' <%{ return std::move(lexeme); }%>
+term<std::string> REGEX  r:r:[^\s]*  // Note that this does not capture the closing space.
+    <%{ return std::move(lexeme); }%>
+term<std::string> TYPE r:<(?!%).*?> <%{ return lexeme.substr(1, lexeme.size()-2); }%>
+term<std::string> ACTION r:<%\{(?:.|\n)*?}%> <%{ return lexeme.substr(3, lexeme.size()-4); }%>
 
 
 rule ParserClass {
@@ -29,16 +32,20 @@ rule Pattern {
 rule Term {
     => 'term' ID SEMI ;
     => 'term' ID Pattern SEMI ;
+    => 'term' TYPE ID Pattern SEMI ;
+    => 'term' TYPE ID Pattern ACTION ;
 }
 
 rule Skip {
     => 'skip' ID Pattern SEMI ;
 }
 
+rule Symbol { => ID ; => SQUOTE ; }
+
 /* A Possibly empty list of symbols (terms and rules) */
 rule SymbolList {
     => ;
-    => SymbolList ID ;
+    => SymbolList Symbol ;
 }
 
 rule Alt {

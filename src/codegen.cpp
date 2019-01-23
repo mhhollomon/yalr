@@ -88,29 +88,50 @@ void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
     // The first is the tokens to are returned by the
     // lexer or rule names used by the Parser.
     // The second list is the terms and skips that the
-    // Lexer needs to generate the mathing rules.
+    // Lexer needs to generate the matching rules.
+    // While we're at it, gather the name for types we'll need
+    // for the semantic value variant.
 
     // List of terms/skips that need to matched against.
     std::vector<SymbolTable::symbol>terms;
 
     // names and values for the token enum.
     auto enum_entries = json::array();
+    auto semantic_actions = json::array();
+
+    // set of type names
+    std::set<std::string>type_names;
 
     for (const auto &[sname, sym] : lt.syms) {
+        std::string tok_name = "TOK_" + sname;
         if (sym.isterm()) {
             // terms go in the enum and the term list
+            // type names go in the set
             if (sname == "$") {
                 enum_entries.push_back(json::object({ 
                         { "name" , "eoi"}, {"value", sym.id() } }));
             } else {
                 enum_entries.push_back(json::object({ 
-                        { "name" , "TOK_" + sname }, {"value", sym.id() } }));
+                        { "name" , tok_name }, {"value", sym.id() } }));
                 terms.push_back(sym);
+                const ast::terminal* info_ptr = sym.getTerminalInfo();
+                assert(info_ptr != nullptr);// should never happen
+                if (info_ptr->type_str != "void") {
+                    type_names.insert(info_ptr->type_str);
+                }
+                if (not info_ptr->action.empty()) {
+                    semantic_actions.push_back(json::object({
+                                { "token", tok_name }, 
+                                { "block" , info_ptr->action },
+                                { "type"  , info_ptr->type_str }
+                                }));
+                }
+
             }
         } else if (sym.isrule()) {
             // rules only go in the enum
             enum_entries.push_back(json::object({ 
-                    { "name" , "TOK_" + sname }, {"value", sym.id() } }));
+                    { "name" , tok_name }, {"value", sym.id() } }));
         } else if (sym.isskip()) {
             // Skips only go in the term list
             terms.push_back(sym);
@@ -120,12 +141,21 @@ void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
         }
     }
 
+    data["semantic_actions"] = semantic_actions;
+
     enum_entries.push_back(json::object({ 
             { "name" , "undef"}, {"value", -1 } }));
     enum_entries.push_back(json::object({ 
             { "name" , "skip"}, {"value", -10 } }));
 
     data["enums"] = enum_entries;
+
+    auto type_arr = json::array();
+    for (auto const& t : type_names ) {
+        type_arr.push_back(t);
+    }
+
+    data["types"] = type_arr;
 
 
 

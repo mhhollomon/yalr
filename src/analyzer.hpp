@@ -10,16 +10,6 @@
 
 namespace yalr { namespace analyzer {
 
-    struct terminal {
-        static int next_value;
-
-        std::string name;
-        int value = ++next_value ;
-
-        terminal(const std::string n) :name{n} {}
-    };
-
-
     struct production {
         static int next_value;
 
@@ -40,7 +30,7 @@ namespace yalr { namespace analyzer {
         SymbolTable syms;
     };
 
-    std::unique_ptr<grammar> analyze(const parser::ast_tree_type &tree);
+    std::unique_ptr<grammar> analyze(parser::ast_tree_type &tree);
 
     struct pp {
         std::ostream& strm;
