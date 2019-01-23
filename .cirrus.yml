@@ -1,0 +1,10 @@
+task:
+  name: gcc-build-release
+  container:
+    image: gcc:8
+  env:
+    CC: gcc
+    CXX: g++
+  build_script:
+    - ${CXX} --version
+    - ./scripts/build.sh release
