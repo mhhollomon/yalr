@@ -6,6 +6,7 @@ task:
     CC: gcc
     CXX: g++
   build_script:
+    - apt-get update
     - apt-get install --assume-yes meson ninja
     - ${CXX} --version
     - ./scripts/build.sh release
