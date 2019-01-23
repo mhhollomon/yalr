@@ -1,0 +1,1020 @@
+/*
+ * SQLite 3.26.0 SQL syntax as of 15-Jan-2019
+ *
+ * Taken from https://www.sqlite.org/lang.html
+ *
+ * UNTESTED and probably INCOMPLETE and INCORRECT. Use at your own risk.
+ * Pull Requests welcome.
+ *
+ * 
+ * Note that the BNF grammar at https://www.sqlite.org/docsrc/doc/trunk/art/syntax/all-bnf.html
+ * has errors.
+ * An example:
+ *    - the case statement doesn't allow for multiple WHEN/THEN
+ *
+ * 
+ * == Delete Statement
+ * SQLite has two different possible syntaxes for the delete/update statement.
+ * The more expressive option is shown in the grammar, 
+ * see https://www.sqlite.org/lang_delete.html for details
+ *
+ */
+
+option lexer.case insensitive
+
+skip WS     r:\s+ ;
+skip LINEC  r:--.*\n ;
+skip BLOCKC r:/\*(?:.|\n)*?\*/  ; // C-style block comments
+
+term SEMI  ';'   ;
+term DOT   '.'   ;
+term LPAR  '('   ;
+term RPAR  ')'   ;
+term COMMA ','   ;
+term STAR  '*'   ;
+term EQUAL '='   ;
+
+term ABORT       'abort'       ;
+term ACTION      'action'      ;
+term ADD         'add'         ;
+term AFTER       'after'       ;
+term ALL         'all'         ;
+term ALTER       'alter'       ;
+term ANALYZE     'analyze'     ;
+term AS          'as'          ;
+term ASC         'asc'         ;
+term ATTACH      'attach'      ;
+term AUTOINCREMENT     'autoincrement'     ;
+term BEFORE      'before'      ;
+term BEGIN       'begin'       ;
+term BETWEEN     'between'     ;
+term BY          'by'          ; 
+term CASCADE     'cascade'     ;   
+term CAST        'cast'        ;
+term CHECK       'check'       ;
+term COLLATE     'collate'     ;
+term COLUMN      'column'      ;
+term COMMIT      'commit'      ;
+term CONFLICT    'conflict'    ;
+term CONSTRAINT  'constraint'  ;
+term CREATE      'create'      ;
+term CURRENT     'current'     ;
+term CURRENT_TIME      'current_time'      ;
+term CURRENT_DATE      'current_date'      ;
+term CURRENT_TIMESTAMP 'current_timestamp' ;
+term DATABASE    'database'    ;
+term DEFAULT     'default'     ;
+term DEFERRED    'deferred'    ;
+term DEFERRABLE  'deferrable'  ;
+term DELETE      'delete'      ;
+term DESC        'desc'        ;
+term DISTINCT    'distinct'    ;
+term DO          'do'          ;
+term DROP        'drop'        ;
+term EACH        'each'        ;
+term ELSE        'else'        ;
+term END         'end'         ;
+term EQUAL       'equal'       ;
+term ESCAPE      'escape'      ;
+term EXCEPT      'except'      ;
+term EXCLUSIVE   'exclusive'   ;
+term EXISTS      'exists'      ;
+term EXPLAIN     'explain'     ;
+term FAIL        'fail'        ;
+term FALSE       'false'       ;
+term FILTER      'filter'      ;
+term FOLLOWING   'following'   ;
+term FOR         'for'         ;
+term FOREIGN     'foreign'     ;
+term FROM        'from'        ;
+term FULL        'full'        ;
+term GLOB        'glob'        ;
+term GROUP       'group'       ;
+term HAVING      'having'      ;
+term IF          'if'          ;
+term IGNORE      'ignore'      ;
+term IMMEDIATE   'immediate'   ;
+term IN          'in'          ;
+term INDEX       'index'       ;
+term INDEXED     'indexed'     ;
+term INITIALLY   'initially'   ;
+term INNER       'inner'       ;
+term INSERT      'insert'      ;
+term INSTEAD     'instead'     ;
+term INTERSECT   'intersect'   ;
+term INTO        'into'        ;
+term IS          'is'          ;
+term ISNULL      'isnull'      ;
+term JOIN        'join'        ;
+term KEY         'key'         ;
+term LEFT        'left'        ;
+term LIKE        'like'        ;
+term LIMIT       'limit'       ;
+term MATCH       'match'       ;
+term NATURAL     'natural'     ;
+term NO          'no'          ;
+term NOT         'not'         ;
+term NOTHING     'nothing'     ;
+term NOTNULL     'notnull'     ;
+term NULL        'null'        ;
+term OF          'of'          ;
+term OFFSET      'offset'      ;
+term ON          'on'          ;
+term OR          'or'          ;
+term ORDER       'order'       ;
+term OUTER       'outer'       ;
+term OVER        'over'        ;
+term PARTITION   'partition'   ;
+term PLAN        'plan'        ;
+term PRAGMA      'pragma'      ;
+term PRECEDING   'preceding'   ;
+term PRIMARY     'primary'     ;
+term QUERY       'query'       ;
+term RAISE       'raise'       ;
+term RANGE       'range'       ;
+term RECURSIVE   'recursive'   ;
+term REFERENCES  'references'  ;
+term REGEXP      'regexp'      ;
+term REINDEX     'reindex'     ;
+term RELEASE     'release'     ;
+term RENAME      'rename'      ;
+term REPLACE     'replace'     ;
+term RESTRICT    'restrict'    ;
+term RIGHT       'right'       ;
+term ROLLBACK    'rollback'    ;
+term ROW         'row'         ;
+term ROWS        'rows'        ;
+term SAVEPOINT   'savepoint'   ;
+term SELECT      'select'      ;
+term SET         'set'         ;
+term TABLE       'table'       ;
+term TEMP        'temp'        ;
+term TEMPORARY   'temporary'   ;
+term THEN        'then'        ;
+term TO          'to'          ;
+term TRANSACTION 'transaction' ;
+term TRIGGER     'trigger'     ;
+term TRUE        'true'        ;
+term UNBOUNDED   'unbounded'   ;
+term UNION       'union'       ;
+term UNIQUE      'unique'      ;
+term UPDATE      'update'      ;
+term USING       'using'       ;
+term VACUUM      'vacuum'      ;
+term VALUES      'values'      ;
+term VIEW        'view'        ;
+term VIRTUAL     'virtual'     ;
+term WHEN        'when'        ;
+term WHERE       'where'       ;
+term WINDOW      'window'      ;
+term WITH        'with'        ;
+term WITHOUT     'without'     ;
+
+term NUMERIC    r:((\d+(\.\d*)?)|(\.\d+))(E([-+])?\d+)? ;
+term SIGN       r:[-+]  ;
+term STRING_LITERAL  r:"[^"\n]*" ;
+term QPARAM     r:\?\d{0,3) ;
+term NAMEDPARAM r:[@:][[:alpha:]]+ ;
+term NAME       r:\w+|"[^"]+"|\[[^\]]+\] ;
+
+
+/*** Utility Rules *****/
+
+rule ExtendedName {
+    => NAME '.' NAME ;
+    => NAME ;
+}
+
+rule ExtendedColumnName {
+    => NAME ;
+    => ExtendedName '.' NAME ;
+}
+
+rule SignedNumber {
+    => NUMERIC ;
+    => SIGN NUMERIC ;
+}
+
+rule LiteralValue {
+    => NUMERIC ;
+    => STRING_LITERAL ;
+    => NULL ;
+    => TRUE ;
+    => FALSE ;
+    => CURRENT_TIME ;
+    => CURRENT_DATE ;
+    => CURRENT_TIMESTAMP;
+}
+
+rule TypeName {
+    => TypeNameList '(' SignedNumber ')' ;
+    => TypeNameList '(' SignedNumber ',' SignedName ')' ;
+}
+
+rule TypeNameList {
+    => NAME ;
+    => TypeNameList NAME ;
+}
+
+rule OrderingDirection {
+    => ;
+    => ASC ;
+    => DESC ;
+}
+
+
+rule Expr {
+    => LiteralValue ;
+    => BindParameter ;
+    => ExtendedColumnName ;
+    => UniOp Expr ;  // What is unary operator ?
+    => Expr BinOp Exptr ; // What is a binary operator ?
+    => FunctionName LPAR FunctionExpr RPAR ;
+    => LPAR ExprList RPAR ;
+    => CAST LPAR Expr AS TypeName RPAR ;
+    => Expr COLLATE NAME ;
+    => Expr MaybeNot ExprStringExpr Expr ExprEscape ;
+    => Expr ExprNull ;
+    => Expr IS MaybeNot Expr ;
+    => Expr MaybeNot BETWEEN Expr AND Expr ;
+    => Expr MaybeNot IN LPAR SelectStmt RPAR ;
+    => Expr MaybeNot IN LPAR ExprList RPAR ;
+    => Expr MaybeNot IN ExtendedName ;
+    => Expr MaybeNot In ExtendedName LPAR ExprList RPAR ;
+    => MaybeNot EXISTS LPAR SelectStmt RPAR ;
+    => CASE Expr CaseLegs CaseElse END ;
+    => CASE CaseLegs CaseElse END ;
+    => RaiseFunction ;
+    => ExprWindowing ;
+}
+
+rule BindParameter {
+    // Not going to try to support $AAA syntax
+    => QPARAM ;
+    => NAMEDPARAM ;
+}
+
+rule MaybeNot { => ; => NOT ; }
+rule MaybeRecursive { => ; => RECURSIVE ; }
+
+rule IfExists { => ; => IF EXISTS ;  }
+
+rule IfNotExists { => ; => IF NOT EXISTS ;  }
+
+rule ExprStringExpr {
+    => LIKE ;
+    => GLOB ;
+    => REGEXP ;
+    => MATCH ;
+}
+
+rule ExprEscape {
+    => ;
+    => ESCAPE Expr ;
+}
+
+rule ExprNull {
+    => ISNULL   ;
+    => NOTNULL  ;
+    => NOT NULL ;
+}
+
+rule FunctionExpr {
+    => ;
+    => STAR ;
+    => DISTINCT ExprList ;
+    => ExprList ;
+}
+
+rule ExprList {
+    => Expr ;
+    => ExprList COMMA Expr ;
+}
+
+rule CaseLegs {
+    => WHEN Expr THEN Expr ;
+    => CaseLegs WHEN Expr THEN Expr ;
+}
+
+rule CaseElse {
+    => ;
+    => ELSE Expr ;
+}
+
+rule RaiseFunction {
+    => RAISE LPAR IGNORE RPAR ;
+    => RAISE LPAR RaiseAction COMMA STRING_LITERAL RPAR ;
+}
+
+rule RaiseAction {
+    => ROLLBACK ;
+    => ABORT ;
+    => FAIL ;
+}
+
+rule ExprWindowing {
+    => NAME LPAR FuncArgs RPAR WindowFilter OVER WindowOverClause ;
+}
+
+rule FuncArgs {
+    => ;
+    => '*' ;
+    => ExprList ;
+}
+
+rule WindowFilter {
+    => ;
+    => Filter ;
+}
+
+rule Filter {
+    => FILTER LPAR WHERE Expr RPAR ;
+}
+
+rule WindowOverClause {
+    => NAME ;
+    => WindowDefn ;
+
+rule WindowDefn {
+    => LPAR PartitionClause OrderClause FrameSpec RPAR ;
+}
+
+rule PartitionClause {
+    => ;
+    => PARTITION BY ExprList ;
+}
+
+rule OrderClause {
+    => ;
+    => ORDER BY OrderingTermList ;
+}
+
+rule OrderingTermList {
+    => OrderingTerm ;
+    => OrderingTermList COMMA OrderingTerm ;
+}
+
+rule OrderingTerm {
+    => Expr OrderingDirection ;
+    => Expr COLLATE NAME OrderingDirection ;
+}
+
+rule FrameSpec {
+    => ;
+    => FrameSpecType FrameSpecRangeStart ;
+    => FrameSpecType BETWEEN FrameSpecRangeStart AND FrameSpecRangeEnd ;
+}
+
+rule FrameSpecType {
+    => RANGE ;
+    => ROWS ;
+}
+
+rule FrameSpecRangeStart {
+    => UNBOUNDED PRECEDING ;
+    => Expr PRECEDING ;
+    => CURRENT ROW ;
+    => Expr FOLLOWING ;
+}
+
+rule FrameSpecRangeEnd {
+    => Expr PRECEDING ;
+    => CURRENT ROW ;
+    => Expr FOLLOWING ;
+    => UNBOUNDED FOLLOWING ;
+}
+
+/******************************************************************/
+/**************** TOP LEVEL RULE **********************************/
+/******************************************************************/
+
+goal rule SqlStmtList {
+    => ;
+    => SqlStmt ;
+    => SqlStmtList SEMI SqlStmt ;
+}
+
+rule SqlStmt {
+    => ExplainPrefix CommandStmt ;
+}
+
+rule ExplainPrefix {
+    => EXPLAIN ;
+    => EXPLAIN QUERY PLAN ;
+}
+
+rule CommandStmt {
+    => AlterTableStmt ;
+    => AnalyzeStmt ;
+    => AttachStmt  ;
+    => BeginStmt   ;
+    => CommitStmt  ;
+    => CreateIndexStmt ;
+    => CreateTableStmt ;
+    => CreateTriggerStmt ;
+    => CreateViewStmt ;
+    => CreateVirtualTableStmt ;
+    => DeleteStmt ;
+    => DetachStmt ;
+    => DropIndexStmt ;
+    => DropTableStmt ;
+    => DropTriggerStmt ;
+    => DropViewStmt ;
+    => InsertStmt ;
+    => PragmaStmt ;
+    => ReindexStmt ;
+    => ReleaseStmt ;
+    => RollbackStmt ;
+    => SavepointStmt ;
+    => SelectStmt ;
+    => UpdateStmt ;
+    => VacuumStmt ;
+}
+
+/*** ALTER TABLE *****************************/
+
+rule AlterTableStmt {
+    => ALTER TABLE ExtendedName AlterSubCommand
+}
+
+rule AlterSubCommand {
+    => RENAME TO NAME ;
+    => RENAME COLUMN NAME TO NAME ;
+    => RENAME NAME TO NAME ;
+    => ADD COLUMN ColumnDef ;
+    => ADD ColumnDef ;
+}
+
+rule ColumnDef {
+    => NAME ;
+    => NAME TypeName ;
+    => NAME ColumnConstraintList ;
+    => NAME TypeName ColumnConstraintList ;
+}
+
+rule ColumnConstraintList {
+    => ColumnConstraint ;
+    => ColumnConstraintList ColumnConstraint ;
+}
+
+rule ColumnConstraint {
+    => CONSTRAINT Name ColumnConstraintSubtype ;
+    => ColumnConstraintSubtype ;
+}
+
+rule ColumnConstraintSubtype {
+    => PRIMARY KEY OrderingDirection ConflictClause ;
+    => PRIMARY KEY OrderingDirection ConflictClause AUTOINCREMENT ;
+    => NOT NULL ConflictClause ;
+    => UNIQUE ConflictClause ;
+    => CHECK LPAR Expr RPAR ;
+    => DEFAULT ColumnConstraintDefaults ;
+    => COLLATE NAME ;
+    => ForeignKeyClause ;
+}
+
+rule ColumnConstraintDefaults {
+    => SignedNumber ;
+    => LiteralValue ;
+    => LPAR Expr RPAR ;
+}
+
+rule ForeignKeyClause {
+    => REFERENCES ExtendedName ColumnList ForeignKeyAction ForeignKeyDefer ;
+}
+
+rule ColumnList {
+    => ;
+    => LPAR ColumnNameList RPAR ;
+}
+
+rule ColumnNameList {
+    => NAME ;
+    => ColumnNameList COMMA NAME ;
+}
+
+rule ForeignKeyAction {
+    => ;
+    => MATCH NAME ;
+    => ON DELETE ForeignKeyActionType ;
+    => ON UPDATE ForeignKeyActionType ;
+}
+
+rule ForeignKeyActionType {
+    => SET NULL ;
+    => SET DEFAULT ;
+    => CASCADE ;
+    => RESTRICT ;
+    => NO ACTION ;
+}
+
+rule ForeignKeyDefer {
+    => ;
+    => MaybeNot DEFERRABLE ;
+    => MaybeNot DEFERRABLE INITIALLY DEFERRED ;
+    => MaybeNot DEFERRABLE INITIALLY IMMEDIATE ;
+}
+
+/*** ANALYZE *********************************/
+
+rule AnalyzeStmt {
+    => ANALYZE ExtendedName ;
+}
+
+/*** ATTACH **********************************/
+
+rule AttachStmt {
+    => ATTACH Expr AS NAME ;
+    => ATTACH DATABASE Expr AS NAME ;
+}
+
+/*** BEGIN ***********************************/
+
+rule BeginStmt {
+    => BEGIN ;
+    => BEGIN TransType ;
+    => BEGIN TRANSACTION ;
+    => BEGIN TransType TRANSACTION ;
+}
+
+rule TransType {
+    => DEFERRED ;
+    => IMMEDIATE ;
+    => EXCLUSIVE ;
+}
+
+/*** COMMIT **********************************/
+
+rule CommitStmt {
+    => COMMIT ;
+    => END ;
+    => COMMIT TRANSACTION ;
+    => END TRANSACTION ;
+}
+
+/*** CREATE INDEX ****************************/
+
+rule CreateIndexStmt {
+    => CREATE MaybeUnique INDEX IfNotExists ExtendedName ON NAME
+        LPAR ColumnNameList RPAR CreateIndexLimit ;
+}
+
+rule CreateIndexLimit {
+    => ;
+    => WHERE Expr ;
+}
+
+/*** CREATE TABLE ****************************/
+
+rule CreateTableStmt {
+    => CREATE TempMarker TABLE IfNotExists ExtendedName
+        '(' ColumnDefList TableConstraintList ')' WithoutRowID ;
+    => CREATE TempMarker TABLE IfNotExists ExtendedName
+        AS SelectStmt ;
+}
+
+rule TempMarker {
+    => ;
+    => TEMP ;
+    => TEMPORARY ;
+}
+
+rule ColumnDefList {
+    => ColumnDef ;
+    => ColumnDefList ColumnDef ;
+}
+
+rule WithoutRowID {
+    => ;
+    => WITHOUT ROWID ;
+}
+
+rule TableConstraintList {
+    => ;
+    => TableConstraintList TableConstraint ;
+}
+
+rule TableConstraint {
+    => TableConstraintPrefix PRIMARY KEY '(' IndexedColumnList ')' ConflictClause ;
+    => TableConstraintPrefix UNIQUE '(' IndexedColumnList ')' ConflictClause ;
+    => TableConstraintPrefix CHECK '(' Expr ')' ;
+    => TableConstraintPrefix FOREIGN KEY '(' NameList ')' ForeignKeyClause ;
+}
+
+rule TableConstraintPrefix {
+    => ;
+    => CONSTRAINT NAME ;
+}
+
+rule IndexedColumnList {
+    => NAME COLLATE NAME OrderingDirection ;
+    => NAME OrderingDirection ;
+    => Expr COLLATE NAME OrderingDirection ;
+    => Expr OrderingDirection ;
+}
+
+rule ConflictClause {
+   => ON CONFLICT ConflictClauseAction ;
+}
+
+rule ConflictClauseAction {
+    => ROLLBACK ;
+    => ABORT ;
+    => FAIL ;
+    => IGNORE ;
+    => REPLACE ;
+}
+
+/*** CREATE TRIGGER **************************/
+
+rule CreateTriggerStmt {
+    => CREATE TempMarker TRIGGER IfNotExists ExtendedName
+        TriggerTimingClause TriggerOnClause  ON Name 
+        TriggerForEachRow TriggerCondition TriggerBlock ;
+}
+
+rule TriggerTimingClause {
+    => BEFORE ;
+    => AFTER ;
+    => INSTEAD OF ;
+    => ;
+}
+
+rule TriggerOnClause {
+    => DELETE ;
+    => INSERT ;
+    => UPDATE TriggerColumnList ;
+}
+
+rule TriggerColumnList {
+    => ;
+    => OF ColumnNameList ;
+}
+
+rule TriggerForEachRow {
+    => ;
+    => FOR EACH ROW ;
+}
+
+rule TriggerCondition {
+    => ;
+    => WHEN Expr ;
+}
+
+rule TriggerBlock {
+    => BEGIN TriggerStmtList END ;
+}
+
+rule TriggerStmtList {
+    => TriggerBlockStmt ;
+    => TriggerStmtList ';' TriggerBlockStmt ;
+}
+
+rule TriggerBlockStmt {
+    => UpdateStmt ;
+    => InsertStmt ;
+    => DeleteStmt ;
+    => SelectStmt ;
+}
+
+/*** CREATE VIEW *****************************/
+
+rule CreateViewStmt {
+    => CREATE TempMarker VIEW IfNotExists ExtendedName
+        '(' ColumnNameList ')' AS SelectStmt ;
+}
+
+/*** CREATE VIRTUAL TABLE ********************/
+
+rule CreateVirtualTableStmt {
+    => CREATE VIRTUAL TABLE IfNotExists ExtendedName USING NAME
+        VirtualTableArgList ;
+}
+
+rule VirtualTableArgList {
+    => ;
+    => '(' ModuleArgList ')' ;
+}
+
+// TODO - This isn't right, but will do for now.
+rule ModuleArgList {
+    => ColumnNameList ;
+}
+
+/*** DELETE **********************************/
+
+rule DeleteStmt {
+    => WithClause DELETE FROM QualifiedTableName WhereClause
+        DeleteLimiter ;
+}
+
+rule WithClause {
+    => ;
+    => WITH MaybeRecursive CTETableList ;
+} 
+
+rule CTETableList {
+    => CTETableEntry ;
+    => CTETableList ',' CTETableEntry ;
+}
+
+rule CTETableEntry {
+    => CTETableName AS '(' SelectStmt ')' ;
+}
+
+rule WhereClause {
+    => WHERE Expr ;
+    => ;
+}
+
+rule DeleteLimiter {
+    => ;
+    => OrderClause LIMIT Expr OffsetClause
+}
+
+rule OffsetClause {
+    => ;
+    => ','    Expr ;
+    => OFFSET Expr ;
+}
+
+/*** DETACH **********************************/
+
+rule DetachStmt {
+    => DETACH NAME ;
+    => DETACH DATABASE NAME ;
+}
+
+/*** DROP INDEX ******************************/
+
+rule DropIndexStmt {
+    => DROP INDEX IfExists ExtendedName ;
+}
+
+/*** DROP TABLE ******************************/
+
+rule DropTableStmt {
+    => DROP TABLE IfExists ExtendedName ;
+}
+
+/*** DROP TRIGGER ****************************/
+
+rule DropTriggerStmt {
+    => DROP TRIGGER IfExists ExtendedName ;
+}
+
+/*** DROP VIEW *******************************/
+
+rule DropViewStmt {
+    => DROP VIEW IfExists ExtendedName ;
+}
+
+/*** INSERT **********************************/
+
+rule InsertStmt {
+    => WithClause InsertAction INTO ExtendedName AliasClause ColumnList InsertSource
+        MaybeUpsertClause ;
+}
+
+rule InsertAction {
+    => INSERT ;
+    => REPLACE ;
+    => INSERT OR REPLACE ;
+    => INSERT OR ROLLBACK ;
+    => INSERT OR ABORT ;
+    => INSERT OR FAIL ;
+    => INSERT OR IGNORE ;
+}
+
+rule AliasClause {
+    => ;
+    => AS NAME ;
+}
+
+rule InsertSource {
+    => DEFAULT VALUES ;
+    => SelectStmt ;
+    => VALUES ValuesList ;
+}
+
+rule ValuesList {
+    => '(' ExprList ')' ;
+    => ValuesList ',' '(' ExprList ')' ;
+}
+
+rule MaybeUpsertClause {
+    => ;
+    => ON CONFLICT ConflictColumns DO UpsertAction ;
+}
+
+rule ConflictColumns {
+    => ;
+    => '(' IndexedColumnList ')' WhereClause ;
+}
+
+rule UpsertAction {
+    => NOTHING;
+    => UPDATE SET SetColumnList = Expr WhereClause ;
+}
+
+/*** PRAGMA **********************************/
+
+rule PragmaStmt {
+    => PRAGMA ExtendedName PragmaValue ;
+    => PRAGMA ExtendedName EQUAL PragmaValue ;
+}
+
+rule PragmaValue {
+    => SignedNumber ;
+    => NAME ;
+    => STRING_LITERAL ;
+}
+
+/*** REINDEX *********************************/
+
+rule ReindexStmt {
+    => REINDEX ExtendedName ;
+}
+
+/*** RELEASE SAVEPOINT ***********************/
+
+rule ReleaseStmt {
+    => RELEASE NAME ;
+    => RELEASE SAVEPOINT NAME ;
+}
+
+/*** ROLLBACK ********************************/
+
+rule RollbackStmt {
+    => ROLLBACK ;
+    => ROLLBACK TRANSACTION ;
+    => ROLLBACK TO NAME ;
+    => ROLLBACK TO SAVEPOINT NAME ;
+    => ROLLBACK TRANSACTION TO NAME ;
+    => ROLLBACK TRANSACTION TO SAVEPOINT NAME ;
+}
+
+/*** SAVEPOINT *******************************/
+
+rule SavepointStmt {
+    => SAVEPOINT NAME ;
+}
+
+/*** SELECT **********************************/
+
+rule SelectStmt {
+    => WithClause SelectCompoundStmt OrderClause LimitClause ;
+}
+
+rule SelectCompoundStmt {
+    => SelectSubStmt ;
+    => SelectCompoundStmt CompoundOperator SelectSubStmt ;
+}
+
+rule SelectSubStmt {
+    => SelectSelectStmt ;
+    => SelectValuesStmt ;
+}
+
+rule SelectValuesStmt {
+    => VALUES ValuesList ;
+}
+
+rule CompoundOperator {
+    => UNION ;
+    => UNION ALL ;
+    => INTERSECT ;
+    => EXCEPT ;
+}
+
+rule SelectSelectStmt {
+    => SELECT SelectDistinct ResultColumnList FromClause WhereClause GroupByClause WindowClause ;
+}
+
+rule SelectDistinct {
+    => ;
+    => DISTINCT ;
+    => ALL ;
+}
+
+rule ResultColumnList {
+    => ResultColumn ;
+    => ResultColumnList ',' ResultColumn ;
+}
+
+rule ResultColumn {
+    => Expr ;
+    => Expr NAME ;
+    => Expr AS NAME ;
+    => '*';
+    => NAME '.' '*' ;
+}
+
+rule FromClause {
+    => FROM FromSource ;
+}
+
+rule FromSource {
+    => SubQueryList ;
+    => JoinClause ;
+}
+
+rule SubQueryList {
+    => TableOrSubquery ;
+    => SubQueryList ',' TableOrSubquery ;
+}
+
+rule TableOrSubquery {
+    => TableReference ;
+    => TableFunction ;
+    => SubSelect ;
+    => '(' FromSource ')' ;
+}
+
+rule TableReference {
+    => ExtendedName AliasClause IndexClause ;
+}
+
+rule IndexClause {
+    => ;
+    => NOT INDEXED ;
+    => INDEXED BY NAME ;
+}
+
+rule TableFunction {
+    => ExtendedName '(' ExprList ')' AliasClause ;
+}
+
+rule SubSelect {
+    => '(' SelectStmt ')' AliasClause ;
+}
+
+rule JoinClause {
+    => TableOrSubquery ;
+    => JoinClause JoinOperator TableOrSubquery JoinConstraint ;
+}
+
+
+rule JoinOperator {
+    => ',' ;
+    => MaybeNatural JOIN ;
+    => MaybeNatural LEFT JOIN ;
+    => MaybeNatural LEFT OUTER JOIN ;
+    => MaybeNatural INNER JOIN ;
+    => MaybeNatural CROSS JOIN ;
+}
+
+rule MaybeNatural { => ; => NATURAL ; }
+
+rule JoinConstraint {
+    => ON Expr ;
+    => USING '(' ColumnNameList ')' ;
+}
+
+rule GroupByClause {
+    => GROUP BY '(' ExprList ')' HavingClause ;
+}
+
+rule HavingClause {
+    => ;
+    => HAVING Expr;
+}
+
+rule WindowClause {
+    => WINDOW WindowList ;
+}
+
+rule WindowList {
+    => NAME AS WindowDefn ;
+    => WindowList ',' NAME AS WindowDefn ;
+}
+
+rule LimitClause {
+    => ;
+    => LIMIT Expr OffsetClause ;
+}
+
+/*** UPDATE **********************************/
+
+rule UpdateStmt {
+    => WithClause UPDATE UpdateSuffix QualifiedTableName SET SetColumnList '=' Expr WhereClause ;
+}
+
+rule UpdateSuffix {
+    => OR ROLLBACK ;
+    => OR ABORT ;
+    => OR REPLACE ;
+    => OR FAIL ;
+    => OR IGNORE ;
+}
+
+rule SetColumnList {
+    => NAME ;
+    => '(' ColumnNameList ')' ;
+}
+
+/*** VACUUM **********************************/
+
+rule VacuumStmt {
+    => VACUUM ;
+}
