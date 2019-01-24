@@ -2,7 +2,7 @@ task:
   name: gcc-build-release
   container:
     image: mhhollomon/yalr-ci:alpine
-    memory: 2G
+    memory: 8G
   env:
     CC: gcc
     CXX: g++
