@@ -1,5 +1,6 @@
 # Yet Another LR Parser Generator
 [![Github Releases](https://img.shields.io/github/release/mhhollomon/yalr.svg)](https://github.com/mhhollomon/yalr/releases)
+[![Build Status](https://api.cirrus-ci.com/github/mhhollomon/yalr.svg)](https://cirrus-ci.com/github/mhhollomon/yalr)
 [![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/pantor/mhhollomon/yalr)
 [![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/mhhollomon/yalr/master/LICENSE)
 
