@@ -1,12 +1,10 @@
 task:
   name: gcc-build-release
   container:
-    image: debian:buster
+    image: mhhollomon/yalr-ci:latest
   env:
     CC: gcc
     CXX: g++
   build_script:
-    - apt-get update
-    - apt-get install --assume-yes g++ libboost-all-dev meson ninja-build
-    - ${CXX} --version
+   - ${CXX} --version
     - ./scripts/build.sh release
