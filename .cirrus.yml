@@ -1,7 +1,7 @@
 task:
   name: gcc-build-release
   container:
-    image: mhhollomon/yalr-ci:latest
+    image: mhhollomon/yalr-ci:alpine
   env:
     CC: gcc
     CXX: g++

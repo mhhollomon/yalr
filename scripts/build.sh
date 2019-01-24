@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 BUILDTYPE=${1:-dev}
 CC=${CC:-clang}
