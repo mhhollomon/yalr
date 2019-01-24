@@ -6,5 +6,5 @@ task:
     CC: gcc
     CXX: g++
   build_script:
-   - ${CXX} --version
+    - ${CXX} --version
     - ./scripts/build.sh release
