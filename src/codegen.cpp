@@ -115,6 +115,7 @@ void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
                         { "name" , tok_name }, {"value", sym.id() } }));
                 terms.push_back(sym);
                 const ast::terminal* info_ptr = sym.getTerminalInfo();
+                // NOLINTNEXTLINE
                 assert(info_ptr != nullptr);// should never happen
                 if (info_ptr->type_str != "void") {
                     type_names.insert(info_ptr->type_str);
