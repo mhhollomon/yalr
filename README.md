@@ -121,6 +121,31 @@ unescape space-like character. Note, this means that the semi-colon at the end
 of the definition must be separated from the pattern by at least one space (or
 tab, or newline).
 
+A parser terminal may also have a type associated with it. If it does, then a
+semantic value will be generated and passed to the parser. The type is given in
+angle brackets afte the keyword term :
+
+```
+term <int> INTEGER r:[-+]?[0-9]+ ;
+```
+
+The computation is given as an action encased in `<%{ ... }%>` . If an action
+is given, then the normal terminating semi-colon is not required.
+
+```
+term <int> INTEGER r:[-+]?[0-9]+ <%{ return std::stoi(lexeme); }%>
+```
+
+The action should be though of as the body of a lambda that returns the
+semantic value to be passed back to the parser. The identifier `lexeme` is
+available. It is a string that contains the text that was matched by the term's
+pattern. If you wish to simply return the string (e.g. for an Identifier term)
+then some efficency can be gained by doing so as a move:
+
+```
+term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
+```
+
 #### Lexer Terminals
 
 Lexer terminals are recognized by the the lexer but are not returned. They are
