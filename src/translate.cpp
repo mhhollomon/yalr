@@ -1,5 +1,8 @@
 #include "translate.hpp"
 
+#include <fstream>
+#include <ios>
+
 namespace yalr::translate {
 
 void output_prod(const analyzer::production& p, std::ostream& strm) {
@@ -10,12 +13,23 @@ void output_prod(const analyzer::production& p, std::ostream& strm) {
     strm << " .\n";
 
 }
-void grammophone::output(std::ostream& strm) const {
+void grammophone::output(const analyzer::grammar& gr, CLIOptions &clopts) const {
 
-    output_prod(g.productions[g.target_prod], strm);
-    for (const auto& p : g.productions) {
-        if (p.prod_id != g.target_prod) {
-            output_prod(p, strm);
+    std::string outfilename;
+    if (not clopts.output_file.empty()) {
+        outfilename = clopts.output_file;
+    } else {
+        outfilename = gr.parser_class + ".txt";
+    }
+
+    std::ofstream code_out(outfilename, std::ios_base::out);
+
+    // grammophone uses the first production as the target
+    // So, be sure to our target out first.
+    output_prod(gr.productions[gr.target_prod], code_out);
+    for (const auto& p : gr.productions) {
+        if (p.prod_id != gr.target_prod) {
+            output_prod(p, code_out);
         }
     }
 

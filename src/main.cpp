@@ -1,3 +1,4 @@
+#include "CLIOptions.hpp"
 #include "parser.hpp"
 #include "analyzer.hpp"
 #include "tablegen.hpp"
@@ -22,13 +23,6 @@
 // } catch ...
 
 
-struct CLIOptions {
-    std::string output_file;
-    std::string translate;
-    std::string state_file;
-    std::string input_file;
-    bool help = false;
-};
 
 CLIOptions parse_commandline(int argc, char**argv) {
   
@@ -159,8 +153,7 @@ int main(int argc, char* argv[]) {
         const auto format = clopts.translate;
 
         if (format == "grammophone") {
-            std::ofstream code_out(outfilename, std::ios_base::out);
-            yalr::translate::grammophone(*ana_tree).output(code_out);
+            yalr::translate::grammophone().output(*ana_tree, clopts);
         } else {
             std::cerr << "Unknown format '" << format << "'\n";
             exit(1);
