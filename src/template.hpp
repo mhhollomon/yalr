@@ -230,18 +230,11 @@ class <%namespace%> {
         la = lexer.next_token();
     }
 
-    void reduce(int i, token_type t) {
+    void reduce(int i) {
         YALR_PDEBUG("Popping " << i << " items\n");
         for(; i>0; --i) {
             tokstack.pop_back();
         }
-        YALR_PDEBUG("Shifting " << t << "\n");
-
-        tokstack.push_back(t);
-        
-#if defined(YALR_DEBUG)
-        if (debug) printstack();
-#endif
     }
 /************** states *****************/
 
@@ -258,13 +251,29 @@ class <%namespace%> {
             {% if action.type == "shift" %}
                 shift(); retval = state<%action.newstateid%>(); break;
             {% else if action.type == "reduce" %}
+                {
+                {% if action.hasvaluetype == "Y" %}
+                <%action.valuetype%> x;
+                {% endif %}
                 YALR_PDEBUG( "Reducing by : <%action.production%>\n");
-                reduce(<%action.count%>, <%action.symbol%>);
+                reduce(<%action.count%>);
+                YALR_PDEBUG("Shifting " << <%action.symbol%> << "\n");
+
+                {% if action.hasvaluetype == 1 %}
+                tokstack.push_back(<%action.symbol%>, x);
+                {% else %}
+                tokstack.push_back(<%action.symbol%>);
+                {% endif %}
+                
+#if defined(YALR_DEBUG)
+                if (debug) printstack();
+#endif
               {% if action.count > 0 %}
                 return { state_action::reduce, <%action.returnlevels%>, <%action.symbol%> };
               {% else %}
                 retval = { state_action::reduce, 0 , <%action.symbol%> };
               {% endif %}
+                }
             {% else %}
                 return { state_action::accept, 0 };
             {% endif %}

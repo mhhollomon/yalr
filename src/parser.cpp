@@ -84,14 +84,15 @@ namespace yalr {
          * A skip cannot have a type */
         auto const yskip_def = kw_skip > ident > quoted_pattern() > x3::lit(';') ;
 
-        /* rule X { => A B C ; => X Y Z ; } */
+        /* rule '<' type '>' X { => A B C ; => X Y Z ; } */
         /* I don't really want to capture the fat arrow, but without it, Spirit
          * tries to hoist the vector of idents into the alternatives struct itself.
          */
         auto const alternative_def = x3::string("=>") >
             *(ident|single_quote()) > x3::lit(';') ;
 
-        auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> kw_rule > ident  >
+        auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> 
+            kw_rule > -type_name() > ident >
             x3::lit('{') > +alternative > x3::lit('}')
             ;
 

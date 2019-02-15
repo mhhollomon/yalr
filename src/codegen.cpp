@@ -46,6 +46,12 @@ auto generate_state_data(const tablegen::lrstate& state,const tablegen::lrtable&
                     }
 
                     adata["symbol"] = "TOK_" + prod.rule.name() ;
+                    adata["valuetype"] = prod.rule.getRuleInfo()->type_str;
+                    if (adata["valuetype"] != "") {
+                        adata["hasvaluetype"] = "Y";
+                    } else {
+                        adata["hasvaluetype"] = "N";
+                    }
                 }
                 break;
             case action_type::accept :

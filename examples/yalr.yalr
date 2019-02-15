@@ -59,8 +59,10 @@ rule AltList {
 }
 
 rule Rule {
-    => 'goal' 'rule' ID '{' AltList '}' ;
-    =>        'rule' ID '{' AltList '}' ;
+    => 'goal' 'rule' TYPE ID '{' AltList '}' ;
+    => 'goal' 'rule'      ID '{' AltList '}' ;
+    =>        'rule' TYPE ID '{' AltList '}' ;
+    =>        'rule'      ID '{' AltList '}' ;
 }
 
 rule Statement {

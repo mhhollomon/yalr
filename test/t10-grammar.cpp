@@ -54,5 +54,17 @@ term <std::string> BAR 'bar' ;
         REQUIRE(tree.defs.size() == 2);
     }
 
+    SECTION("Type names for rules", "[parser]") {
+        auto tree = parse_string("rule <int> A { => A A ; => ; }");
+        REQUIRE(tree.success);
+        auto term = std::get<ast::rule_def>(tree.defs[0]);
+        REQUIRE(term.type_str == "int");
+
+        tree = parse_string("rule <my_thing<int>> A { => A A ; => ; }");
+        REQUIRE(tree.success);
+        term = std::get<ast::rule_def>(tree.defs[0]);
+        REQUIRE(term.type_str == "my_thing<int>");
+    }
+
 }
 

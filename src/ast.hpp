@@ -26,6 +26,7 @@ namespace yalr::ast {
 
     struct rule_def : symbol {
         bool isgoal;
+        std::string type_str;
         std::vector<alternative>alts;
     };
 
@@ -49,7 +50,7 @@ namespace yalr::ast {
 } // namespace yalr::ast
 
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::alternative, phony, pieces);
-BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, isgoal, name, alts);
+BOOST_FUSION_ADAPT_STRUCT(yalr::ast::rule_def, isgoal, type_str, name, alts);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::terminal, type_str, name, pattern, action);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::skip, name, pattern);
 BOOST_FUSION_ADAPT_STRUCT(yalr::ast::grammar, parser_class, defs);

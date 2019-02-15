@@ -8,7 +8,7 @@ term <int> NUM r:[1-9][0-9]* <%{ return atoi(lexeme.c_str()); }%>
 term COMMA ',' ;
 
 // hopefully
-rule A {
+rule <std::string> A {
     => NUM ;
     => A ',' NUM ;
 }
