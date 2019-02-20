@@ -47,7 +47,10 @@ auto generate_state_data(const tablegen::lrstate& state,const tablegen::lrtable&
 
                     adata["symbol"] = "TOK_" + prod.rule.name() ;
                     adata["valuetype"] = prod.rule.getRuleInfo()->type_str;
-                    if (adata["valuetype"] != "") {
+                    // json .empty() checks for null (no value) rather than
+                    // an empty string. This confuses clang-tidy.
+                    //NOLINTNEXTLINE(readability-container-size-empty)
+                    if (adata["valuetype"] != "") { 
                         adata["hasvaluetype"] = "Y";
                     } else {
                         adata["hasvaluetype"] = "N";

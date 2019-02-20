@@ -115,6 +115,8 @@ namespace yalr {
             bool operator<(const symbol& o) const {
                 return (m_id < o.m_id);
             }
+
+            virtual ~symbol() {}
         };
 
     private:

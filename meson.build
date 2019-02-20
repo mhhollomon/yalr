@@ -8,9 +8,7 @@ libdir = include_directories('lib')
 # subdir is just to get the names of files.
 subdir('src')
 
-linkdep = dependency('boost', modules : ['system'])
-
-yalr_exe = executable('yalr', yalr_srcfiles, include_directories: libdir, dependencies : linkdep)
+yalr_exe = executable('yalr', yalr_srcfiles, include_directories: libdir)
 
 clangtidy = find_program('clang-tidy', required: false)
 if clangtidy.found()

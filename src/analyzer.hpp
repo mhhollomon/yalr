@@ -1,7 +1,7 @@
 #if !defined(YALR_ANALYZER_HPP_)
 #define YALR_ANALYZER_HPP_
 
-#include "parser.hpp"
+#include "ast.hpp"
 #include "SymbolTable.hpp"
 
 #include <string>
@@ -30,7 +30,7 @@ namespace yalr { namespace analyzer {
         SymbolTable syms;
     };
 
-    std::unique_ptr<grammar> analyze(parser::ast_tree_type &tree);
+    std::unique_ptr<grammar> analyze(ast::grammar &tree);
 
     struct pp {
         std::ostream& strm;

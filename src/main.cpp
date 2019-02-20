@@ -82,46 +82,18 @@ int main(int argc, char* argv[]) {
     const std::string input_string(std::istreambuf_iterator<char>{in}, {});
 
 
-    yalr::parser::iterator_type iter = input_string.begin();
-    yalr::parser::iterator_type const eof = input_string.end();
-
-
-    auto tree = yalr::do_parse(iter, eof);
+    auto p = yalr::parser::yalr_parser(input_string);
+    auto tree =  p.parse();
 
     if (!tree.success) {
         std::cout << "Parse failed\n";
-        std::cout << "Stopped at : ";
-        for (int i =0; i < 20; ++i) {
-            if (iter == eof) {
-                break;
-            }
+        std::cout << "Stopped at " << p.current_loc.loc.line <<
+            ':' << p.current_loc.loc.column << "\n";
 
-            std::cout << *iter;
-            ++iter;
-        }
-        std::cout << std::endl;
-
+        p.stream_errors(std::cout);
         return 1;
     } 
     
-    if (iter != eof) {
-        std::cout << "Failed: didn't parse everything\n";
-        std::cout << "Stopped at : ";
-        for (int i =0; i < 20; ++i) {
-            if (iter == eof) {
-                break;
-            }
-
-            std::cout << *iter;
-            ++iter;
-        }
-        std::cout << std::endl;
-
-        return 1;
-    } 
-
-    std::cout << "Good input\n";
-
     /*
     std::cout << "------ AST ------\n";
     yalr::ast::pretty_print(tree, std::cout);

@@ -11,8 +11,8 @@ struct ast_print_visitor {
 
     void operator()(const grammar& g) {
 
-        if (g.parser_class.has_value()) {
-            strm << "parser class \"" << *g.parser_class << "\"\n";
+        if (not g.parser_class.empty()) {
+            strm << "parser class \"" << g.parser_class << "\"\n";
         }
 
         for ( const auto& d : g.defs ) {

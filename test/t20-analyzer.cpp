@@ -4,19 +4,19 @@
 
 #include <catch2/catch.hpp>
 
-auto parse_string(const std::string& s) {
-    auto f = s.begin();
-    const auto e = s.end();
+namespace ast = yalr::ast;
+using parser = yalr::parser::yalr_parser;
 
-    std::cerr << "In parse_string\n";
-    auto parse_tree = yalr::do_parse(f,e);
-    return yalr::analyzer::analyze(parse_tree);
+auto parse_string(std::string_view sv) {
+    auto p = parser(sv);
+    auto tree = p.parse();
+    return yalr::analyzer::analyze(tree);
 }
 
 TEST_CASE("grammar", "[analyzer]") {
     // Sanity check - this is the minimal
     // spec acceptable to the analyzer
-    auto tree = parse_string("term foo; goal rule X { => foo ; }");
+    auto tree = parse_string("term foo 'x'; goal rule X { => foo ; }");
     REQUIRE(bool(tree));
 
     std::cerr << "past sanity check\n";

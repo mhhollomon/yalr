@@ -1,22 +1,17 @@
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include "parser.hpp"
 
+namespace ast = yalr::ast;
+using parser = yalr::parser::yalr_parser;
+
 #include <catch2/catch.hpp>
 
-namespace ast = yalr::ast;
-
-auto parse_string(const std::string& s) {
-    auto f = s.begin();
-    const auto e = s.end();
-
-    return yalr::do_parse(f,e);
+ast::grammar parse_string(std::string_view sv) { 
+    auto p = parser(sv);
+    return p.parse(); 
 }
 
 TEST_CASE("grammar", "[parser]") {
-    // Sanity check - this is the minimal
-    // spec acceptable to the parser. (the analyzer requires more).
-    auto tree = parse_string("term foo;");
-    REQUIRE(tree.success);
 
     SECTION("Parse single quotes in productions", "[parser]") {
         auto tree = parse_string("term FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");

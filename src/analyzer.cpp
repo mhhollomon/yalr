@@ -115,12 +115,12 @@ struct prod_visitor {
 
 };
 
-std::unique_ptr<grammar> analyze(parser::ast_tree_type &tree) {
+std::unique_ptr<grammar> analyze(ast::grammar &tree) {
     int error_count = 0;
     auto retval = std::make_unique<grammar>();
 
-    if (tree.parser_class.has_value()) {
-        retval->parser_class = *tree.parser_class;
+    if (not tree.parser_class.empty()) {
+        retval->parser_class = tree.parser_class;
     } else {
         retval->parser_class = "YalrParser";
     }
