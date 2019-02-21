@@ -2710,20 +2710,8 @@ class Renderer {
     }
   }
 
-  void update_loop_data(bool link = true)  {
+  void update_loop_data()  {
     LoopLevel& level = m_loop_stack.back();
-
-    if (link && (m_loop_stack.size() > 1)) {
-      for (int i = m_loop_stack.size() - 2; i >= 0; i--) {
-        auto& level_it = m_loop_stack.at(i);
-
-        if (level_it.loop_type == LoopLevel::Type::Array) {
-          level.data[static_cast<std::string>(level_it.value_name)] = level_it.values.at(level_it.index);
-        } else {
-          level.data[static_cast<std::string>(level_it.value_name)] = *level_it.map_it->second;
-        }
-      }
-    }
 
     if (level.loop_type == LoopLevel::Type::Array) {
       level.data[static_cast<std::string>(level.value_name)] = level.values.at(level.index); // *level.it;
@@ -3084,7 +3072,6 @@ class Renderer {
           }
 
           m_loop_stack.emplace_back();
-          //std::cerr << "StartLoop level " << m_loop_stack.size() << "\n";
           LoopLevel& level = m_loop_stack.back();
           level.value_name = bc.str;
           level.values = std::move(m_stack.back());
@@ -3135,7 +3122,6 @@ class Renderer {
             inja_throw("render_error", "unexpected state in renderer");
           }
           LoopLevel& level = m_loop_stack.back();
-          //std::cerr << "EndLoop level " << m_loop_stack.size() << "\n";
 
           bool done;
           if (level.loop_type == LoopLevel::Type::Array) {
@@ -3157,7 +3143,7 @@ class Renderer {
             break;
           }
 
-          update_loop_data(false);
+          update_loop_data();
 
           // jump back to start of loop
           i = bc.args - 1;  // -1 due to ++i in loop

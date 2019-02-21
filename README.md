@@ -246,8 +246,6 @@ int main() {
 - [Meson](https://mesonbuild.com/) for build configuration.
 - [Ninja](https://ninja-build.org/) for building.
 - [Catch2](https://github.com/catchorg/Catch2) for unit testing.
-- [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
-is currently used to build the grammar spec parser.
 - [cxxopts](https://github.com/jarro2783/cxxopts) for command line handling.
 - [inja](https://github.com/pantor/inja) to help with code generation.
 
