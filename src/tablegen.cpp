@@ -411,22 +411,38 @@ void pretty_print(const item_set& is,
     }
 }
 
-void pretty_print(const lrstate& lr, 
-        const std::vector<analyzer::production>& productions, std::ostream& strm) {
+void pretty_print(
+        const lrstate& lr, 
+        const std::vector<analyzer::production>& productions,
+        std::ostream& strm) {
     strm << "--------- State " << lr.id << " " << 
         (lr.initial ? "Initial" : "") << "\n";
     pretty_print(lr.items, productions, strm);
+    
     strm << "Transitions:\n";
     for (const auto& iter : lr.transitions) {
         const auto t = iter.second;
         strm << "  " << t.sym.name() << " => state " << t.state_id << "\n";
     }
+    
     strm << "Actions:\n";
     for (const auto& iter : lr.actions) {
-        strm << "  " << iter.first.name() << " => " <<
-           iter.second.type_name() << " and move to state " <<  
-           iter.second.new_state_id << "\n";
+        strm << "  " << iter.first.name() << " => " << iter.second.type_name();
+        switch(iter.second.atype) {
+            case action_type::shift:
+               strm << " and move to state " <<  iter.second.new_state_id;
+               break;
+            case action_type::reduce:
+               {
+                   strm << " by production " << iter.second.prod_id;
+               }
+               break;
+            default :
+               break;
+        }
+        strm << "\n";
     }
+
     strm << "Gotos:\n";
     for (const auto& iter : lr.gotos) {
         strm << "  " << iter.first.name() << " => state " << 
