@@ -6,7 +6,7 @@
 
 /*
  * This is a fairly naive inplementation of the Simple LR parser table
- * generation algorithm given the the "Dragon Book" section 4.7.
+ * generation algorithm given in the "Dragon Book" section 4.7.
  *
  * For the moment, no special care is taken to try to optimize the
  * algorithm - except that the goto(I,X) is partially cached in the transitions
@@ -302,6 +302,8 @@ void compute_first_and_follow(lrtable& lt) {
     retval->productions = g.productions;
     retval->target_prod_id = g.target_prod;
     retval->parser_class = g.parser_class;
+    retval->lexer_class = g.lexer_class;
+    retval->code_namespace = g.code_namespace;
     
     /*
      * compute first and follow sets

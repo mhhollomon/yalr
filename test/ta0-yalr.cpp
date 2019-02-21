@@ -15,7 +15,7 @@ rule <std::string> A {
 )T";
 
     YalrParser::Lexer l(input.cbegin(), input.cend());
-    auto parser = YalrParser::YalrParser(l);
+    auto parser = YalrParser::Parser(l);
     parser.debug = true;
 
     if (parser.doparse()) {

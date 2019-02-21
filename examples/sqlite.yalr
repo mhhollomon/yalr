@@ -20,7 +20,7 @@
  *
  */
 
-option lexer.case insensitive
+//option lexer.case insensitive
 
 skip WS     r:\s+ ;
 skip LINEC  r:--.*\n ;
@@ -74,7 +74,7 @@ term DROP        'drop'        ;
 term EACH        'each'        ;
 term ELSE        'else'        ;
 term END         'end'         ;
-term EQUAL       'equal'       ;
+term EQUALW      'equal'       ;
 term ESCAPE      'escape'      ;
 term EXCEPT      'except'      ;
 term EXCLUSIVE   'exclusive'   ;
@@ -434,7 +434,7 @@ rule CommandStmt {
 /*** ALTER TABLE *****************************/
 
 rule AlterTableStmt {
-    => ALTER TABLE ExtendedName AlterSubCommand
+    => ALTER TABLE ExtendedName AlterSubCommand ;
 }
 
 rule AlterSubCommand {
@@ -729,7 +729,7 @@ rule WhereClause {
 
 rule DeleteLimiter {
     => ;
-    => OrderClause LIMIT Expr OffsetClause
+    => OrderClause LIMIT Expr OffsetClause ;
 }
 
 rule OffsetClause {
@@ -814,14 +814,14 @@ rule ConflictColumns {
 
 rule UpsertAction {
     => NOTHING;
-    => UPDATE SET SetColumnList = Expr WhereClause ;
+    => UPDATE SET SetColumnList '=' Expr WhereClause ;
 }
 
 /*** PRAGMA **********************************/
 
 rule PragmaStmt {
     => PRAGMA ExtendedName PragmaValue ;
-    => PRAGMA ExtendedName EQUAL PragmaValue ;
+    => PRAGMA ExtendedName '=' PragmaValue ;
 }
 
 rule PragmaValue {

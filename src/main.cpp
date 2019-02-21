@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     if (not clopts.output_file.empty()) {
         outfilename = clopts.output_file;
     } else {
-        outfilename = ana_tree->parser_class + ".hpp";
+        outfilename = clopts.input_file + ".hpp";
     }
 
     if (not clopts.translate.empty()) {

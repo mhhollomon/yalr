@@ -89,7 +89,9 @@ void generate_code(const tablegen::lrtable& lt, std::ostream& outstrm) {
     env.set_expression("<%", "%>");
 
     json data;
-    data["namespace"] = lt.parser_class;
+    data["namespace"] = lt.code_namespace;
+    data["parserclass"] = lt.parser_class;
+    data["lexerclass"] = lt.lexer_class;
 
 
     // dump the tokens

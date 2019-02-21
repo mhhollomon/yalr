@@ -119,10 +119,22 @@ std::unique_ptr<grammar> analyze(ast::grammar &tree) {
     int error_count = 0;
     auto retval = std::make_unique<grammar>();
 
+    if (not tree.code_namespace.empty()) {
+        retval->code_namespace = tree.code_namespace;
+    } else {
+        retval->code_namespace = "YalrParser";
+    }
+
     if (not tree.parser_class.empty()) {
         retval->parser_class = tree.parser_class;
     } else {
-        retval->parser_class = "YalrParser";
+        retval->parser_class = "Parser";
+    }
+
+    if (not tree.lexer_class.empty()) {
+        retval->lexer_class = tree.lexer_class;
+    } else {
+        retval->lexer_class = "Lexer";
     }
 
     /* sort the defs out into terms and rules

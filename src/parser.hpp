@@ -12,41 +12,6 @@
 
 namespace yalr::parser {
 
-#if 0
-
-    auto const action_block_def = 
-        x3::lit("<%{") > lexeme[*(char_ - x3::lit("}%>"))] > x3::lit("}%>");
-
-    /* term '<' type '>'  Z pattern ; */
-    auto const terminal_def = kw_term >
-        -type_name() >
-        ident > -quoted_pattern() > ( action_block |  x3::lit(';')) ;
-
-    /* skip Z "pattern" ;
-     * A skip cannot have a type */
-    auto const yskip_def = kw_skip > ident > quoted_pattern() > x3::lit(';') ;
-
-    /* rule '<' type '>' X { => A B C ; => X Y Z ; } */
-    /* I don't really want to capture the fat arrow, but without it, Spirit
-     * tries to hoist the vector of idents into the alternatives struct itself.
-     */
-    auto const alternative_def = x3::string("=>") >
-        *(ident|single_quote()) > x3::lit(';') ;
-
-    auto const rule_stmt_def =  ((kw_goal >> x3::attr(true)) | x3::attr(false)) >> 
-        kw_rule > -type_name() > ident >
-        x3::lit('{') > +alternative > x3::lit('}')
-        ;
-
-
-    /* Top Level Grammar */
-    auto const grammar_def =
-        (-parser_class >> 
-        +( yskip | terminal | rule_stmt )) >
-        x3::eoi
-        ;
-#endif
-
     using match_val = std::pair<bool, std::string_view>;
 
     std::set<std::string, std::less<>> keywords = {

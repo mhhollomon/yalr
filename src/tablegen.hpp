@@ -81,6 +81,8 @@ namespace yalr { namespace tablegen {
         symbolset epsilon; /* those symbols that have epsilon productions */
         int target_prod_id;
         std::string parser_class;
+        std::string lexer_class;
+        std::string code_namespace;
     };
 
 

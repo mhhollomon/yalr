@@ -43,7 +43,7 @@ At the simplest, it is:
 yalr my_grammar.yalr
 ```
 
-This will generate a file `YalrParser.hpp` that has the generated parser in it.
+This will generate a file `my_grammar.yalr.hpp` that has the generated parser in it.
 
 Other options:
 
@@ -70,26 +70,41 @@ Keywords are reserved and may not be used as the name of a terminal or rule.
 
 The [example
 directory](https://github.com/mhhollomon/yalr/tree/master/examples) contains
-some example grammars including the grammar for the yalr grammar itself.
+some example grammars including a grammar for the yalr grammar itself.
 
 ### Parser Class Name
 
-The parser is normally put in `class YalrParser`. This can be changed by using the statement:
+The parser is normally put in `class Parser`. This can be changed by using the statement:
 ```
 parser class MyClass;
 ```
-This *also* changes the default name for the output to `MyClass.hpp`. 
-This can be overriden by the `--output-file` option on the command line.
-
 This statement may only appear once in the file.
 
-It must be the first statement in the grammar.
+### Lexer Class Name
+
+The lexer is normally put in `class Lexer`. This can be changed by using the statement:
+```
+lexer class MyClass;
+```
+This statement may only appear once in the file.
+
+### Namespace
+
+Both the lexer and and parser are normally put into the namespace 'YalrParser'.
+This can be changed by using the statement:
+```
+namespace MySpace;
+```
+
+Inline namespaces (e.g. one::two) are currently not supported.
+
+This statement may only appear once in the file.
 
 ### Terminals
 
 All terminals must be explicitly declared.
 
-There are two types of terminal - "parser" terminals and "lexer" terminals.
+There are two types of terminals - "parser" terminals and "lexer" terminals.
 
 #### Parser Terminals
 

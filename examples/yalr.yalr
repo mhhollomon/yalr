@@ -1,7 +1,11 @@
 
 skip WS      r:\s+     ;
 skip LINECOM r://.*\n  ; // dot doesn't match EOL
+
+term OPTION  'option'  ;
 term PARSER  'parser'  ;
+term LEXER   'lexer'   ;
+term NAMESP  'namespace' ;
 term CLASS   'class'   ;
 term RULE    'rule'    ;
 term GOAL    'goal'    ;
@@ -21,7 +25,15 @@ term<std::string> ACTION r:<%\{(?:.|\n)*?}%> <%{ return lexeme.substr(3, lexeme.
 
 
 rule ParserClass {
-    => PARSER CLASS ID SEMI ;
+    => PARSER CLASS ID ';' ;
+}
+
+rule LexerClass {
+    => 'lexer' 'class' ID ';' ;
+}
+
+rule Namespace {
+    => 'namespace' ID ';' ;
 }
 
 rule Pattern {
@@ -65,14 +77,28 @@ rule Rule {
     =>        'rule'      ID '{' AltList '}' ;
 }
 
-rule Statement {
+rule ConfigStmt {
+    => Namespace ;
     => ParserClass ;
+    => LexerClass ;
+}
+
+rule ConfigStmtList {
+    => ;
+    => ConfigStmtList ConfigStmt ;
+}
+
+rule Statement {
     => Skip ;
     => Term ;
     => Rule ;
 }
 
-goal rule StatementList {
+rule StatementList {
     => Statement ;
     => StatementList Statement ;
+}
+
+goal rule YalrSpec {
+    => ConfigStmtList StatementList ;
 }

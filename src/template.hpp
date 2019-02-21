@@ -138,7 +138,7 @@ std::vector<std::pair<match_ptr, token_type>> patterns = {
 };
 
 
-class Lexer {
+class <%lexerclass%> {
 public:
 #if defined(YALR_DEBUG)
     bool debug = false;
@@ -206,7 +206,7 @@ private:
 };
 
 
-class <%namespace%> {
+class <%parserclass%> {
     Lexer& lexer;
     token_value la;
     std::deque<token_value> tokstack;
@@ -306,7 +306,7 @@ public:
 #if defined(YALR_DEBUG)
     bool debug = false;
 #endif
-    <%namespace%>(Lexer& l) : lexer(l){};
+    <%parserclass%>(<%lexerclass%>& l) : lexer(l){};
 
     bool doparse() {
         la = lexer.next_token();
@@ -317,7 +317,7 @@ public:
 
         return false;
     }
-}; // class <%namespace%>
+}; // class <%parserclass%>
 
 } // namespace <%namespace%>
 

@@ -24,6 +24,8 @@ namespace yalr { namespace analyzer {
 
     struct grammar {
         std::string parser_class;
+        std::string lexer_class;
+        std::string code_namespace;
         std::string goal;
         std::vector<production> productions;
         int target_prod;
