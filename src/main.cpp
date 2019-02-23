@@ -87,9 +87,6 @@ int main(int argc, char* argv[]) {
 
     if (!tree.success) {
         std::cout << "Parse failed\n";
-        std::cout << "Stopped at " << p.current_loc.loc.line <<
-            ':' << p.current_loc.loc.column << "\n";
-
         p.stream_errors(std::cout);
         return 1;
     } 

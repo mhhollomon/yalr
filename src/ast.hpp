@@ -9,15 +9,8 @@
 
 namespace yalr::ast {
 
-
-    struct location {
-        long offset;
-        long line;
-        long column;
-    };
-
     struct locatable {
-        location loc;
+        long offset;
     };
 
     struct symbol : locatable {

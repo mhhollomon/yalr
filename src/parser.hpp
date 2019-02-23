@@ -5,6 +5,7 @@
 
 #include <stack>
 #include <list>
+#include <vector>
 #include <set>
 #include <ctype.h>
 
@@ -21,7 +22,7 @@ namespace yalr::parser {
 
     struct parse_loc {
         std::string_view sv;
-        ast::location loc;
+        long offset;
     };
 
     struct error_record {
@@ -31,25 +32,75 @@ namespace yalr::parser {
         error_record(std::string m, parse_loc x) : message{m}, pl{x} {}
     };
 
+    struct line_start {
+        long line_num;
+        long offset;
+        line_start(long l, long o) : line_num(l), offset(o) {}
+    };
+
     struct yalr_parser {
         std::string_view orig_sv;
         parse_loc current_loc;
 
         std::list<error_record> error_list;
 
+        std::vector<line_start> line_map;
+        long current_line = 1;
+
         yalr_parser(std::string_view sv) : 
-            orig_sv{sv}, current_loc{sv, {0, 1, 1}} {}
+            orig_sv{sv}, current_loc{sv, 0} {
+            
+            line_map.reserve(1000);
+            line_map.emplace_back(1, 0);
+        }
+
+        line_start find_line(long offset) {
+            std::vector<line_start>::size_type start = 0;
+            std::vector<line_start>::size_type end = line_map.size();
+            auto index = start + (end - start)/2;
+            while(start < end-1) {
+                //std::cerr << "s=" << start << " i=" << index << " e=" << end << '\n';
+                // exact match - return it.
+                if (line_map[index].offset == offset) return line_map[index];
+
+                if (line_map[index].offset > offset) {
+                    // we passed it. So everything north is also out of scope.
+                    // reduce our range to the items before this.
+                    if (index == end) {
+                        end -= 1;
+                    } else {
+                        end = index;
+                    }
+                } else {
+                    // Less than. Need to move forward more
+                    // Note that this keeps `index` as a part of the range.
+                    if (index == start) {
+                        index += 1;
+                        if (index == end) break;
+                        continue;
+                    }
+                    start = index;
+                }
+                index = start + (end - start)/2;
+            }
+
+            // ran out of places to look. Return whatever we have.
+            return line_map[start];
+        }
+
 
         std::ostream& stream_errors(std::ostream& ostrm) {
             for (const auto& iter : error_list) {
-                ostrm << "filename " << iter.pl.loc.line << ':' <<
-                    iter.pl.loc.column << " (offset = " << iter.pl.loc.offset << ")" << "  : " <<
+                long offset = iter.pl.offset;
+                auto [line_num, line_start] = find_line(offset);
+                auto column = offset-line_start + 1;
+
+                ostrm << "filename " << line_num << ':' <<
+                    column << " (offset = " << offset << ")" << "  : " <<
                     iter.message << "\n";
-                long offset = iter.pl.loc.offset;
-                offset -= iter.pl.loc.column-1; // compute beginning of line
                 auto sv = orig_sv;
-                sv.remove_prefix(offset-1);
-                auto pos = sv.find_first_of('\n', 0);
+                sv.remove_prefix(line_start);
+                auto pos = sv.find_first_of('\n');
                 if (pos != std::string_view::npos) {
                     sv = sv.substr(0, pos);
                 }
@@ -58,8 +109,8 @@ namespace yalr::parser {
                 if (pos == std::string_view::npos) {
                     ostrm << "\n";
                 }
-                std::string filler(iter.pl.loc.column-1, '~');
-                ostrm << filler << "\n";
+                std::string filler(column, '~');
+                ostrm << filler << "^\n";
             }
 
             return ostrm;
@@ -73,12 +124,11 @@ namespace yalr::parser {
         void consume(int count) {
             auto &cl = current_loc;
             while (count > 0 and not eoi() ) {
+                cl.offset += 1;
                 if (cl.sv[0] == '\n') {
-                    cl.loc.column = 1; cl.loc.line += 1;
-                } else {
-                    cl.loc.column += 1;
+                    current_line += 1;
+                    line_map.emplace_back(current_line, cl.offset);
                 }
-                cl.loc.offset += 1;
                 cl.sv.remove_prefix(1);
                 count -= 1;
             }
@@ -87,8 +137,7 @@ namespace yalr::parser {
         // new line.
         void fast_consume(int count) {
             auto &cl = current_loc;
-            cl.loc.column += count;
-            cl.loc.offset += count;
+            cl.offset += count;
             cl.sv.remove_prefix(count);
         }
 
@@ -131,7 +180,7 @@ namespace yalr::parser {
         bool parse_rule(ast::def_list_type& defs) {
             ast::rule_def new_sym;
 
-            auto start_loc = current_loc;
+            new_sym.offset = current_loc.offset;
 
             if (match_keyword("goal")) {
                 new_sym.isgoal = true;
@@ -165,7 +214,6 @@ namespace yalr::parser {
             }
 
             new_sym.name = std::string(identifier);
-            new_sym.loc = start_loc.loc;
             defs.emplace_back(std::move(new_sym));
             return true;
         }
@@ -173,7 +221,7 @@ namespace yalr::parser {
         bool parse_alternative(std::vector<ast::alternative>& alts) {
             ast::alternative new_alt;
 
-            new_alt.loc = current_loc.loc;
+            new_alt.offset = current_loc.offset;
 
             if (not check_string("=>")) {
                 return false;
@@ -209,7 +257,7 @@ namespace yalr::parser {
         bool parse_term(ast::def_list_type& defs) {
             ast::terminal new_sym;
 
-            new_sym.loc = current_loc.loc;
+            new_sym.offset = current_loc.offset;
 
             if (not match_keyword("term")) {
                 return false;
@@ -251,7 +299,7 @@ namespace yalr::parser {
         bool parse_skip(ast::def_list_type& defs) {
             ast::skip new_sym;
 
-            new_sym.loc = current_loc.loc;
+            new_sym.offset = current_loc.offset;
 
             if (not match_keyword("skip")) {
                 return false;
