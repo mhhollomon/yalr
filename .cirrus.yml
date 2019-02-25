@@ -1,11 +1,21 @@
-task:
-  name: clang-build-release
-  container:
+container:
     image: mhhollomon/yalr-ci:debian
     memory: 8G
+
+task:
+  name: clang-build-release
   env:
     CC: clang
     CXX: clang++
+  build_script:
+    - ${CXX} --version
+    - ./scripts/build.sh release
+
+task:
+  name: g++-build-release
+  env:
+    CC: gcc
+    CXX: g++
   build_script:
     - ${CXX} --version
     - ./scripts/build.sh release
