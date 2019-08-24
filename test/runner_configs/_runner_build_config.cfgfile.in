@@ -1,0 +1,3 @@
+.e compiler @YALR_RUNNER_COMPILER@
+.e flags    @YALR_RUNNER_FLAGS@
+.e include  @YALR_RUNNER_INC@

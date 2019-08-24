@@ -1,42 +1,41 @@
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
 #include "parser.hpp"
 
-namespace ast = yalr::ast;
-using parser = yalr::parser::yalr_parser;
 
-#include <catch2/catch.hpp>
+auto parse_string(std::string s) { 
 
-ast::grammar parse_string(std::string_view sv) { 
-    auto p = parser(sv);
+    auto ts = std::make_shared<yalr::text_source>("t10-grammar", std::move(s));
+    auto p = yalr::yalr_parser(ts);
     return p.parse(); 
 }
 
-TEST_CASE("grammar", "[parser]") {
+TEST_CASE("grammar - [parser]") {
 
-    SECTION("Parse single quotes in productions", "[parser]") {
+    SUBCASE("Parse single quotes in productions - [parser]") {
         auto tree = parse_string("term FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
-        REQUIRE(tree.success);
+        CHECK(tree.success);
     }
 
-    SECTION("type names for terms", "[parser]") {
+    SUBCASE("type names for terms - [parser]") {
         auto tree = parse_string("term<int> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
-        REQUIRE(tree.success);
-        auto term = std::get<ast::terminal>(tree.defs[0]);
-        REQUIRE(term.type_str == "int");
+        CHECK(tree.success);
+        auto term = std::get<yalr::terminal>(tree.statements[0]);
+        CHECK(term.type_str->text == "int");
 
         tree = parse_string("term<std::string> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
-        REQUIRE(tree.success);
-        term = std::get<ast::terminal>(tree.defs[0]);
-        REQUIRE(term.type_str == "std::string");
+        CHECK(tree.success);
+        term = std::get<yalr::terminal>(tree.statements[0]);
+        CHECK(term.type_str->text == "std::string");
 
         tree = parse_string("term<unsigned long long> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
-        REQUIRE(tree.success);
-        term = std::get<ast::terminal>(tree.defs[0]);
-        REQUIRE(term.type_str == "unsigned long long");
+        CHECK(tree.success);
+        term = std::get<yalr::terminal>(tree.statements[0]);
+        CHECK(term.type_str->text == "unsigned long long");
         
     }
 
-    SECTION("action block in terms", "[parser]") {
+    SUBCASE("action block in terms - [parser]") {
         auto tree = parse_string(
 R"DELIM(term<int> FOO 'foo' <%{ // here is my action block
     /* don't need a semicolon */
@@ -44,21 +43,36 @@ R"DELIM(term<int> FOO 'foo' <%{ // here is my action block
     }%>
 term <std::string> BAR 'bar' ;
 )DELIM" );
-        REQUIRE(tree.success);
+        CHECK(tree.success);
         // BAR should be in the list
-        REQUIRE(tree.defs.size() == 2);
+        CHECK(tree.statements.size() == 2);
     }
 
-    SECTION("Type names for rules", "[parser]") {
+    SUBCASE("Type names for rules - [parser]") {
         auto tree = parse_string("rule <int> A { => A A ; => ; }");
-        REQUIRE(tree.success);
-        auto term = std::get<ast::rule_def>(tree.defs[0]);
-        REQUIRE(term.type_str == "int");
+        CHECK(tree.success);
+        auto rule = std::get<yalr::rule>(tree.statements[0]);
+        CHECK(rule.type_str->text == "int");
 
         tree = parse_string("rule <my_thing<int>> A { => A A ; => ; }");
-        REQUIRE(tree.success);
-        term = std::get<ast::rule_def>(tree.defs[0]);
-        REQUIRE(term.type_str == "my_thing<int>");
+        CHECK(tree.success);
+        rule = std::get<yalr::rule>(tree.statements[0]);
+        CHECK(rule.type_str->text == "my_thing<int>");
+
+        tree = parse_string("rule <my_thing::your_thing<funky::int>> A { => A A ; => ; }");
+        CHECK(tree.success);
+        rule = std::get<yalr::rule>(tree.statements[0]);
+        CHECK(rule.type_str->text == "my_thing::your_thing<funky::int>");
+    }
+
+    SUBCASE("aliases for terms - [parser]") {
+        auto tree = parse_string("rule A { => i:FOO ; => j:'foo' ; }");
+        CHECK(tree.success);
+        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        auto alt = ruleA.alternatives[0];
+        CHECK(alt.items[0].alias->text == "i");
+        alt = ruleA.alternatives[1];
+        CHECK(alt.items[0].alias->text == "j");
     }
 
 }

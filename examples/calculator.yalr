@@ -1,0 +1,28 @@
+
+skip WS      r:\s+     ;
+
+term<float> NUMBER r:[-+]?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
+
+goal rule statement_list {
+    => statement                <%{ std::cout << "answer = " << _v1 << "\n"; }%>
+    => statement statement_list <%{ std::cout << "answer = " << _v1 << "\n"; }%>
+}
+
+rule <float> statement { => expression <%{ return _v1; }%> }
+
+rule <float> expression {
+    => l:expression '+' r:operand <%{ return l + r; }%>
+    => l:expression '-' r:operand <%{ return l - r; }%>
+    => operand                    <%{ return _v1;   }%>
+}
+
+rule <float> operand {
+    => l:operand '*' r:factor  <%{ return l * r; }%>
+    => l:operand '/' r:operand <%{ return l / r; }%>
+    => factor                  <%{ return _v1;   }%>
+}
+
+rule <float> factor { 
+    => NUMBER             <%{ return _v1; }%>
+    => '(' expression ')' <%{ return _v2; }%>
+}

@@ -1,5 +1,12 @@
 ## On Master
 
+### Functional Changes
+- Add the ability to name the items in a rule alternatives and use those names in rule actions.
+
+### non-functional changes
+- Moved to CMake for build. The meson system is currently broken.
+- Refactored the code some more.
+
 ## Release v0.0.2
 
 ### Functional Changes

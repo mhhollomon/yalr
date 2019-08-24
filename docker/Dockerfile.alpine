@@ -1,0 +1,5 @@
+FROM alpine:edge
+RUN apk update && apk add g++ meson ninja clang cmake make
+RUN rm -rf /etc/apk/cache
+CMD [ "/usr/bin/env", "sh" ]
+
