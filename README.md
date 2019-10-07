@@ -1,39 +1,33 @@
 # Yet Another LR Parser Generator
 [![Github Releases](https://img.shields.io/github/release/mhhollomon/yalr.svg)](https://github.com/mhhollomon/yalr/releases)
 [![Build Status](https://api.cirrus-ci.com/github/mhhollomon/yalr.svg)](https://cirrus-ci.com/github/mhhollomon/yalr)
-[![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/pantor/mhhollomon/yalr)
+[![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/mhhollomon/yalr)
 [![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/mhhollomon/yalr/master/LICENSE)
-
-C++ will be generated.
-
-Targetting LALR at first but GLR as the end goal.
-
-The generated parser will use [recursive ascent](https://en.wikipedia.org/wiki/Recursive_ascent_parser) (_is this possible for GLR with its split stack?_)
 
 ## Status
 
-Yalr currently generates a *language recognizer* - that is, the generated code
-will simply give a yes/no answer to the question "Does the input string match
-the grammar?"
+Yalr is fully functional - if bare-boned. See the [Calculator
+example](examples/calculator.yalr)
 
-Both a lexer and a parser are generated.
+## Overview
 
-The next goal is to "tidy up" - add more unit tests, make the parser a
-bit better about error reporting, etc.
+Yalr is yet another LR (actually SLR) compiler generator.
+
+The design goal was to create an generator that created a single file, making
+it easy to integrate into a build system. The code generated is C++17.
 
 ## Building
 
-Yalr requires boost, meson, ninja, and a c++17 compliant compiler. Assuming you have those, then building is:
+Yalr requires CMake, make, and a C++17 compliant compiler. Assuming you have those, then building is:
 ```bash
 git clone https://github.com/mhhollomon/yalr
 cd yalr
 mkdir build
-cd build
-meson ../src
-ninja
+cmake -B build
+cmake --build build
 ```
 
-The new executable will be in the build directory.
+The new `yalr` executable will be in the build directory.
 
 ## Running
 
@@ -56,7 +50,7 @@ yalr --help
 yalr -o foo.hpp my_grammar.yalr
 
 # Instead of outputting the parser,
-# translate the grammer for use on grammophone
+# translate the grammar for use on grammophone
 # (see references)
 yalr -t grammophone my_grammar.yalr
 ```
@@ -70,7 +64,8 @@ Keywords are reserved and may not be used as the name of a terminal or rule.
 
 The [example
 directory](https://github.com/mhhollomon/yalr/tree/master/examples) contains
-some example grammars including a grammar for the yalr grammar itself.
+some example grammars including a (probably out-of-date) grammar for the yalr
+grammar itself.
 
 ### Parser Class Name
 
@@ -102,8 +97,6 @@ This statement may only appear once in the file.
 
 ### Terminals
 
-All terminals must be explicitly declared.
-
 There are two types of terminals - "parser" terminals and "lexer" terminals.
 
 #### Parser Terminals
@@ -128,7 +121,7 @@ The pattern can be specified two different ways.
 
 1. As a single-quote delimited string.
 Patterns in this format are matched in the lexer as simple string compares.
-The pattern can be used as an alias for the term in rules.
+The pattern can be used for the term in rules.
 
 2. std::regex regular expression.
 The starting delimiter is the literal `r:`. The pattern extends to the next
@@ -151,7 +144,7 @@ is given, then the normal terminating semi-colon is not required.
 term <int> INTEGER r:[-+]?[0-9]+ <%{ return std::stoi(lexeme); }%>
 ```
 
-The action should be though of as the body of a lambda that returns the
+The action should be thought of as the body of a lambda that returns the
 semantic value to be passed back to the parser. The identifier `lexeme` is
 available. It is a string that contains the text that was matched by the term's
 pattern. If you wish to simply return the string (e.g. for an Identifier term)
@@ -185,10 +178,25 @@ rule Foo { => WS ; }
 
 
 ### Non-terminals
+
 Rules are declared with the `rule` keyword.
 Each alternate is introduced with `=>` and terminated with a semicolon.
 
-One rule must be marked as the starting or "goal" rule, by preceeding it with the `goal` keyword.
+One rule must be marked as the starting or "goal" rule, by preceeding it with
+the `goal` keyword.
+
+An alias may be given to each symbol in the alternate. The value of that symbol
+will then be available in the action block.
+
+A terminal whose pattern is a single-quoted string may be referenced either by
+the name given it, or by the pattern itseld (complete with the quotes).
+
+If a single-quoted string is used in a rule, but no terminal has been defined
+with that string, then one is automatically created. While this can be very
+convenient, it does not allow you to assign a type or an action/value to the
+terminal. But for common structural lexemes (like semi-colon and the like),
+this may actually be quite helpful. This can also make the rules a bit easier
+to read since they will read more like the string they would match.
 
 ```
 rule MyRule {
@@ -196,8 +204,8 @@ rule MyRule {
   => ;  /* an empty alternative */
 }
 
-/* you can use single quoted patterns as aliases */
-term SEMI ';' ;
+/* you can use single quoted patterns directly in the rule */
+/* The system will define a terminal for ';' for us */
 term INT  'int';
 rule A {
     => 'int' ID ';' ;
@@ -210,6 +218,11 @@ rule Compact { => A B ; => C Compact ; }
 goal rule Program {
   => Program Statement ;
 }
+
+// symbol aliases
+term <int> NUM r:[-+]\d+ <%{ return std::stoi(lexeme); }%>
+term ADD 'add' ;
+rule <int> RPN_ADD { => 'add' left:NUM right:NUM <%{ return left + right; }%> }
 ```
 
 ## Generated Code
@@ -246,6 +259,7 @@ int main() {
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
 - [Lemon](http://www.hwaci.com/sw/lemon/)
 - [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
+- [ANTLR](https://www.antlr.org/)
 - [Grammophone](http://mdaines.github.io/grammophone/) - explore grammars.
 - [LR on Wikipedia](https://en.wikipedia.org/wiki/LR_parser)
 - [GLR on Wikipedia](https://en.wikipedia.org/wiki/GLR_parser)
@@ -258,9 +272,8 @@ int main() {
     parsing](https://webhome.cs.uvic.ca/~nigelh/Publications/rad.pdf)
 
 ## Technologies
-- [Meson](https://mesonbuild.com/) for build configuration.
-- [Ninja](https://ninja-build.org/) for building.
-- [Catch2](https://github.com/catchorg/Catch2) for unit testing.
+- [Cmake](https://cmake.org/) for build configuration.
+- [doctest](https://github.com/onqtam/doctest) for unit testing.
 - [cxxopts](https://github.com/jarro2783/cxxopts) for command line handling.
 - [inja](https://github.com/pantor/inja) to help with code generation.
 

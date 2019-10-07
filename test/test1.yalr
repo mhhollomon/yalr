@@ -1,7 +1,7 @@
 parser class Test1;
 
-term a ;
-term b ;
+term a 'a';
+term b 'b';
 
 goal rule S {
     => ;

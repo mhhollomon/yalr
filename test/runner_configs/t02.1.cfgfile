@@ -1,0 +1,27 @@
+#
+# how to test
+# In this case run the compiler and
+# expect it to fail
+#
+.e command :CXX_COMPILER
+
+#
+# Code to try to compile
+#
+.block code
+#include "utils.hpp"
+struct test1_t : public yalr::util::identifier_t<test1_t> { using yalr::util::identifier_t<test1_t>::identifier_t; };
+struct test2_t : public yalr::util::identifier_t<test2_t> { using yalr::util::identifier_t<test2_t>::identifier_t; };
+
+int main() {
+    test1_t a = test1_t::get_next_id();
+    test2_t b = a;  // This should fail to compile
+}
+.blockend
+
+#
+# The expected failure line.
+# and regex for the message.
+#
+.e line 7
+.e regex conversion

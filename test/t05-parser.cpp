@@ -4,216 +4,206 @@
  * Larger functions should be tested as a part of the overall grammar
  * in t10 or other.
  */
-#define CATCH_CONFIG_MAIN
 
-#include "parser.hpp"
-#include <catch2/catch.hpp>
-
-#include <string>       // std::string
-#include <iostream>     // std::cout
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
 #include <sstream>      // std::stringstream
 
-using parser = yalr::parser::yalr_parser;
+#include "parser.cpp"
 
-TEST_CASE("skip()", "[parser]") {
+using parser = yalr::parser_guts;
 
-    SECTION("new lines are accounted in the location") {
-        auto p = parser("   \n  X   \n   ");
+parser mk_parser(const std::string &s) {
+    return parser(std::make_shared<yalr::text_source>("test", std::string{s}));
+}
 
-        REQUIRE(p.skip());
-        REQUIRE(p.current_loc.sv[0] == 'X');
-        REQUIRE(p.current_loc.offset == 6);
-        auto line = p.line_map[1];
-        REQUIRE(line.line_num == 2);
-        REQUIRE(line.offset == 4);
-        auto found = p.find_line(p.current_loc.offset);
-        REQUIRE(found.line_num == 2);
-        REQUIRE(found.offset == 4);
+TEST_CASE("skip() - [parser]") {
+
+    SUBCASE("new lines are accounted in the location") {
+        auto p = mk_parser("   \n  X   \n   ");
+
+        CHECK(p.skip());
+        CHECK(p.current_loc.sv[0] == 'X');
+        CHECK(p.current_loc.offset == 6);
     }
 
-    SECTION("C style comments are handled") {
+    SUBCASE("C style comments are handled") {
         /* ---- Simple comment --- */
-        auto p = parser("  /*  \n   */ \n  X\n\n     ");
-        REQUIRE(p.skip());
-        REQUIRE(p.current_loc.sv[0] == 'X');
-        REQUIRE(p.current_loc.offset == 16);
-        auto found = p.find_line(p.current_loc.offset);
-        REQUIRE(found.line_num == 3);
-        REQUIRE(found.offset == 14);
+        auto p = mk_parser("  /*  \n   */ \n  X\n\n     ");
+        CHECK(p.skip());
+        CHECK(p.current_loc.sv[0] == 'X');
+        CHECK(p.current_loc.offset == 16);
 
 
         /* ----- unterminated --- */
-        p =  parser("  /*     X");
-        REQUIRE(not p.skip());
-        REQUIRE(p.eoi());
-        REQUIRE(p.error_list.size() > 0);
+        p =  mk_parser("  /*     X");
+        CHECK(not p.skip());
+        CHECK(p.eoi());
+        CHECK(p.error_list.size() > 0);
 
         /* --- Multiline ---- */
         /* also make sure embedded openers don't cause problems */
-        p = parser("  /*   /*  \n This \n has // \n\tstuff \n /* */\n  :   /*\n */");
-        REQUIRE(p.skip());
-        REQUIRE(p.current_loc.sv[0] == ':');
-        REQUIRE(p.current_loc.offset == 45);
+        p = mk_parser("  /*   /*  \n This \n has // \n\tstuff \n /* */\n  :   /*\n */");
+        CHECK(p.skip());
+        CHECK(p.current_loc.sv[0] == ':');
+        CHECK(p.current_loc.offset == 45);
 
     }
 
-    SECTION("C++ style comments are handled") {
+    SUBCASE("C++ style comments are handled") {
         /* ---- Simple comment --- */
-        auto p = parser("  //  Stuff in the comment    \n  X\n\n     ");
-        REQUIRE(p.skip());
-        REQUIRE(p.current_loc.sv[0] == 'X');
-        REQUIRE(p.current_loc.offset == 33);
+        auto p = mk_parser("  //  Stuff in the comment    \n  X\n\n     ");
+        CHECK(p.skip());
+        CHECK(p.current_loc.sv[0] == 'X');
+        CHECK(p.current_loc.offset == 33);
 
         /* ----- unterminated --- */
-        p =  parser("  //     X");
-        REQUIRE(not p.skip());
-        REQUIRE(p.eoi());
-        REQUIRE(p.error_list.size() > 0);
+        p =  mk_parser("  //     X");
+        CHECK(not p.skip());
+        CHECK(p.eoi());
+        CHECK(p.error_list.size() > 0);
 
         std::stringstream ss;
 
         p.stream_errors(ss);
-        std::string expected = R"x(filename 1:3 (offset = 2)  : Unterminated comment starting here
+        std::string expected = R"x(test:1:3: error:Unterminated comment starting here
   //     X
 ~~~^
 )x";
-        REQUIRE(ss.str() == expected);
+        CHECK(ss.str() == expected);
    
 
         /* C inside C++ */
-        p = parser("  // /* // \n */\n X ");
-        REQUIRE(p.skip());
-        REQUIRE(p.current_loc.sv[0] == '*');
-        REQUIRE(p.current_loc.offset == 13);
+        p = mk_parser("  // /* // \n */\n X ");
+        CHECK(p.skip());
+        CHECK(p.current_loc.sv[0] == '*');
+        CHECK(p.current_loc.offset == 13);
     }
 }
 
-TEST_CASE("match_keyword()", "[parser]") {
+TEST_CASE("match_keyword() - [parser]") {
 
-    SECTION("positive") {
-         auto p =  parser("keyword(");
-         REQUIRE(p.match_keyword("keyword"));
+    SUBCASE("positive") {
+         auto p =  mk_parser("keyword(");
+         CHECK(p.match_keyword("keyword"));
     }
 
-    SECTION("negative") {
-        auto p = parser("keyword_ ");
-        REQUIRE(not p.match_keyword("keyword"));
-    }
-}
-
-TEST_CASE("expect_keyword()", "[parser]") {
-
-    SECTION("positive") {
-         auto p =  parser("keyword(");
-         REQUIRE(p.expect_keyword("keyword"));
-    }
-
-    SECTION("negative") {
-        auto p = parser("keyword_ ");
-        REQUIRE(not p.expect_keyword("keyword"));
-        REQUIRE(p.error_list.size() == 1);
+    SUBCASE("negative") {
+        auto p = mk_parser("keyword_ ");
+        CHECK(not p.match_keyword("keyword"));
     }
 }
 
-TEST_CASE("match_identifier()", "[parser]") {
+TEST_CASE("expect_keyword() - [parser]") {
 
-    SECTION("positive") {
-        auto p =  parser("__foo__bar123_ ");
-        auto [success, lexeme] = p.match_identifier();
-        REQUIRE(success);
-        REQUIRE(lexeme == "__foo__bar123_");
-
-        {
-        auto p = parser("ruleabc");
-        auto [success, lexeme] = p.match_identifier();
-        REQUIRE(success);
-        REQUIRE(lexeme == "ruleabc");
-        }
+    SUBCASE("positive") {
+         auto p =  mk_parser("keyword(");
+         CHECK(p.expect_keyword("keyword"));
     }
 
-    SECTION("negative") {
-        auto p = parser("rule");
-        auto [success, lexeme] = p.match_identifier();
-        REQUIRE(not success);
+    SUBCASE("negative") {
+        auto p = mk_parser("keyword_ ");
+        CHECK(not p.expect_keyword("keyword"));
+        CHECK(p.error_list.size() == 1);
     }
 }
 
-TEST_CASE("match_char()", "[parser]") {
-    SECTION("positive") {
-        auto p = parser("xabcde");
-        REQUIRE(p.match_char('x'));
-        REQUIRE(p.current_loc.offset == 1);
-        REQUIRE(p.match_char('a'));
+TEST_CASE("match_identifier() - [parser]") {
+
+    SUBCASE("positive") {
+        auto p =  mk_parser("__foo__bar123_ ");
+        auto lexeme = p.match_identifier();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "__foo__bar123_");
+
+        {
+        auto p = mk_parser("ruleabc");
+        auto lexeme = p.match_identifier();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "ruleabc");
+        }
     }
 
-    SECTION("negative") {
-        auto p = parser("");
-        REQUIRE(not p.match_char(':'));
+    SUBCASE("negative") {
+        auto p = mk_parser("rule");
+        auto lexeme = p.match_identifier();
+        CHECK(not lexeme);
+    }
+}
+
+TEST_CASE("match_char() - [parser]") {
+    SUBCASE("positive") {
+        auto p = mk_parser("xabcde");
+        CHECK(p.match_char('x'));
+        CHECK(p.current_loc.offset == 1);
+        CHECK(p.match_char('a'));
+    }
+
+    SUBCASE("negative") {
+        auto p = mk_parser("");
+        CHECK(not p.match_char(':'));
         {
-        auto p = parser("z");
-        REQUIRE(not p.match_char('Z'));
+        auto p = mk_parser("z");
+        CHECK(not p.match_char('Z'));
         }
     }
 }
 
-TEST_CASE("match_singlequote()", "[parser]") {
-    SECTION("positive") {
-        {
-        auto p = parser("'xyz\\' \"'");
-        auto [success, lexeme] = p.match_singlequote();
-        REQUIRE(success);
-        REQUIRE(lexeme == "'xyz\\' \"'");
-        REQUIRE(p.eoi());
-        REQUIRE(p.current_loc.offset == 9);
-        }
-        {
-        auto p = parser("'xyz\\\nabc' cccc");
-        auto [success, lexeme] = p.match_singlequote();
-        REQUIRE(success);
-        REQUIRE(lexeme == "'xyz\\\nabc'");
-        REQUIRE(not p.eoi());
-        REQUIRE(p.current_loc.offset == 10);
-        }
+TEST_CASE("match_singlequote() - [parser]") {
+    SUBCASE("positive 1") {
+        auto p = mk_parser("'xyz\\' \"'");
+        auto lexeme = p.match_singlequote();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "'xyz\\' \"'");
+        CHECK(p.eoi());
+        CHECK(p.current_loc.offset == 9);
     }
-    SECTION("negative", "[parser]") {
-        // the function actually return 'true' but it counts as an error.
+    SUBCASE("positive 2") {
+        auto p = mk_parser("'xyz\\\nabc' cccc");
+        auto lexeme = p.match_singlequote();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "'xyz\\\nabc'");
+        CHECK(not p.eoi());
+        CHECK(p.current_loc.offset == 10);
+    }
+    SUBCASE("negative - [parser]") {
         {
-        auto p = parser("'abc\nxyz'");
-        auto [success, lexeme] = p.match_singlequote();
-        REQUIRE(success);
-        REQUIRE(p.error_list.size() == 1);
+        auto p = mk_parser("'abc\nxyz'");
+        auto lexeme = p.match_singlequote();
+        CHECK_FALSE(lexeme);
+        CHECK(p.error_list.size() == 1);
         }
         {
-        auto p = parser("'xyz");
-        auto [success, lexeme] = p.match_singlequote();
-        REQUIRE(success);
-        REQUIRE(p.error_list.size() == 1);
+        auto p = mk_parser("'xyz");
+        auto lexeme = p.match_singlequote();
+        CHECK_FALSE(lexeme);
+        CHECK(p.error_list.size() == 1);
         }
 
     }
 }
 
-TEST_CASE("match_regex()", "[parser]") {
-    SECTION("positive") {
-        auto p = parser("r:abc[\"\\ ]: ");
-        auto [success, lexeme] = p.match_regex();
-        REQUIRE(success);
-        REQUIRE(lexeme == "r:abc[\"\\ ]:");
-        REQUIRE(not p.eoi());
-        REQUIRE(p.current_loc.offset == 11);
-        {
-        auto p = parser(R"d(r:\s+ )d");
-        auto [success, lexeme] = p.match_regex();
-        REQUIRE(success);
-        REQUIRE(lexeme == "r:\\s+");
-        REQUIRE(not p.eoi());
-        REQUIRE(p.current_loc.offset == 5);
-        }
+TEST_CASE("match_regex() - [parser]") {
+    SUBCASE("positive 1") {
+        auto p = mk_parser("r:abc[\"\\ ]: ");
+        auto lexeme = p.match_regex();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "r:abc[\"\\ ]:");
+        CHECK(not p.eoi());
+        CHECK(p.current_loc.offset == 11);
     }
-    SECTION("negative") {
-        auto p = parser("x:abc[\"\\ ]: ");
-        auto [success, lexeme] = p.match_regex();
-        REQUIRE(not success);
-        REQUIRE(p.current_loc.offset == 0);
+    SUBCASE("positive 2") {
+        auto p = mk_parser(R"d(r:\s+ )d");
+        auto lexeme = p.match_regex();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "r:\\s+");
+        CHECK(not p.eoi());
+        CHECK(p.current_loc.offset == 5);
+    }
+    SUBCASE("negative") {
+        auto p = mk_parser("x:abc[\"\\ ]: ");
+        auto lexeme = p.match_regex();
+        CHECK(not lexeme);
+        CHECK(p.current_loc.offset == 0);
     }
 }

@@ -5,15 +5,14 @@
 #include "codegen.hpp"
 #include "translate.hpp"
 
-#include <cxxopts/cxxopts.hpp>
-#include <gsl/span>
+#include "cxxopts.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <ios>
 
 // I'm not in love with the fact that
-// you have to wrap the enitre script body into a try {}.
+// you have to wrap the entire function body into a try {}.
 // And that you have no choice but to do everything up here.
 // The reason is that cxxopts::ParseResult doesn't have a default
 // constructor, so that you cannot do:
@@ -79,10 +78,11 @@ int main(int argc, char* argv[]) {
     std::ifstream in(clopts.input_file, std::ios_base::in);
     in.unsetf(std::ios_base::skipws);
 
-    const std::string input_string(std::istreambuf_iterator<char>{in}, {});
+    auto source = std::make_shared<yalr::text_source>(clopts.input_file, 
+            std::string(std::istreambuf_iterator<char>{in}, {}));
 
 
-    auto p = yalr::parser::yalr_parser(input_string);
+    auto p = yalr::yalr_parser(source);
     auto tree =  p.parse();
 
     if (!tree.success) {
@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     std::cout << "------ AST ------\n";
     */
 
-    auto ana_tree = yalr::analyzer::analyze(tree);
-    if (not ana_tree) {
+    auto anatree = yalr::analyzer::analyze(tree);
+    if (not anatree) {
         // the analyzer should be putting out various errors
         // so we just need to stop.
         exit(1);
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 
     /*
     std::cout << "------ ANALYZE ------\n";
-    yalr::analyzer::pretty_print(*ana_tree, std::cout);
+    yalr::analyzer::pretty_print(*anatree, std::cout);
     std::cout << "------ ANALYZE ------\n";
     */
 
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
         const auto format = clopts.translate;
 
         if (format == "grammophone") {
-            yalr::translate::grammophone().output(*ana_tree, clopts);
+            yalr::translate::grammophone().output(*anatree, clopts);
         } else {
             std::cerr << "Unknown format '" << format << "'\n";
             exit(1);
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
-    auto lrtbl = yalr::tablegen::generate_table(*ana_tree);
+    auto lrtbl = yalr::generate_table(*anatree);
 
     std::string state_file_name;
     if (not clopts.state_file.empty()) {
@@ -142,13 +142,13 @@ int main(int argc, char* argv[]) {
         }
         std::cout << "--- Generating state table into " << state_file_name << "\n";
         std::ofstream state_out(state_file_name, std::ios_base::out);
-        yalr::tablegen::pretty_print(*lrtbl, state_out);
+        yalr::pretty_print(*lrtbl, state_out);
     }
 
 
     std::cout << "--- Generating code into " << outfilename << "\n";
     std::ofstream code_out(outfilename, std::ios_base::out);
-    yalr::codegen::generate_code(*lrtbl, code_out);
+    yalr::generate_code(*lrtbl, code_out);
 
     return 0;
 }

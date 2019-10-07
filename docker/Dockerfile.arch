@@ -1,0 +1,7 @@
+FROM archlinux/base:latest
+# I would prefer to use `pacman -Scc`
+# but packamn doesn't give you a way to force the deletion without
+# iteracting with te prompt.
+RUN pacman -Syu --noconfirm && pacman -S --noconfirm gcc clang cmake make && \
+    rm -rf  /var/cache/pacman/pkg/* && rm -rf /var/lib/pacman/*
+
