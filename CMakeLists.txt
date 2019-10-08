@@ -1,7 +1,7 @@
 # yalr
 cmake_minimum_required(VERSION 3.13)
 
-project(Yalr VERSION 0.03
+project(Yalr VERSION 0.1.0
              DESCRIPTION "Yet another LR Parser Generator"
              LANGUAGES CXX)
 

@@ -1,4 +1,5 @@
 # Yet Another LR Parser Generator
+## Yalr Release 0.1.0
 [![Github Releases](https://img.shields.io/github/release/mhhollomon/yalr.svg)](https://github.com/mhhollomon/yalr/releases)
 [![Build Status](https://api.cirrus-ci.com/github/mhhollomon/yalr.svg)](https://cirrus-ci.com/github/mhhollomon/yalr)
 [![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/mhhollomon/yalr)
@@ -189,7 +190,7 @@ An alias may be given to each symbol in the alternate. The value of that symbol
 will then be available in the action block.
 
 A terminal whose pattern is a single-quoted string may be referenced either by
-the name given it, or by the pattern itseld (complete with the quotes).
+the name given it, or by the pattern itself (complete with the quotes).
 
 If a single-quoted string is used in a rule, but no terminal has been defined
 with that string, then one is automatically created. While this can be very
@@ -197,6 +198,17 @@ convenient, it does not allow you to assign a type or an action/value to the
 terminal. But for common structural lexemes (like semi-colon and the like),
 this may actually be quite helpful. This can also make the rules a bit easier
 to read since they will read more like the string they would match.
+
+#### Production sematic action
+
+Each production in a rule can be assigned its own action to compute a semantic
+value. The semantic values of the items in the production are available to the
+actions in variables of the form `_v{n}` where `{n}` is the position of the
+item from the left numbered from 1. An item may also be given an alias. This
+alias will be used to create a reference variable that points to the
+corresponding semantic avalue variable. If an represents a rule or terminal
+without a type, the corresponding semantic variable will not be defined.
+Giving an alias to such an item will result in an error. 
 
 ```
 rule MyRule {
@@ -219,9 +231,14 @@ goal rule Program {
   => Program Statement ;
 }
 
-// symbol aliases
+// semantic actions
 term <int> NUM r:[-+]\d+ <%{ return std::stoi(lexeme); }%>
 term ADD 'add' ;
+
+// Using the underlying semantic variables
+// Note that the 'sub' takes up _v1 - even though it does not have a type.
+rule <int> RPN_SUB { => 'sub' NUM NUM <%{ return _v2 - _v3; }%> }
+// With aliases
 rule <int> RPN_ADD { => 'add' left:NUM right:NUM <%{ return left + right; }%> }
 ```
 
@@ -254,6 +271,8 @@ int main() {
     }
 }
 ```
+
+See [calculator_main](examples/calculator_main.cpp) for a larger example.
 
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)

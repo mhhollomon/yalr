@@ -1,11 +1,20 @@
-## On Master
+## Release v0.1.0
+
+Yalr is now a function parser generator - complete with semantic actions.
+
+There is still much to be done, but the system can actually do useful work.
 
 ### Functional Changes
-- Add the ability to name the items in a rule alternatives and use those names in rule actions.
+- Add the ability to name the items in rule alternatives and use those names in rule actions.
+- Simple terminals can now be defined "inline". This allows the use of
+  single-quoted strings directly in rules. The terminal is added for you by the
+  system.
 
 ### non-functional changes
 - Moved to CMake for build. The meson system is currently broken.
+- Add many more tests.
 - Refactored the code some more.
+- Started adding technical documentation.
 
 ## Release v0.0.2
 
