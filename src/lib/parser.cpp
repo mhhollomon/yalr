@@ -476,6 +476,7 @@ struct parser_guts {
 
     //
     // 'namespace' IDENT ';'
+    // 'namespace' single-quote ';'
     //
     bool parse_namespace(statement_list& stmts) {
         option new_opt;
@@ -486,8 +487,17 @@ struct parser_guts {
         }
 
         skip();
-        otf = expect_identifier();
-        if (not otf) return false;
+        otf = match_identifier();
+        if (not otf) {
+            otf = match_singlequote();
+            if (not otf) {
+                record_error("Expecting identifier or single quoted string");
+                return false;
+            }
+
+            // strip off the single quotes
+            otf->text = otf->text.substr(1, otf->text.size()-2);
+        }
         new_opt.setting = *otf;
 
         skip();

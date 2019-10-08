@@ -1,16 +1,7 @@
 # yalr/test
 cmake_minimum_required(VERSION 3.13)
 
-#
-# This is really bad. IF somebody has better ideas,
-# let me know
-#
-# one possibility : "-I$<JOIN:$<TARGET_PROPERTY:yalr,INCLUDE_DIRECTORIES>,;-I>"
-#
-set(YALR_RUNNER_COMPILER ${CMAKE_CXX_COMPILER})
 set(YALR_RUNNER_FLAGS -std=c++17)
-set(YALR_RUNNER_INC ${CMAKE_HOME_DIRECTORY}/src/include)
-configure_file("runner_configs/_runner_build_config.cfgfile.in" "_runner_build_config.cfgfile" @ONLY)
 
 add_executable(test_runner)
 target_sources(test_runner PRIVATE "runner.cpp")
@@ -38,7 +29,12 @@ target_link_libraries(t02-sourcetext
 
 add_test(NAME t02-sourcetext COMMAND "t02-sourcetext")
 
-add_test(NAME t02-sourcetext-1 COMMAND "test_runner" "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t02.1.cfgfile")
+add_test(NAME t02-sourcetext-1 COMMAND "test_runner"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t02.1.cfgfile"
+    "include='-I$<JOIN:$<TARGET_PROPERTY:yalr,INCLUDE_DIRECTORIES>, -I>'"
+    "flags=${YALR_RUNNER_FLAGS}"
+    "compiler=${CMAKE_CXX_COMPILER}"
+    )
 
 ## parser #############################
 add_executable(t05-parser)
@@ -75,3 +71,18 @@ target_link_libraries(t20-analyzer
         errorinfo_objlib
     )
 add_test(NAME t20-analyzer COMMAND "t20-analyzer")
+
+add_test(NAME t30-yalr-1 COMMAND "test_runner"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.1.cfgfile"
+    "yalr='$<TARGET_FILE:yalr>'"
+    )
+
+add_test(NAME t30-yalr-2 COMMAND "test_runner"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.2.cfgfile"
+    "yalr='$<TARGET_FILE:yalr>'"
+    )
+
+add_test(NAME t30-yalr-3 COMMAND "test_runner"
+    "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.3.cfgfile"
+    "yalr='$<TARGET_FILE:yalr>'"
+    )

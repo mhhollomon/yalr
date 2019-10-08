@@ -22,14 +22,14 @@ struct option_setting {
     optional_text_fragment value;
 
     option_setting(const default_setting & ds) : option(ds.option),
-        default_value(ds.value) {}
+        default_value(ds.value), value(std::nullopt) {}
 
     std::string_view get_value() const {
         return value ? value->text : default_value;
     };
 
     optional_text_fragment get_fragment() const { return value; }
-    bool is_default() const { return bool(value); }
+    bool is_default() const { return not bool(value); }
 };
 
 
@@ -48,6 +48,10 @@ class option_list {
         }
     }
 
+    bool contains(std::string_view opt) const {
+        return (settings.count(opt) > 0);
+    }
+
     //
     // Note that only the program should be checking this, so
     // if the setting doesn't exist it is a program error.
@@ -62,7 +66,7 @@ class option_list {
         auto iter = settings.find(option);
         assert(iter != settings.end());
 
-        auto os = iter->second;
+        auto &os = iter->second;
 
         if (os.is_default() or allow_override) {
             os.value = value;

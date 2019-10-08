@@ -1,0 +1,13 @@
+.e command :COMMAND_LINE
+
+.e command_line ${yalr} -o ${output_file} ${input_file}
+
+.b input
+parser class my_cool_class ;
+
+term a 'a';
+
+goal rule foo { => a ; }
+.blockend
+
+.e regex class my_cool_class \{\n    Lexer\&

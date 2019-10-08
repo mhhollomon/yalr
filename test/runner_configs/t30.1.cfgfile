@@ -1,0 +1,13 @@
+.e command :COMMAND_LINE
+
+.e command_line ${yalr} -o ${output_file} ${input_file}
+
+.b input
+namespace 'one::two' ;
+
+term a 'a';
+
+goal rule foo { => a ; }
+.blockend
+
+.e regex namespace one::two
