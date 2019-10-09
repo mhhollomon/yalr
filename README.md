@@ -90,9 +90,10 @@ Both the lexer and and parser are normally put into the namespace 'YalrParser'.
 This can be changed by using the statement:
 ```
 namespace MySpace;
-```
 
-Inline namespaces (e.g. one::two) are currently not supported.
+// or use single quotes for inline namespaces:
+namespace 'one::two';
+```
 
 This statement may only appear once in the file.
 
