@@ -19,18 +19,17 @@ R"DELIM(/* build time date version goes here */
 #endif
 
 #if defined(YALR_DEBUG)
-#if ! defined(YALR_LDEBUG)
-#define YALR_LDEBUG(msg) { if (debug) \
+#  if ! defined(YALR_LDEBUG)
+#    define YALR_LDEBUG(msg) { if (debug) \
     std::cerr << msg ; }
-#else
-#define YALR_LDEBUG(msg)
-#endif
-#if ! defined(YALR_PDEBUG)
-#define YALR_PDEBUG(msg) { if (debug) \
+#  endif
+#  if ! defined(YALR_PDEBUG)
+#    define YALR_PDEBUG(msg) { if (debug) \
     std::cerr << msg ; }
+#  endif
 #else
-#define YALR_PDEBUG(msg)
-#endif
+#  define YALR_LDEBUG(msg)
+#  define YALR_PDEBUG(msg)
 #endif
 
 namespace <%namespace%> {

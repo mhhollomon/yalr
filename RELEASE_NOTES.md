@@ -1,3 +1,13 @@
+## Release v0.1.1
+
+Bug fix release.
+### Functional Changes
+
+- fix for bug #17 - The generated code will not compile if NDEBUG is set.
+- implement enhancement #16 - inline namespaces.
+
+### Non-functional changes
+
 ## Release v0.1.0
 
 Yalr is now a function parser generator - complete with semantic actions.

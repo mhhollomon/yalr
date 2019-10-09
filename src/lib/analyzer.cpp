@@ -127,6 +127,17 @@ struct phase_i_visitor {
     // Handle options.
     //
     void operator()(const yalr::option &t) {
+        if (out.options.contains(t.name.text)) {
+            if (not out.options.set_option(t.name.text, t.setting)) {
+                std::cerr << "option '" << t.name.text << 
+                    "' has already be set\n";
+               error_count += 1;
+            }
+        } else {
+            std::cerr << "Unknown option '" << t.name.text << "\n";
+            error_count += 1;
+        }
+
     }
 
 };

@@ -77,3 +77,19 @@ term <std::string> BAR 'bar' ;
 
 }
 
+TEST_CASE("namespace - [parser]") {
+    SUBCASE("Identifier as the name") {
+        auto tree = parse_string("namespace FOO ;");
+
+        CHECK(tree.success);
+        auto opt = std::get<yalr::option>(tree.statements[0]);
+        CHECK(opt.setting.text == "FOO");
+    }
+    SUBCASE("quoted string as the name") {
+        auto tree = parse_string("namespace 'one::two' ;");
+
+        CHECK(tree.success);
+        auto opt = std::get<yalr::option>(tree.statements[0]);
+        CHECK(opt.setting.text == "one::two");
+    }
+}
