@@ -1,4 +1,4 @@
-## Release v0.1.1
+## Release v0.1.2
 
 Bug fix release.
 ### Functional Changes
