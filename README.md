@@ -1,5 +1,5 @@
 # Yet Another LR Parser Generator
-## Yalr Release 0.1.0
+## Yalr Release 0.1.1
 [![Github Releases](https://img.shields.io/github/release/mhhollomon/yalr.svg)](https://github.com/mhhollomon/yalr/releases)
 [![Build Status](https://api.cirrus-ci.com/github/mhhollomon/yalr.svg)](https://cirrus-ci.com/github/mhhollomon/yalr)
 [![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/mhhollomon/yalr)
