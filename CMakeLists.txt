@@ -48,6 +48,7 @@ target_link_libraries(yalr
         lib-include
         translate_objlib
         analyzer_objlib
+        parsetree_objlib
         parser_objlib
         tablegen_objlib
         codegen_objlib

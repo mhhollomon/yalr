@@ -14,6 +14,10 @@ struct symbol_identifier_t : public util::identifier_t<symbol_identifier_t> {
     using util::identifier_t<symbol_identifier_t>::identifier_t;
 };
 
+enum class assoc_type {
+    undef, left, right
+};
+
 struct terminal_symbol {
     symbol_identifier_t id;
     bool                is_inline = false;
@@ -21,10 +25,14 @@ struct terminal_symbol {
     std::string_view    type_str;
     std::string_view    pattern;
     std::string_view    action;
+    // These two will need to be computed in the analyzer
+    assoc_type          associativity = assoc_type::undef;
+    std::optional<int>  precedence;
 
     terminal_symbol(const terminal& t) :
         name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
-        pattern(t.pattern.text), action(t.action ? t.action->text : ""sv) {}
+        pattern(t.pattern.text), action(t.action ? t.action->text : ""sv)
+        {}
     terminal_symbol() = default;
 };
 

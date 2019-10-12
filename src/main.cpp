@@ -38,6 +38,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
             ("S,state-table", "File in which to put the state table", 
                 cxxopts::value(clopts.state_file)->implicit_value("-NONE :^-") )
             ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
+            ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
             ;
         options.add_options("positionals")
             ("input-file", "grammar file to process",  cxxopts::value(clopts.input_file))
@@ -86,29 +87,32 @@ int main(int argc, char* argv[]) {
     auto tree =  p.parse();
 
     if (!tree.success) {
-        std::cout << "Parse failed\n";
-        p.stream_errors(std::cout);
+        std::cerr << "Parse failed\n";
+        for (auto const& e : tree.errors) {
+            e.output(std::cerr);
+        }
         return 1;
     } 
     
-    /*
-    std::cout << "------ AST ------\n";
-    yalr::ast::pretty_print(tree, std::cout);
-    std::cout << "------ AST ------\n";
-    */
+    if (clopts.debug) {
+        std::cout << "------ PARSE TREE ----------\n";
+        tree.pretty_print(std::cout);
+        std::cout << "------ PARSE TREE end ------\n";
+    }
 
     auto anatree = yalr::analyzer::analyze(tree);
-    if (not anatree) {
-        // the analyzer should be putting out various errors
-        // so we just need to stop.
+    if (not anatree->success) {
+        for (auto const& e : anatree->errors) {
+            e.output(std::cerr);
+        }
         exit(1);
     }
 
-    /*
-    std::cout << "------ ANALYZE ------\n";
-    yalr::analyzer::pretty_print(*anatree, std::cout);
-    std::cout << "------ ANALYZE ------\n";
-    */
+    if (clopts.debug) {
+        std::cout << "------ ANALYZE ------\n";
+        yalr::analyzer::pretty_print(*anatree, std::cout);
+        std::cout << "------ ANALYZE ------\n";
+    }
 
 
     std::string outfilename;

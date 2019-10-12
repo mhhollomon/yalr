@@ -2,6 +2,9 @@
 #define YALR_UTILS_HPP
 
 #include <iostream>
+#include <string>
+#include <sstream>
+
 namespace yalr::util {
 
     template <typename Derived>
@@ -86,6 +89,24 @@ namespace yalr::util {
 
     template <typename T>
     reversion_wrapper<T> reverse (T&& iterable) { return { iterable }; }
+
+
+
+    //
+    // concat
+    //
+    // concatentate any number of arguments
+    // using their operator<<().
+    //
+    template<typename ...Args>
+    std::string concat(Args&&... args) {
+        std::stringstream ss;
+
+        (ss << ... << args);
+
+        return ss.str();
+
+    }
 
 } // namespace yalr::util
 

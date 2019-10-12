@@ -356,17 +356,55 @@ void compute_first_and_follow(lrtable& lt) {
                                     action(action_type::reduce, item.prod_id));
                             if (!placed) {
                                 if (new_iter->first.type() == symbol_type::terminal) {
-                                    std::cerr << "Shift/reduce conflict in state ";
+                                    symbol shift_sym = new_iter->first;
+                                    std::cerr << "Shift/reduce conflict in state " << state.id <<
+                                        " between term " << shift_sym.pretty_name() << " and "
+                                        << "production = " << item.prod_id << "\n";
+
+                                    auto term_ptr = shift_sym.get_data<symbol_type::terminal>();
+                                    auto term_precedence = term_ptr->precedence ? *(term_ptr->precedence) : -99;
+                                    auto prod_precedence = prod.precedence ? *prod.precedence : -99;
+
+                                    bool will_shift = (term_precedence > prod_precedence) || 
+                                        ((term_precedence == prod_precedence) &&
+                                             (term_ptr->associativity == assoc_type::right));
+                                    bool will_reduce = (prod_precedence > term_precedence) ||
+                                        ((term_precedence == prod_precedence) &&
+                                             (term_ptr->associativity == assoc_type::left));
+
+                                    if (not will_shift and not will_reduce) {
+                                        std::cerr << " Forcing it to a parse time error\n";
+                                        state.actions.erase(sym);
+                                    } else if (will_shift) {
+                                        std::cerr << " Resolving to a shift\n";
+                                    } else if (will_reduce) {
+                                        std::cerr << " Resolving to a reduce\n";
+                                        state.actions.erase(sym);
+                                        auto [ act, placed ] = state.actions.try_emplace(sym,
+                                                action(action_type::reduce, item.prod_id));
+                                        //NOLINTNEXTLINE
+                                        assert(placed);
+                                    }
                                 } else {
-                                    std::cerr << "Reduce/reduce conflict in state ";
+                                    std::cerr << "Reduce/reduce conflict in state " << state.id
+                                        << " between production = " << item.prod_id << " and "
+                                        << "production = " << new_iter->second.production_id << "\n";
+
+                                    auto const &old_prod = retval->productions.find(new_iter->second.production_id)->second;
+                                    auto orig_precedence = old_prod.precedence ? *old_prod.precedence : -99;
+                                    auto new_precedence = prod.precedence ? *prod.precedence : -99;
+
+                                    if (new_precedence > orig_precedence) {
+                                        std::cerr << " Resolving to reduce by " << item.prod_id << "\n";
+                                        state.actions.erase(sym);
+                                        auto [ act, placed ] = state.actions.try_emplace(sym,
+                                                action(action_type::reduce, item.prod_id));
+                                        //NOLINTNEXTLINE
+                                        assert(placed);
+                                    } else {
+                                        std::cerr << " Resolving to reduce by " << old_prod.prod_id << "\n";
+                                    }
                                 }
-                                std::cerr << state.id << " for symbol " << sym.name() << "\n";
-                                std::cerr << "Forcing the reduce for now\n";
-                                state.actions.erase(sym);
-                                auto [ act, placed ] = state.actions.try_emplace(sym,
-                                        action(action_type::reduce, item.prod_id));
-                                //NOLINTNEXTLINE
-                                assert(placed);
                             }
                         }
                     }

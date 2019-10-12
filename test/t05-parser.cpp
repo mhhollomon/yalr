@@ -12,9 +12,17 @@
 #include "parser.cpp"
 
 using parser = yalr::parser_guts;
+using namespace std::string_literals;
 
 parser mk_parser(const std::string &s) {
     return parser(std::make_shared<yalr::text_source>("test", std::string{s}));
+}
+
+std::string error_string(parser& p) {
+    std::stringstream ss;
+    p.stream_errors(ss);
+
+    return ss.str();
 }
 
 TEST_CASE("skip() - [parser]") {
@@ -63,14 +71,11 @@ TEST_CASE("skip() - [parser]") {
         CHECK(p.eoi());
         CHECK(p.error_list.size() > 0);
 
-        std::stringstream ss;
-
-        p.stream_errors(ss);
         std::string expected = R"x(test:1:3: error:Unterminated comment starting here
   //     X
-~~~^
+~~^
 )x";
-        CHECK(ss.str() == expected);
+        CHECK(error_string(p) == expected);
    
 
         /* C inside C++ */
@@ -124,8 +129,13 @@ TEST_CASE("match_identifier() - [parser]") {
         }
     }
 
-    SUBCASE("negative") {
+    SUBCASE("negative 1") {
         auto p = mk_parser("rule");
+        auto lexeme = p.match_identifier();
+        CHECK(not lexeme);
+    }
+    SUBCASE("negative 2") {
+        auto p = mk_parser("1234");
         auto lexeme = p.match_identifier();
         CHECK(not lexeme);
     }
@@ -206,4 +216,90 @@ TEST_CASE("match_regex() - [parser]") {
         CHECK(not lexeme);
         CHECK(p.current_loc.offset == 0);
     }
+}
+
+TEST_CASE("match_int() - [parser]") {
+    SUBCASE("positive 1") {
+        auto p = mk_parser("120");
+        auto lexeme = p.match_int();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "120");
+    }
+    SUBCASE("positive 2") {
+        auto p = mk_parser("-120.03");
+        auto lexeme = p.match_int();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "-120");
+    }
+    SUBCASE("negative") {
+        auto p = mk_parser("-.03");
+        auto lexeme = p.match_int();
+        CHECK(not lexeme);
+        CHECK(p.current_loc.offset == 0);
+    }
+}
+
+TEST_CASE("match_assoc() - [parser]") {
+    SUBCASE("positive 1") {
+        auto p = mk_parser("@assoc=left");
+        auto lexeme = p.match_assoc();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "left");
+    }
+    SUBCASE("negative 1") {
+        auto p = mk_parser("@assoc= left");
+        auto lexeme = p.match_assoc();
+        CHECK(not lexeme);
+        auto expected = R"(test:1:8: error:missing or incorrect associativity specification
+@assoc= left
+~~~~~~~^
+)"s;
+
+        CHECK(error_string(p) == expected);
+    }
+
+    SUBCASE("negative 2") {
+        auto p = mk_parser("@assoc=1234");
+        auto lexeme = p.match_assoc();
+        CHECK(not lexeme);
+        auto expected = R"(test:1:8: error:missing or incorrect associativity specification
+@assoc=1234
+~~~~~~~^
+)"s;
+
+        CHECK(error_string(p) == expected);
+    }
+}
+
+TEST_CASE("match_precedence() - [parser]") {
+    SUBCASE("positive 1") {
+        auto p = mk_parser("@prec=-123");
+        auto lexeme = p.match_precedence();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "-123");
+    }
+    SUBCASE("positive 2") {
+        auto p = mk_parser("@prec=some_other_term");
+        auto lexeme = p.match_precedence();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "some_other_term");
+    }
+    SUBCASE("positive 3") {
+        auto p = mk_parser("@prec='+'");
+        auto lexeme = p.match_precedence();
+        CHECK(lexeme);
+        CHECK(lexeme->text == "'+'");
+    }
+    SUBCASE("negative 1") {
+        auto p = mk_parser("@prec= foo");
+        auto lexeme = p.match_precedence();
+        CHECK(not lexeme);
+        auto expected = R"(test:1:7: error:Missing or bad precedence specifier
+@prec= foo
+~~~~~~^
+)"s;
+
+        CHECK(error_string(p) == expected);
+    }
+
 }

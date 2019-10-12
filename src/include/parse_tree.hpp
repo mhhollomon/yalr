@@ -10,10 +10,12 @@
 namespace yalr {
 
     struct terminal {
-        text_fragment name;
+        text_fragment          name;
         optional_text_fragment type_str;
-        text_fragment pattern;
+        text_fragment          pattern;
         optional_text_fragment action;
+        optional_text_fragment associativity;
+        optional_text_fragment precedence;
     };
 
     struct skip {
@@ -32,7 +34,8 @@ namespace yalr {
     };
 
     struct alternative {
-        std::vector<alt_item> items;
+        std::vector<alt_item>  items;
+        optional_text_fragment precedence;
         optional_text_fragment action;
     };
 
@@ -44,9 +47,6 @@ namespace yalr {
     };
 
     using statement = std::variant<terminal, skip, option, rule>;
-    //struct statement : std::variant<terminal, skip, option, rule> {
-    //    using std::variant<terminal, skip, option, rule>::variant;
-    //};
 
     using statement_list = std::vector<statement>;
     struct parse_tree {
@@ -55,9 +55,9 @@ namespace yalr {
         std::list<error_info> errors;
 
         operator bool() { return success; }
+
+        std::ostream &pretty_print(std::ostream &strm) const;
     };
-
-
 
 } // namespace yalr
 

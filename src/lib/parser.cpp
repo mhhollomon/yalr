@@ -64,6 +64,10 @@ struct parser_guts {
                 text_fragment{std::string_view(), pl_to_tl(loc)});
     }
 
+    void record_error(const std::string& msg, text_fragment tf) {
+        error_list.emplace_back(msg, tf); 
+    }
+
     //
     // Output the errors to the given ostream.
     //
@@ -111,6 +115,15 @@ struct parser_guts {
     //
     inline bool check_string(std::string_view o) {
         return current_loc.sv.compare(0, o.size(), o) == 0;
+    }
+
+    inline bool match_string(std::string_view o) {
+        bool matched = check_string(o);
+        if (matched) {
+            consume(o.size());
+        }
+
+        return matched;
     }
 
     //
@@ -197,6 +210,7 @@ struct parser_guts {
         }
 
         retval.success = (eoi() and error_list.size() == 0);
+        retval.errors = std::move(error_list);
 
         return retval; 
     }
@@ -253,39 +267,65 @@ struct parser_guts {
     bool parse_alternative(std::vector<alternative>& alts) {
         alternative new_alt;
 
-        if (not check_string("=>")) {
+        if (not match_string("=>")) {
             return false;
         }
 
-        consume(2);
-
         bool error = false;
+        bool saw_prec = false;
         while(skip() and not eoi() and error_list.size() < 5) {
             // ';" closes the alternative, so leave the loop if we see it.
             if (match_char(';')) break;
 
-            // action closes the alternaitve, so leave the loop if we see it.
+            // action closes the alternative, so leave the loop if we see it.
             auto action_str = match_actionblock();
             if (action_str) {
                 new_alt.action = action_str;
                 break;
             }
 
+            auto prec_spec = match_precedence();
+            if (prec_spec) {
+                if (saw_prec) {
+                    record_error("Multiple precedence specifiers for alternative");
+                    error = true;
+                } else {
+                    new_alt.precedence = prec_spec;
+                    saw_prec = true;
+                }
+                //
+                // restart the loop. hopefully we see an action block
+                // or ';'
+                continue;
+            }
+
             auto new_item = match_item();
             if (new_item) {
-                new_alt.items.emplace_back(*new_item);
+                if (saw_prec) {
+                    record_error("item seen after precedence specifier", 
+                            new_item->symbol_ref);
+                    error = true;
+                } else {
+                    new_alt.items.emplace_back(*new_item);
+                }
+                // yes continue regardless.
                 continue;
             }
 
             // if none of the above, get grumpy.
-            record_error("Expecting rule item or action or closing semicolon.");
+            if (saw_prec) {
+                record_error("Expecting action or closing semicolon.");
+            } else {
+                record_error("Expecting precedence, rule item, action or closing semicolon.");
+            }
             error = true;
-            break;
+            // skip a token and try again.
+            consume_to_space();
         }
 
         alts.emplace_back(std::move(new_alt));
 
-        return ! error;
+        return true;
     }
 
     //
@@ -344,8 +384,8 @@ struct parser_guts {
         return std::nullopt;
     }
 
-    /* term '<' type '>'  Z pattern ; */
-    /* term '<' type '>'  Z pattern <%{ action }%> */
+    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
+    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
     bool parse_term(statement_list& stmts) {
         terminal new_term;
         optional_text_fragment otf;
@@ -367,6 +407,18 @@ struct parser_guts {
         otf = expect_pattern();
         if (not otf) return false;
         new_term.pattern = *otf;
+
+        /* @assoc and @prec can come in either order */
+        skip();
+        if ( (otf = match_assoc()) ) {
+            new_term.associativity = otf;
+            skip();
+            new_term.precedence = match_precedence();
+        } else if ( (otf = match_precedence()) ) {
+            new_term.precedence = otf;
+            skip();
+            new_term.associativity = match_assoc();
+        }
 
         skip();
         new_term.action = match_actionblock();
@@ -573,30 +625,34 @@ struct parser_guts {
         }
     }
 
-    /******************************************************
+    /************************************************************************
      * IDENTIFIER Matching
-     *****************************************************/
+     *
+     * Identifiers must start with a letter or underbar.
+     ************************************************************************/
     // Match an identifier (but not a keyword)
     optional_text_fragment match_identifier() {
         auto& cl = current_loc;
         int count = 0;
-        while ((unsigned)count < cl.sv.size() and ( 
+
+        if (valid_pos(0) and (std::isalpha(peek(0)) or peek(0) == '_')) {
+            count += 1;
+        } else {
+            return std::nullopt;
+        }
+        while (valid_pos(count) and ( 
                     std::isalnum(cl.sv[count]) or cl.sv[count] == '_')) {
             ++count;
         }
 
-        if (count == 0) {
+        auto ret_sv = cl.sv.substr(0, count);
+
+        if (keywords.count(ret_sv) > 0) {
             return std::nullopt;
-        } else {
-            auto ret_sv = cl.sv.substr(0, count);
-
-            if (keywords.count(ret_sv) > 0) {
-                return std::nullopt;
-            }
-
-            consume(count);
-            return text_fragment{ ret_sv, pl_to_tl(cl) };
         }
+
+        consume(count);
+        return text_fragment{ ret_sv, pl_to_tl(cl) };
 
     }
 
@@ -632,6 +688,29 @@ struct parser_guts {
             );
             return false;
         }
+    }
+
+    /************************************************************************
+     * INT Matching
+     ************************************************************************/
+    optional_text_fragment match_int() {
+        auto save_loc = current_loc;
+
+        bool negative = match_char('-');
+
+        auto pos = current_loc.sv.find_first_not_of("0123456789");
+
+        if (negative) current_loc = save_loc;
+
+        if ( pos == 0) {
+            return std::nullopt;
+        } else if (pos == std::string_view::npos) {
+            pos = current_loc.sv.size();
+        } else if (negative) {
+            pos += 1;
+        }
+
+        return current_loc_text_fragment(pos);
     }
 
     /******************************************************
@@ -761,10 +840,9 @@ struct parser_guts {
      * ACTION BLOCK Matching
      *****************************************************/
     optional_text_fragment match_actionblock() {
-        if (not check_string("<%{")) {
+        if (not match_string("<%{")) {
             return std::nullopt;
         }
-        consume(3);
         int state = 0;
         int stop = false;
         int count = -1;
@@ -802,6 +880,52 @@ struct parser_guts {
         return current_loc_text_fragment(count-3, count);
 
     }
+
+    /************************************************************************
+     * Associativity Matching
+     ************************************************************************/
+    optional_text_fragment match_assoc() {
+        if (not match_string("@assoc=")) {
+            return std::nullopt;
+        }
+
+        //
+        // don't do a skip(). The specifier must be
+        // right up against the keyword.
+        //
+        auto otf = match_identifier();
+        if (not otf) {
+            record_error("missing or incorrect associativity specification");
+            consume_to_space();
+            return std::nullopt;
+        }
+
+        return otf;
+    }
+
+    /************************************************************************
+     * Precedence Matching
+     ************************************************************************/
+    optional_text_fragment match_precedence() {
+        if (not match_string("@prec=")) {
+            return std::nullopt;
+        }
+
+        //
+        // don't do a skip(). The specifier must be
+        // right up against the keyword.
+        //
+        optional_text_fragment otf;
+        if ( (otf = match_int()) ) return otf;
+        if ( (otf = match_identifier()) ) return otf;
+        if ( (otf = match_singlequote()) ) return otf;
+
+        record_error("Missing or bad precedence specifier");
+        consume_to_space();
+        return std::nullopt;
+
+    }
+
     /****************************************************************
      * SKIP Processing
      ****************************************************************/
@@ -859,9 +983,8 @@ struct parser_guts {
                     consume(1);
                     break;
                 case skBlock: // Block comment
-                    if (check_string("*/")) {
+                    if (match_string("*/")) {
                         //std::cout << "--- block comment end\n";
-                        consume(2);
                         state = skNormal;
                     } else {
                         consume(1);
@@ -877,6 +1000,25 @@ struct parser_guts {
 
         return true;
     }
+
+    /************************************************************************
+     * consume_to_space
+     *
+     * This is used to skip ahead in the input in order to (hopefully)
+     * continue parsing after a failure. Currently, this isn't too bright.
+     * In particular, it will happily leave you in the middle of a
+     * single quoted string.
+     ************************************************************************/
+    void consume_to_space() {
+        while (not eoi() and not std::isspace(peek(0))) {
+            // treat comments as spaces
+            if (check_string("//") or check_string("/*")) {
+                break;
+            }
+            consume(1);
+        }
+    }
+
 
 /*** End of parser_guts ***/
 };

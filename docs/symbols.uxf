@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>0</y>
+      <w>180</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>terminal_symbol
+--
+style=autoresize
++id :symbol_identifier_t {id}
++name : std::string_view
++type_str : std::string_view
++pattern : std::string_view
++action : std::string_view
++associativity: assoc_type
++precedence: ?int
+--
+&lt;&lt;create&gt;&gt;create(t : terminal)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>220</x>
+      <y>70</y>
+      <w>190</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>skip_symbol
+--
+style=autoresize
++id : symbol_identifier_t {id}
++name : std::string_view
++pattern : std::string_view
+--
+&lt;&lt;create&gt;&gt;create(s : skip)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>440</x>
+      <y>40</y>
+      <w>190</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>rule_symbol
+--
+style=autoresize
++id : symbol_identifier_t {id}
++name : std::string_view
++type_str : std::string_view
++action : std::string_view
+--
+&lt;&lt;create&gt;&gt;create(r :rule)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>240</x>
+      <y>230</y>
+      <w>240</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;variant&gt;&gt;
+symbol_data
+--
+style=autoresize
+terminal_symbol
+skip_symbol
+rule_symbol
+--
++ id() -&gt; symbol_identifier_t {query}
++ name() -&gt; std::string_view {query}</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>120</x>
+      <y>170</y>
+      <w>160</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+&lt;&lt;uses&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;30.0;140.0;30.0;140.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>280</x>
+      <y>170</y>
+      <w>70</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+&lt;&lt;uses&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>340</x>
+      <y>160</y>
+      <w>210</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+&lt;&lt;uses&gt;&gt;</panel_attributes>
+    <additional_attributes>190.0;10.0;190.0;40.0;10.0;40.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>880</x>
+      <y>10</y>
+      <w>110</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;enumeration&gt;&gt;
+symbol_type
+--
+style=autoresize
+invalid
+terminal
+skip
+rule</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>210</x>
+      <y>430</y>
+      <w>270</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;dataType&gt;&gt;
+symbol
+style=autoresize
+--
++id : symbol_identifier_t {query}
+-data : symbol_data*
+--
++name() -&gt; std::string_view {query}
++type() -&gt; symbol_type {query}
++type_name() -&gt; std::string_view {query}
++get_data&lt;T&gt;() -&gt; T* {query}</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>290</x>
+      <y>360</y>
+      <w>40</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1
+m2=*</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>860</x>
+      <y>370</y>
+      <w>140</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;datatype&gt;&gt;
+symbol_identifier_t</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>660</x>
+      <y>480</y>
+      <w>460</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>symbol_table
+--
+style=autoresize
+-key_map: std::map&lt;std::string, symbol&gt;
+-id_map: std::map&lt;identifier_t, symbol&gt;
+--
++find(key :std::string_view) -&gt; ?symbol {query}
++find(id :symbol_identifier_t)-&gt; ?symbol {query}
++add(key :std::string_view, t: terminal) -&gt; (added :bool, sym : symbol)
++add(key :std::string_view, s: skip) -&gt; (added :bool, sym : symbol)
++add(key :std::string_view, r: rule) -&gt; (added :bool, sym : symbol)
++register(key :std::string_view, s: symbol) -&gt; (added :bool, sym : symbol)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>470</x>
+      <y>490</y>
+      <w>210</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+&lt;&lt;uses&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;20.0;190.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>660</x>
+      <y>700</y>
+      <w>210</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>symbol_set
+--
+style=autoresize
+--
+is_in(s :symbol) -&gt; bool {query}
+addset(ss : symbol_set) -&gt; bool</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>320</x>
+      <y>580</y>
+      <w>360</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+&lt;&lt;uses&gt;&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;160.0;340.0;160.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>870</x>
+      <y>150</y>
+      <w>130</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>template=Tag
+&lt;&lt;dataType&gt;&gt;
+util::identifier_t
+style=autoresize
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>920</x>
+      <y>230</y>
+      <w>170</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-
+&lt;&lt;bind&gt;&gt;
+&lt;struct symbol_id_tag&gt;</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;140.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>920</x>
+      <y>710</y>
+      <w>100</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>std::set</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>860</x>
+      <y>720</y>
+      <w>80</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>60.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>

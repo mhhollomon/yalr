@@ -38,6 +38,23 @@ target_link_libraries(sourcetext_objlib
     )
 
 ##
+## parsetree_objlib
+##
+add_library(parsetree_objlib OBJECT)
+
+target_sources(parsetree_objlib
+    PRIVATE
+        "lib/parse_tree.cpp"
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/parse_tree.hpp"
+    )
+
+target_link_libraries(parsetree_objlib
+    PUBLIC
+        lib-include
+    )
+
+##
 ## errorinfo_objlib
 ##
 add_library(errorinfo_objlib OBJECT)

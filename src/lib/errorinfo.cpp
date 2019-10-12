@@ -17,7 +17,7 @@ namespace yalr {
                 li.line_start, li.line_end-li.line_start);
         if (fragment.location.source->content[li.line_end] != '\n')
             strm << "\n";
-        std::string filler(li.col_num, '~');
+        std::string filler(li.col_num-1, '~');
         strm << filler << "^\n";
 
         return strm;
