@@ -75,6 +75,17 @@ term <std::string> BAR 'bar' ;
         CHECK(alt.items[0].alias->text == "j");
     }
 
+    SUBCASE("actions for alternatives - [parser]") {
+        auto tree = parse_string("rule A { => <%{ return 1; }%> => x ; }");
+        CHECK(tree.success);
+        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        CHECK(ruleA.alternatives.size() == 2);
+        auto alt = ruleA.alternatives[0];
+        REQUIRE(alt.action);
+        CHECK(alt.action->text == " return 1; ");
+    }
+
+
 }
 
 TEST_CASE("namespace - [parser]") {
@@ -93,3 +104,52 @@ TEST_CASE("namespace - [parser]") {
         CHECK(opt.setting.text == "one::two");
     }
 }
+
+TEST_CASE("assoc/prec in terms - [parser]") {
+    SUBCASE("just assoc") {
+        auto tree = parse_string("term X 'x' @assoc=left ;");
+        CHECK(tree.success);
+    }
+    SUBCASE("just prec") {
+        auto tree = parse_string("term X 'x' @prec=20;");
+        CHECK(tree.success);
+    }
+    SUBCASE("prec first") {
+        auto tree = parse_string("term X 'x' @prec=foo @assoc=left;");
+        CHECK(tree.success);
+    }
+    SUBCASE("assoc first") {
+        auto tree = parse_string("term X 'x' @assoc=left @prec='+';");
+        CHECK(tree.success);
+    }
+    SUBCASE("duplicate") {
+        auto tree = parse_string("term X 'x' @assoc=left @assoc=right ;\nterm Y 'y' @prec=123 @prec='x' ;");
+        CHECK(not tree.success);
+        CHECK(tree.errors.size() == 2);
+    }
+}
+
+TEST_CASE("prec in rules - [parser]") {
+    SUBCASE("positive") {
+        auto tree = parse_string("rule A { => 'x' @prec=2; }");
+        CHECK(tree.success);
+    }
+    SUBCASE("multiple") {
+        auto tree = parse_string("rule A { => 'x' @prec=2 @prec=foo; }");
+        CHECK(not tree);
+        for (auto const &e : tree.errors) {
+            e.output(std::cout);
+        }
+        CHECK(tree.errors.size() == 1);
+    }
+    SUBCASE("trailing item") {
+        auto tree = parse_string("rule A { => 'x' @prec=2 'y'; }");
+        CHECK(not tree);
+        for (auto const &e : tree.errors) {
+            e.output(std::cout);
+        }
+        CHECK(tree.errors.size() == 1);
+    }
+}
+
+

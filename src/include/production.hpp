@@ -25,6 +25,7 @@ namespace yalr {
         production_identifier_t prod_id;
         symbol rule;
         std::string_view action;
+        std::optional<int> precedence;
         std::vector<prod_item> items;
 
         production(yalr::production_identifier_t id, yalr::symbol s, const std::string_view a, std::vector<yalr::prod_item> i) :

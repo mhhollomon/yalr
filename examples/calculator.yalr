@@ -2,6 +2,10 @@
 skip WS      r:\s+     ;
 
 term<float> NUMBER r:[-+]?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
+term PLUS '+'  @assoc=left @prec=100 ;
+term MINUS '-' @assoc=left @prec=PLUS ;
+term MULTI '*' @assoc=left @prec=200 ;
+term DIV   '/' @assoc=left @prec='*' ;
 
 goal rule statement_list {
     => statement                <%{ std::cout << "answer = " << _v1 << "\n"; }%>
@@ -11,18 +15,10 @@ goal rule statement_list {
 rule <float> statement { => expression <%{ return _v1; }%> }
 
 rule <float> expression {
-    => l:expression '+' r:operand <%{ return l + r; }%>
-    => l:expression '-' r:operand <%{ return l - r; }%>
-    => operand                    <%{ return _v1;   }%>
-}
-
-rule <float> operand {
-    => l:operand '*' r:factor  <%{ return l * r; }%>
-    => l:operand '/' r:operand <%{ return l / r; }%>
-    => factor                  <%{ return _v1;   }%>
-}
-
-rule <float> factor { 
+    => l:expression '+' r:expression <%{ return l + r; }%>
+    => l:expression '-' r:expression <%{ return l - r; }%>
+    => l:expression '*' r:expression <%{ return l * r; }%>
+    => l:expression '/' r:expression <%{ return l / r; }%>
     => NUMBER             <%{ return _v1; }%>
     => '(' expression ')' <%{ return _v2; }%>
 }

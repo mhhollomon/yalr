@@ -1,7 +1,7 @@
 #include "calculator.yalr.hpp"
 
 int main() {
-    std::string input = "3.0 + 5.6 / 2";
+    std::string input = "5 * 3.0 + 5.6 / 2";
 
     YalrParser::Lexer l(input.cbegin(), input.cend());
     auto parser = YalrParser::Parser(l);

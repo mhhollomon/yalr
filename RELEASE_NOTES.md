@@ -1,12 +1,26 @@
+## On Dev
+
+### Functional Changes
+
+- enhancement #20 - Add associativity and precedences markers to terminal and
+  rules. See the [README](Readme.md) for details and the calculator example to
+  see it in action.
+
+### Non-functional Changes
+
+- issue #15 - Now using the error_info system to report errors from the
+  analyzer. This will allow better error messages in the future.
+- Add a set of technical diagrams to the docs/ directory. These were created in
+  [Umlet](http://www.umlet.com)
+
 ## Release v0.1.2
 
 Bug fix release.
+
 ### Functional Changes
 
 - fix for bug #17 - The generated code will not compile if NDEBUG is set.
 - implement enhancement #16 - inline namespaces.
-
-### Non-functional changes
 
 ## Release v0.1.0
 

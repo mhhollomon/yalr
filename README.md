@@ -156,6 +156,36 @@ then some efficency can be gained by doing so as a move:
 term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
 ```
 
+##### Terminal Precedence and Associativity
+
+Parser terminals can be assigned a precedence and associativity in order to help
+resolve possible conflicts in the grammar. Please see the section below  on
+Action Conflict Resolution for details on the algorithm.
+
+Associativity is assigned to the terminal using the `@assoc=` flag. It can be
+assigned either `left` or `right` associativity. By default, terminals are
+assigned an `undef` associativity.
+
+```
+term Mult '*' @assoc=left ;
+```
+
+The `left` or `right` keyword must come directly after the flag. There can be
+no spaces btween the equal sign and the value.
+
+Precedence is assgined to the terminal using the `@prec=` flag. It can be
+assigned as a positive integer value, or as the name or pattern of another
+terminal. The referenced terminal must have a precedence assigned.
+
+```
+term Mult '*' @assoc=left @prec=200 ;
+
+// give Div the same precedence as Mult
+term Div  '/' @assoc=left @prec='*' ;
+```
+
+Higher precedence values "bind tighter".
+
 #### Lexer Terminals
 
 Lexer terminals are recognized by the the lexer but are not returned. They are
@@ -182,7 +212,7 @@ rule Foo { => WS ; }
 ### Non-terminals
 
 Rules are declared with the `rule` keyword.
-Each alternate is introduced with `=>` and terminated with a semicolon.
+Each alternative is introduced with `=>` and terminated with a semicolon.
 
 One rule must be marked as the starting or "goal" rule, by preceeding it with
 the `goal` keyword.
@@ -241,6 +271,84 @@ term ADD 'add' ;
 rule <int> RPN_SUB { => 'sub' NUM NUM <%{ return _v2 - _v3; }%> }
 // With aliases
 rule <int> RPN_ADD { => 'add' left:NUM right:NUM <%{ return left + right; }%> }
+```
+
+#### Rule Precedence
+
+An alternative may be assigned an explicit precedence using the same `@prec=`
+flag as terminals. The flag must go after the last item but before the closing
+semi-colon or action block.
+
+If an alternative is not given an explicit precedence, then the alternative
+will have the same precedence as the *right-most* terminal in the alternative.
+If it has no terminals, then it will have the same default precedence as a
+terminal that has no defined precedence.
+
+```
+term X 'x' @prec=200 ;
+
+rule S {
+    => 'a' 'x' E           ; // this will have a prec=200
+    => 'a'  E  E           ; // default precedence
+    => 'x' 'a' E           ; // also default
+    => 'x' 'a' R @prec='x' ; // this will have prec=200
+}
+```
+
+## Action Conflict Resolution
+
+Sometimes in a grammar, the parser will have states where there are two
+possible actions for the given state and input.
+
+Consider this grammar fragment:
+```
+rule E {
+    => E '+' E ; // production 1
+    => E '*' E ; // production 2
+    => number  ; // production 3
+}
+```
+
+and the input `1 + 2 * 3`.
+
+Would like it to parse it as `1 + ( 2 * 3)` - that is - use the second
+production first and then use the first production to create the parse tree :
+```
+E(+ E(1) E(* E(2) E(3)))
+```
+
+The important point is after it has seen (and shifted) '1' '+' '2' and is
+deciding what to do with the `*`. it has a choice, it can shift it and delay
+reducing until later (this is what we want it to do), or it can go ahead and
+reduce by production 1.  
+
+When there is a shift/reduce conflict like this thegenerator will compare the
+precedence of the production (1) and the terminal(`*`). If the production is
+greater, then the reduce will be done. If the terminal is higher precedence,
+then the shift will done. 
+
+If the two have equal precedence, the associativity of the terminal will be
+consulted. If it is 'left' then reduce will be done. If it is 'right', then the
+shift will be done.
+
+If `yalr` cannot decide what to do, an error will be generated.
+
+It is also possible to have two rules come in conflict (reduce/reduce). The
+same rules apply.
+
+So, to make our example act as we want, we need to make `*` have a higher
+precedence than production 1. By default it will have the precedence of the `+`
+terminal.
+
+```
+term P '+' @prec=1
+term M '*' @prec=200
+
+rule E {
+    => E '+' E ; // production 1
+    => E '*' E ; // production 2
+    => number  ; // production 3
+}
 ```
 
 ## Generated Code
