@@ -20,15 +20,20 @@ it easy to integrate into a build system. The code generated is C++17.
 ## Building
 
 Yalr requires CMake, make, and a C++17 compliant compiler. Assuming you have those, then building is:
+
 ```bash
-git clone https://github.com/mhhollomon/yalr
+git clone https://github.com/mhhollomon/yalr.git
 cd yalr
-mkdir build
-cmake -B build
-cmake --build build
+./scripts/build.sh release
 ```
 
-The new `yalr` executable will be in the build directory.
+The script will build and run the tests.
+
+To install :
+
+```bash
+sudo cmake --install build-release
+```
 
 ## Running
 
