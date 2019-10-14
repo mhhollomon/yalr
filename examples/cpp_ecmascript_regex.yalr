@@ -3,65 +3,50 @@
  *
  * Translated from https://en.cppreference.com/w/cpp/regex/ecmascript
  *
+ * Lots of unresolved shift/reduce errors.
+ *
+ * 186 states. heh.
+ *
  * Completely untested. Use at your own risk.
  */
 
  
-/*
- * Don't blindly use UPPER and LOWER terms - precedence says that
- * e.g. L_C will capture "c" . So to truly match all lowers,
- * you need to match all the singles and then the LOWER term.
- * Use "rule Lower" instead.
- */
-term L_C      "c"       ;
-term L_D      "d"       ;
-term L_F      "f"       ;
-term L_N      "n"       ;
-term L_R      "r"       ;
-term L_S      "s"       ;
-term L_T      "t"       ;
-term L_U      "u"
-term L_V      "v"       ;
-term L_W      "w"       ;
-term L_X      "x"       ;
-
-term LHEX     "[a-f]"   ;
-term LOWER    "[a-z]"   ;
-
-term U_D      "D"       ;
-term U_S      "S"       ;
-term U_W      "W"       ;
-
-term UHEX     "[A-F]"   ;
-term UPPER    "[A-Z]"   ;
-
-
 rule Lower {
-    => L_C  ; => L_D  ; => L_F  ; => L_N ;
-    => L_R  ; => L_S  ; => L_T  ; => L_U ;
-    => L_V  ; => L_W  ; => L_X  ;
-    => LHEX ;
-    => LOWER ;
+    => 'a' ; => 'b' ; => 'c' ; => 'd' ; => 'e' ;
+    => 'f' ; => 'g' ; => 'h' ; => 'i' ; => 'j' ;
+    => 'k' ; => 'l' ; => 'm' ; => 'n' ; => 'o' ;
+    => 'p' ; => 'q' ; => 'r' ; => 's' ; => 't' ;
+    => 'u' ; => 'v' ; => 'w' ; => 'x' ; => 'y' ;
+    => 'z' ;
+}
+
+rule LHEX {
+    => 'a' ; => 'b' ; => 'c' ; => 'd' ; => 'e' ; => 'f' ;
 }
 
 rule Upper {
-    => U_D ; => U_S ; => U_W ;
-    => UHEX ;
-    => UPPER ;
+    => 'A' ; => 'B' ; => 'C' ; => 'D' ; => 'E' ;
+    => 'F' ; => 'G' ; => 'H' ; => 'I' ; => 'J' ;
+    => 'K' ; => 'L' ; => 'M' ; => 'N' ; => 'O' ;
+    => 'P' ; => 'Q' ; => 'R' ; => 'S' ; => 'T' ;
+    => 'U' ; => 'V' ; => 'W' ; => 'X' ; => 'Y' ;
+    => 'Z' ;
 }
 
-term ZERO "0" ;
-term NDDIGIT "[1-9]" ;
+rule UHEX {
+    => 'A' ; => 'B' ; => 'C' ; => 'D' ; => 'E' ; => 'F' ;
+}
+
+term ZERO '0' ;
+term NDDIGIT r:[1-9] ;
 
 rule DecDigit {
     => ZERO ; => NDDIGIT ;
 }
 
 rule HexDigit {
-    => DecDigit
-    => L_C ; => L_D ; => L_F ;
+    => DecDigit ;
     => LHEX ;
-    => U_D ;
     => UHEX ;
 }
 
@@ -71,11 +56,9 @@ goal rule Pattern {
     => Disjunction ;
 }
 
-term OR "\\|"  ; // per the rules below, this is right associative
-
 rule Disjunction {
     => Alternative ;
-    => Alternative OR Disjunction ;
+    => Alternative '|' Disjunction ;
 }
 
 rule Alternative {
@@ -89,27 +72,19 @@ rule Term {
     => Atom Quantifier ;
 }
 
-term QMARK    "\?"    ;
-
 rule Quantifier {
     => QuantifierPrefix ;
-    => QuantifierPrefix QMARK ;
+    => QuantifierPrefix '?' ;
 }
 
-term STAR     "*"     ;
-term PLUS     "+"     ;
-term LB       "\{"    ;
-term RB       "}"     ;
-term COMMA    ","     ;
-
 rule QuantifierPrefix {
-    => STAR ;
-    => PLUS ;
-    => QMARK ;
-    => LB DecimalDigits RB ;
-    => LB DecimalDigits COMMA RB ;
-    => LB COMMA DecimalDigits RB ;
-    => LB DecimalDigits COMMA DecimalDigits RB ;
+    => '*' ;
+    => '+' ;
+    => '?' ;
+    => '{' DecimalDigits '}' ;
+    => '{' DecimalDigits ',' '}' ;
+    => '{' ',' DecimalDigits '}' ;
+    => '{' DecimalDigits ',' DecimalDigits '}' ;
 }
 
 
@@ -118,36 +93,36 @@ rule DecimalDigits {
     => DecimalDigits DecDigit ;
 }
 
-term CARET    "\\^"    ;
-term DOLR     "\\$"    ;
-term ESC_L_B  "\\\\b"   ; // literal backslash followed by "b"
-term NWB      "\\\\B"   ; // literal backslash followed by "B"
-term EQUAL    "="     ;
-term NOT      "!"     ;
-term LP       "("     ;
-term RP       ")"     ;
+term CARET    '^'    ;
+term DOLR     '$'    ;
+term ESC_L_B  '\\b'   ; // literal backslash followed by "b"
+term ESC_U_B  '\\B'   ; // literal backslash followed by "B"
+term EQUAL    '='     ;
+term NOT      '!'     ;
+term LP       '('     ;
+term RP       ')'     ;
 
 rule Assertion {
     => CARET ;
     => DOLR ;
     => ESC_L_B ; // Positive Word boundary
-    => NWB ;
-    => LP QMARK EQUAL Disjunction RP ;
-    => LP QMARK NOT   Disjunction RP ;
+    => ESC_U_B ; // Negative Word Boundary
+    => LP '?' EQUAL Disjunction RP ;
+    => LP '?' NOT   Disjunction RP ;
 }
 
-term DOT      "\\."    ;
-term COLON    ":"     ;
-term DASH     "-" ;
-//term BKSL     "\\\\"    ;
-term NULESC   "\\\\0" ;
-term ESCCHAR  "\\\\[^[:alnum:]]" ;
-term ESCCNTRL "\\\\[fnrtv]" ;
-term HEXCODE  "\\\\x[a-fA-F0-9]{2}" ;
-term UNICODE  "\\\\u[a-fA-F0-9]{4}" ;
-term CCODE    "\\\\c[A-Za-z]" ;
-term BACKREF  "\\\\[1-9][0-9]*" ;
-term CHARCLSS "\\\\[dDsSwW]" ;
+term DOT      '.'    ;
+term COLON    ':'     ;
+term DASH     '-' ;
+//term BKSL     '\\\\'    ;
+term NULESC   '\\\\0' ;
+term ESCCHAR  r:\\\\[^[:alnum:]] ;
+term ESCCNTRL r:\\\\[fnrtv] ;
+term HEXCODE  r:\\\\x[a-fA-F0-9]{2} ;
+term UNICODE  r:\\\\u[a-fA-F0-9]{4} ;
+term CCODE    r:\\\\c[A-Za-z] ;
+term BACKREF  r:\\\\[1-9][0-9]* ;
+term CHARCLSS r:\\\\[dDsSwW] ;
 
 /* All the escape sequences in AtomEscape sequences are
  * distinquishable by the second character and don't have alternate meanings in
@@ -165,7 +140,7 @@ rule Atom {
     => CHARCLSS ;  // CharacterClassEscape
     => CharacterClass ;
     => LP Disjunction RP ;
-    => LP QMARK COLON Disjunction RP ;
+    => LP '?' COLON Disjunction RP ;
 }
 
 rule PatternCharacter {
@@ -176,8 +151,8 @@ rule PatternCharacter {
 }
 
 rule CharacterClass {
-    => LBRACK CARET ClassRanges RBRACK ; // hmm do I need to do something to disambiguate this?
-    => LBRACK ClassRanges RBRACK ;
+    => '[' CARET ClassRanges ']' ; // hmm do I need to do something to disambiguate this?
+    => '[' ClassRanges ']' ;
 }
 
 rule ClassRanges {
@@ -194,13 +169,29 @@ rule NonemptyClassRanges {
     => ClassAtom DASH ClassAtom ClassRanges ;
 }
 
+rule NonemptyClassRangesNoDash {
+    => ClassAtom ;
+    => ClassAtomNoDash NonemptyClassRangesNoDash ;
+    => ClassAtomNoDash DASH ClassAtom ClassRanges ;
+}
+
 rule ClassAtom {
     => DASH ;
     => ClassAtomNoDash ; 
 }
 
+rule AtomNoDash_Source {
+    => Upper; => Lower; => DecDigit;
+    => '.'; => ':'; => ';' ; => '[';
+    => ','; => '?'; => '(' ; => ')';
+    => '@'; => '#'; => '$' ; => '^';
+    => '&'; => '*'; => '\''; => '"';
+    => '|'; => '!' ; => '~'; => '`';
+    => '\n'; => '<'; => '>'; => '\\';
+}
+
 rule ClassAtomNoDash {
-    => SourceCharacterKinda ; // SourceCharacter but not one of \ or ] or - -- need to figure this out
+    => AtomNoDash_Source ;
     => NULESC ;
     => ESC_L_B ; // (backspace char)
     => CCODE ;
@@ -208,15 +199,15 @@ rule ClassAtomNoDash {
 }
 
 rule ClassAtomExClass {
-    => LBRACK COLON ClassName COLON RBRACK
+    => '[' COLON ClassName COLON ']' ;
 }
 
 rule ClassAtomCollatingElement {
-    => LBRACK DOT ClassName DOT RBRACK ;
+    => '[' DOT ClassName DOT ']' ;
 }
 
-ule ClassAtomEquivalence {
-    => LBRACK EQUAL ClassName EQUAL RBRACK ;
+rule ClassAtomEquivalence {
+    => '[' EQUAL ClassName EQUAL ']' ;
 }
 
 rule ClassName {
@@ -227,5 +218,5 @@ rule ClassName {
 
 // This needs to be close to the bottom so that it is not
 // a "first" match.
-term PCHAR    "[^$^\\\\.*+?()\\][}{|]" ;
+term PCHAR    r:[^$^\\\\.*+?()\\][}{|] ;
 

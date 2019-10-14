@@ -87,6 +87,14 @@ namespace yalr {
         // then we need to update the last line with the ending offset.
         //
         if (not saw_line_end) lines[last_line_num-1].line_end = offset;
+
+        analyzed = true;
+
+        /*
+        for (const auto &i : lines) {
+            std::cout << i.line_num << " " << i.line_start << " - " << i.line_end << "\n";
+        }
+        */
     }
 
     std::ostream &operator<<(std::ostream &s, const text_fragment & tf) {
