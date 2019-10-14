@@ -24,6 +24,16 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       "Debug" "Release" "Developer" "CI")
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(YALR_DEFAULT_INSTALL_OPTION ON)
+else()
+    set(YALR _DEFAULT_INSTALL_OPTION OFF)
+endif()
+
+option(YALR_BUILD_EXAMPLES "Set to ON to build examples" ON)
+option(YALR_BUILD_TESTS "Set to ON to build tests" ON)
+option(YALR_ENABLE_INSTALL "Generate the install target" ${YALR_DEFAULT_INSTALL_OPTION})
+
 
 add_compile_options("$<$<CONFIG:Developer>:-g;-O1;-Wall;-pedantic>")
 add_compile_options("$<$<CONFIG:CI>:-O1;-Wall;-pedantic>")
@@ -59,13 +69,17 @@ target_link_libraries(yalr
 #
 # Uses the yalr executable
 #
-add_subdirectory(examples)
+if (YALR_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
 
 #
 # Testing
 #
-enable_testing()
-add_subdirectory(test)
+if (YALR_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()
 
 #
 # ctags
@@ -78,4 +92,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Developer")
         VERBATIM
         COMMENT Generating ctags
         )
+endif()
+
+
+#
+# install
+#
+if (YALR_ENABLE_INSTALL)
+    install(TARGETS yalr DESTINATION bin)
 endif()
