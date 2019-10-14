@@ -232,7 +232,7 @@ struct phase_ii_visitor {
                 } else if (p.symbol_ref.text[0] == '\'') {
                     // add an inline terminal
                     // We'll need to come up with a nice name.
-                    out.atoms.emplace_back("_TERM"s + std::to_string(++inline_terminal_count));
+                    out.atoms.emplace_back("0TERM"s + std::to_string(++inline_terminal_count));
                     terminal_symbol t;
                     t.name = out.atoms.back();
                     t.pattern = p.symbol_ref.text;

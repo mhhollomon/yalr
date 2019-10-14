@@ -398,15 +398,19 @@ struct parser_guts {
         new_term.type_str = match_typestring();
 
         skip();
-        otf = expect_identifier();
-        if (not otf) return false;
-        new_term.name = *otf;
+        if ( (otf = expect_identifier()) ) {
+            new_term.name = *otf;
+        } else {
+            consume_to_space();
+        }
         
 
         skip();
-        otf = expect_pattern();
-        if (not otf) return false;
-        new_term.pattern = *otf;
+        if ( (otf = expect_pattern()) ) {
+            new_term.pattern = *otf;
+        } else {
+            consume_to_space();
+        }
 
         /* @assoc and @prec can come in either order */
         skip();
@@ -424,9 +428,8 @@ struct parser_guts {
         new_term.action = match_actionblock();
         if (not new_term.action) {
             // if we don't see an action block, we better see the closing semi-colon.
-            if (not expect_char(';')) {
-                return false;
-            }
+            // Record the error, but don't quit. Assume we got and keep going.
+            expect_char(';');
         }
 
         stmts.emplace_back(std::move(new_term));
@@ -632,7 +635,7 @@ struct parser_guts {
      ************************************************************************/
     // Match an identifier (but not a keyword)
     optional_text_fragment match_identifier() {
-        auto& cl = current_loc;
+        auto start_loc = current_loc;
         int count = 0;
 
         if (valid_pos(0) and (std::isalpha(peek(0)) or peek(0) == '_')) {
@@ -641,18 +644,18 @@ struct parser_guts {
             return std::nullopt;
         }
         while (valid_pos(count) and ( 
-                    std::isalnum(cl.sv[count]) or cl.sv[count] == '_')) {
+                    std::isalnum(current_loc.sv[count]) or current_loc.sv[count] == '_')) {
             ++count;
         }
 
-        auto ret_sv = cl.sv.substr(0, count);
+        auto ret_sv = current_loc.sv.substr(0, count);
 
         if (keywords.count(ret_sv) > 0) {
             return std::nullopt;
         }
 
         consume(count);
-        return text_fragment{ ret_sv, pl_to_tl(cl) };
+        return text_fragment{ ret_sv, pl_to_tl(start_loc) };
 
     }
 
@@ -719,16 +722,15 @@ struct parser_guts {
     // Match string surrounded by single quotes.
     // newline characters are not allowed unless they are escaped.
     optional_text_fragment match_singlequote() {
-        int state = 0;
         if (peek() != '\'') {
             return std::nullopt;
         }
-        int count = 1;
+        int count = 0;
         bool working = true;
-        bool error = false;
         // put the increment first, that way we move past
         // the character that stopped us. Below, we will consume it,
         // but not return it.
+        int state = 0;
         while(valid_pos(++count) and working) {
             switch (state) {
                 case 0: // INIT
@@ -738,8 +740,6 @@ struct parser_guts {
                         working = false;
                     } else if (peek(count) == '\n') {
                         record_error("Unescaped new line in single quoted string");
-                        error = true;
-                        working = false;
                     }
                     break;
                 case 1: // ESCAPE
@@ -753,14 +753,9 @@ struct parser_guts {
         if (working) {
             // we ran out of input
             record_error("unterminated single quoted string at end of input");
-            error = true;
         }
 
-        if (error) {
-            return std::nullopt;
-        } else {
-            return current_loc_text_fragment(count);
-        }
+        return current_loc_text_fragment(count);
     
     };
 
@@ -1012,7 +1007,7 @@ struct parser_guts {
     void consume_to_space() {
         while (not eoi() and not std::isspace(peek(0))) {
             // treat comments as spaces
-            if (check_string("//") or check_string("/*")) {
+            if (check_string("//") or check_string("/*") or check_string(";")) {
                 break;
             }
             consume(1);

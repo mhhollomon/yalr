@@ -11,10 +11,10 @@ namespace yalr {
             li.col_num << ": error:" <<
             message << "\n";
         //
-        // put out the formated line
+        // put out the formatted line
         //
         strm << fragment.location.source->content.substr(
-                li.line_start, li.line_end-li.line_start);
+                li.line_start, li.line_end-li.line_start+1);
         if (fragment.location.source->content[li.line_end] != '\n')
             strm << "\n";
         std::string filler(li.col_num-1, '~');

@@ -38,6 +38,7 @@ term ABORT       'abort'       ;
 term ACTION      'action'      ;
 term ADD         'add'         ;
 term AFTER       'after'       ;
+term AND         'and'         ;
 term ALL         'all'         ;
 term ALTER       'alter'       ;
 term ANALYZE     'analyze'     ;
@@ -50,6 +51,7 @@ term BEGIN       'begin'       ;
 term BETWEEN     'between'     ;
 term BY          'by'          ; 
 term CASCADE     'cascade'     ;   
+term CASE        'case'        ;
 term CAST        'cast'        ;
 term CHECK       'check'       ;
 term COLLATE     'collate'     ;
@@ -58,6 +60,7 @@ term COMMIT      'commit'      ;
 term CONFLICT    'conflict'    ;
 term CONSTRAINT  'constraint'  ;
 term CREATE      'create'      ;
+term CROSS       'cross'       ;
 term CURRENT     'current'     ;
 term CURRENT_TIME      'current_time'      ;
 term CURRENT_DATE      'current_date'      ;
@@ -68,6 +71,7 @@ term DEFERRED    'deferred'    ;
 term DEFERRABLE  'deferrable'  ;
 term DELETE      'delete'      ;
 term DESC        'desc'        ;
+term DETACH      'detach'      ;
 term DISTINCT    'distinct'    ;
 term DO          'do'          ;
 term DROP        'drop'        ;
@@ -143,6 +147,7 @@ term RESTRICT    'restrict'    ;
 term RIGHT       'right'       ;
 term ROLLBACK    'rollback'    ;
 term ROW         'row'         ;
+term ROWID       'rowid'       ;
 term ROWS        'rows'        ;
 term SAVEPOINT   'savepoint'   ;
 term SELECT      'select'      ;
@@ -208,7 +213,7 @@ rule LiteralValue {
 
 rule TypeName {
     => TypeNameList '(' SignedNumber ')' ;
-    => TypeNameList '(' SignedNumber ',' SignedName ')' ;
+    => TypeNameList '(' SignedNumber ',' SignedNumber ')' ;
 }
 
 rule TypeNameList {
@@ -223,12 +228,30 @@ rule OrderingDirection {
 }
 
 
+rule UniOp {
+    => '-'; => '+' ; => '~' ; => 'not' ;
+}
+
+rule BinOp { // need to assign precedence to these.
+             // operators on the same line have the same precedence.
+    => '||' ;
+    => '*'; => '/'; => '%' ;
+    => '+' ; => '-' ;
+    => '<<' ; => '>>' ; => '&' ; => '|';
+    => '=' ; => '==' ; => '!=' ; => '<> '; => 'is'; => 'is not' ;
+        => 'in'; => 'like'; => 'glob'; => 'match' ; => 'regexp' ;
+    => 'and' ;
+    => 'or'  ;
+}
+
+term FunctionName 'foo' ; // obviously not correct
+
 rule Expr {
     => LiteralValue ;
     => BindParameter ;
     => ExtendedColumnName ;
     => UniOp Expr ;  // What is unary operator ?
-    => Expr BinOp Exptr ; // What is a binary operator ?
+    => Expr BinOp Expr ; // What is a binary operator ?
     => FunctionName LPAR FunctionExpr RPAR ;
     => LPAR ExprList RPAR ;
     => CAST LPAR Expr AS TypeName RPAR ;
@@ -240,7 +263,7 @@ rule Expr {
     => Expr MaybeNot IN LPAR SelectStmt RPAR ;
     => Expr MaybeNot IN LPAR ExprList RPAR ;
     => Expr MaybeNot IN ExtendedName ;
-    => Expr MaybeNot In ExtendedName LPAR ExprList RPAR ;
+    => Expr MaybeNot IN ExtendedName LPAR ExprList RPAR ;
     => MaybeNot EXISTS LPAR SelectStmt RPAR ;
     => CASE Expr CaseLegs CaseElse END ;
     => CASE CaseLegs CaseElse END ;
@@ -334,6 +357,7 @@ rule Filter {
 rule WindowOverClause {
     => NAME ;
     => WindowDefn ;
+}
 
 rule WindowDefn {
     => LPAR PartitionClause OrderClause FrameSpec RPAR ;
@@ -457,6 +481,8 @@ rule ColumnConstraintList {
     => ColumnConstraintList ColumnConstraint ;
 }
 
+term Name r:[a-z]+ ; // not correct.
+
 rule ColumnConstraint {
     => CONSTRAINT Name ColumnConstraintSubtype ;
     => ColumnConstraintSubtype ;
@@ -559,6 +585,11 @@ rule CreateIndexStmt {
         LPAR ColumnNameList RPAR CreateIndexLimit ;
 }
 
+rule MaybeUnique {
+    => 'unique' ;
+    => ;
+}
+
 rule CreateIndexLimit {
     => ;
     => WHERE Expr ;
@@ -599,6 +630,11 @@ rule TableConstraint {
     => TableConstraintPrefix UNIQUE '(' IndexedColumnList ')' ConflictClause ;
     => TableConstraintPrefix CHECK '(' Expr ')' ;
     => TableConstraintPrefix FOREIGN KEY '(' NameList ')' ForeignKeyClause ;
+}
+
+rule NameList {
+    => NameList Name ;
+    => Name ;
 }
 
 rule TableConstraintPrefix {
@@ -708,6 +744,8 @@ rule DeleteStmt {
         DeleteLimiter ;
 }
 
+term QualifiedTableName r:[a-z]* ; // WRONG, but makes this compile.
+
 rule WithClause {
     => ;
     => WITH MaybeRecursive CTETableList ;
@@ -721,6 +759,8 @@ rule CTETableList {
 rule CTETableEntry {
     => CTETableName AS '(' SelectStmt ')' ;
 }
+
+term CTETableName r:[a-z]* ; // WRONG, but makes this compile.
 
 rule WhereClause {
     => WHERE Expr ;

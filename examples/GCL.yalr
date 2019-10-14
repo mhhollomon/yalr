@@ -1,4 +1,7 @@
 
+/***************************************************
+* Guarded Command Language
+****************************************************/
 skip WS  r:\s+ ;
 
 term IF     'if'    ;
@@ -6,8 +9,6 @@ term FI     'fi'    ;
 term DO     'do'    ; 
 term OD     'od'    ;
 term SKIP   'skip'  ;
-term OR     'or'    ; 
-term AND    'and'   ;
 term TRUE   'true'  ;
 term FALSE  'false' ;
 
@@ -20,17 +21,24 @@ term ASSIGN ':='    ;
 term COMMA  ','     ;
 term LPAR   '('     ;
 term RPAR   ')'     ;
-term BANG   '!'     ;
-term LT     '<'     ;
-term LE     '<='    ;
-term GT     '>'     ;
-term GE     '>='    ;
-term EQ     '='     ; 
-term NE     '!='    ;
-term SLASH  '/'     ;
-term STAR   '*'     ;
-term PLUS   '+'     ;
-term MINUS  '-'     ;
+term BANG   '!'  @assoc=right   ;
+// Relops need to bind tighter than the 
+// logical operators
+term LT     '<'   @prec=200  @assoc=left ;
+term LE     '<='  @prec=LT   @assoc=left ;
+term GT     '>'   @prec=LT   @assoc=left ;
+term GE     '>='  @prec=LT   @assoc=left ;
+term EQ     '='   @prec=LT   @assoc=left ; 
+term NE     '!='  @prec=LT   @assoc=left ;
+term OR     'or'  @prec=100  @assoc=left ; 
+term AND    'and' @prec='or' @assoc=left ;
+//
+// standard math precedence
+//
+term STAR   '*'   @prec=200  @assoc=left ;
+term SLASH  '/'   @prec='*'  @assoc=left ;
+term PLUS   '+'   @prec=100  @assoc=left ;
+term MINUS  '-'   @prec=PLUS @assoc=left ;
 
 term IDENT  r:\w+  ;
 term NUMBER r:[1-9][0-9]* ;
@@ -86,20 +94,12 @@ rule MathTerm {
     => '(' MathExp ')' ;
 }
 
-rule Divide {
-    => MathTerm SLASH MathTerm ;
-    => MathTerm ;
-}
-
-rule Factor {
-    => Factor '*' Divide ;
-    => Divide ;
-}
-
 rule MathExp {
-    => MathExp PLUS Factor ;
-    => MathExp MINUS Factor ;
-    => Factor ;
+    => MathExp '+' MathExp ;
+    => MathExp '-' MathExp ;
+    => MathExp '*' MathExp ;
+    => MathExp '/' MathExp ;
+    => MathTerm ;
 }
 
 rule BoolTerm {
@@ -125,6 +125,6 @@ rule Compare {
 rule BoolExp {
     => BoolTerm ;
     => Compare ;
-    => BoolExp OR Compare ;
-    => BoolExp OR BoolTerm ;
+    => BoolExp OR BoolExp ;
+    => BoolExp AND BoolExp ;
 }

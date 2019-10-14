@@ -72,6 +72,6 @@ TEST_CASE("[analyzer] allow single quotes to define a new term") {
         CHECK(*tree);
         auto sym = tree->symbols.find("'bar'");
         REQUIRE(sym);
-        CHECK(sym->name() == "_TERM1");
+        CHECK(sym->name() == "0TERM1");
 }
 

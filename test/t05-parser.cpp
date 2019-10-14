@@ -160,10 +160,19 @@ TEST_CASE("match_char() - [parser]") {
 }
 
 TEST_CASE("match_singlequote() - [parser]") {
+    SUBCASE("escaped char") {
+        auto p = mk_parser("'\\''");
+        auto lexeme = p.match_singlequote();
+        REQUIRE(lexeme);
+        CHECK(lexeme->text == "'\\''");
+        CHECK(p.eoi());
+        CHECK(p.current_loc.offset == 4);
+    }
+
     SUBCASE("positive 1") {
         auto p = mk_parser("'xyz\\' \"'");
         auto lexeme = p.match_singlequote();
-        CHECK(lexeme);
+        REQUIRE(lexeme);
         CHECK(lexeme->text == "'xyz\\' \"'");
         CHECK(p.eoi());
         CHECK(p.current_loc.offset == 9);
@@ -171,7 +180,7 @@ TEST_CASE("match_singlequote() - [parser]") {
     SUBCASE("positive 2") {
         auto p = mk_parser("'xyz\\\nabc' cccc");
         auto lexeme = p.match_singlequote();
-        CHECK(lexeme);
+        REQUIRE(lexeme);
         CHECK(lexeme->text == "'xyz\\\nabc'");
         CHECK(not p.eoi());
         CHECK(p.current_loc.offset == 10);
@@ -180,13 +189,11 @@ TEST_CASE("match_singlequote() - [parser]") {
         {
         auto p = mk_parser("'abc\nxyz'");
         auto lexeme = p.match_singlequote();
-        CHECK_FALSE(lexeme);
         CHECK(p.error_list.size() == 1);
         }
         {
         auto p = mk_parser("'xyz");
         auto lexeme = p.match_singlequote();
-        CHECK_FALSE(lexeme);
         CHECK(p.error_list.size() == 1);
         }
 
@@ -197,7 +204,7 @@ TEST_CASE("match_regex() - [parser]") {
     SUBCASE("positive 1") {
         auto p = mk_parser("r:abc[\"\\ ]: ");
         auto lexeme = p.match_regex();
-        CHECK(lexeme);
+        REQUIRE(lexeme);
         CHECK(lexeme->text == "r:abc[\"\\ ]:");
         CHECK(not p.eoi());
         CHECK(p.current_loc.offset == 11);
