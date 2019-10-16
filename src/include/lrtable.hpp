@@ -106,6 +106,7 @@ namespace yalr {
         production_map productions;
         std::map<symbol, symbol_set> first_set;
         std::map<symbol, symbol_set> follow_set;
+        std::multimap<std::string, std::string_view> verbatim_map;
         symbol_set epsilon;
         production_identifier_t target_prod;
         option_list options;

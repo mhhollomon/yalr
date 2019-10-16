@@ -1,6 +1,7 @@
 #include "codegen.hpp"
 #include "template.hpp"
 #include "utils.hpp"
+#include "analyzer_tree.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -132,6 +133,27 @@ json generate_reduce_functions(const lrtable& lt) {
     return funcs;
 }
 
+/****************************************************************************/
+json generate_verbatim(const lrtable& lt) {
+
+    json retval = json::object();
+
+    for (auto v : verbatim_locations) {
+        auto pieces = json::array();
+        auto range =  lt.verbatim_map.equal_range(std::string(v));
+
+        for (auto t = range.first; t != range.second; ++t) {
+            pieces.push_back(std::string(t->second));
+        }
+        auto loc = std::string(v);
+        loc.replace(loc.find('.'), 1, "_");
+        retval[loc] = pieces;
+    }
+
+    return retval;
+}
+
+/****************************************************************************/
 void generate_code(const lrtable& lt, std::ostream& outstrm) {
 
     inja::Environment env;
@@ -275,6 +297,8 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     data["states"] = states_array;
 
     data["reducefuncs"] = generate_reduce_functions(lt);
+
+    data["verbatim"] = generate_verbatim(lt);
 
 /*    std::cout << "----------------------------\n";
     std::cout << data.dump(4) << std::endl;

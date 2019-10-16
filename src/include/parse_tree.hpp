@@ -46,7 +46,12 @@ namespace yalr {
         std::vector<alternative> alternatives;
     };
 
-    using statement = std::variant<terminal, skip, option, rule>;
+    struct verbatim {
+        text_fragment location;
+        text_fragment text;
+    };
+
+    using statement = std::variant<terminal, skip, option, rule, verbatim>;
 
     using statement_list = std::vector<statement>;
     struct parse_tree {

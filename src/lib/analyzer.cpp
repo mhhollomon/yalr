@@ -2,7 +2,19 @@
 
 #include "option_defaults.hpp"
 
-namespace yalr::analyzer {
+#include <unordered_set>
+
+
+namespace yalr {
+
+std::unordered_set<std::string_view> verbatim_locations = {
+    { "file.top" },      {"file.bottom"},
+    { "namespace.top" }, {"namespace.bottom"},
+    { "lexer.top" },     {"lexer.bottom"},
+    { "parser.top" },    {"parser.bottom"},
+};
+
+namespace analyzer {
 
 //
 // Helper function used to dereference a precedence specifier.
@@ -182,6 +194,17 @@ struct phase_i_visitor {
             out.record_error(t.name,"Unknown option '", t.name, "'");
         }
 
+    }
+
+    //
+    //// Handle verbatim.
+    //
+    void operator()(const yalr::verbatim &t) {
+        if (verbatim_locations.count(t.location.text) > 0) {
+            out.verbatim_map.emplace(t.location.text, t.text.text);
+        } else {
+            out.record_error("Unknown location for verbatim section", t.location);
+        }
     }
 
 };
@@ -434,4 +457,5 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
     strm << "----- END PRODUCTIONS --------\n";
 }
 
+}
 } // namespace yalr::analyzer

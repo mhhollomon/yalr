@@ -115,3 +115,64 @@ Should these return `std::unique_ptr` or `std::shared_ptr` instead?
 
 Have a way for the user to decide?
 
+
+### @lexeme type for terminals
+
+```
+term <@lexeme> IDENT r:[a-z]+ ;
+```
+
+Should expand to:
+
+```
+term <std::string> IDENT r:[a-z]+ <%{ return std::move(lexeme); }%>
+```
+
+### termset
+
+```
+termset <int> MYSTUFF @prec=200 'a' 'b' 'c' <%{ return int(lexeme[0]); }%>
+```
+
+should expand to:
+
+```
+term <int> __1 'a' @prec=200 <%{ return int(lexeme[0]); }%>
+term <int> __2 'b' @prec=200 <%{ return int(lexeme[0]); }%>
+term <int> __3 'c' @prec=200 <%{ return int(lexeme[0]); }%>
+
+rule <int> MYSTUFF {
+    => 'a' <%{ return _v1; }%>
+    => 'b' <%{ return _v1; }%>
+    => 'c' <%{ return _v1; }%>
+}
+```
+
+It is fine to use an already defined terminal. However, if the termset set
+precedence, then the used terminal cannot already have precedence set, or it
+will result in an analysis phase error.
+
+ALso the type of the terminal must match the termset - unless the termset shows
+void.
+
+```
+// termset is void
+term <int> A 'a' <%{ return 42; }%>
+termset FOO A 'b' 'c';
+
+// ERROR - term is void ut termset is int
+term A 'a' ;
+termset <int> A 'b' <%{ ... }%>
+
+// Okay - no precedence
+term A 'a' ;
+termset FOO @prec=200 A 'b' 'c' ;
+
+//Okay - no termset precedence
+term A 'a' @prec=200 ;
+termset FOO A 'b' ;
+
+// ERROR - precedence conflict - even though
+// they are the same number
+term A 'a' @prec=200 ;
+termset FOO @prec=200 A 'b' ;

@@ -254,6 +254,7 @@ void compute_first_and_follow(lrtable& lt) {
     retval->symbols = g.symbols;
     retval->target_prod = g.target_prod;
     retval->options = g.options;
+    retval->verbatim_map = g.verbatim_map;
     
     for (auto &p : g.productions) {
         retval->productions.try_emplace(p.prod_id, p);
