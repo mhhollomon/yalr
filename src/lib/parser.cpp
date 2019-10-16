@@ -18,7 +18,7 @@ struct parse_loc {
 
 std::set<std::string, std::less<>> keywords = {
     "parser", "class", "rule", "term", "skip", "global",
-    "namespace", "lexer", "option"
+    "namespace", "lexer", "option", "verbatim"
 };
 
 struct parser_guts {
@@ -147,7 +147,7 @@ struct parser_guts {
     }
 
     //
-    // return a text_location base on the current_loc
+    // return a text_location based on the current_loc
     //
     text_location currl_to_tl() {
         return pl_to_tl(current_loc);
@@ -159,6 +159,11 @@ struct parser_guts {
 
     text_fragment pl_to_tf(parse_loc pl, int count) {
         return { pl.sv.substr(0, count), pl_to_tl(pl) };
+    }
+
+    text_fragment pl_to_tf(parse_loc pl_start, parse_loc pl_end) {
+        return { pl_start.sv.substr(0, pl_end.offset - pl_start.offset), 
+                    pl_to_tl(pl_start) };
     }
 
     text_fragment current_loc_text_fragment(int ret_len, int consume_len) {
@@ -205,7 +210,8 @@ struct parser_guts {
             if (parse_rule(retval.statements)) continue;
             if (parse_term(retval.statements)) continue;
             if (parse_skip(retval.statements)) continue;
-            record_error("Expecting a statement (rule, term, skip)");
+            if (parse_verbatim(retval.statements)) continue;
+            record_error("Expecting a statement (rule, term, skip, verbatim)");
             break;
         }
 
@@ -467,6 +473,48 @@ struct parser_guts {
         return true;
     }
 
+    /* verbatim loc.loc.loc <%{ action }%> */
+    bool parse_verbatim(statement_list& stmts) {
+        yalr::verbatim new_verbatim;
+        optional_text_fragment otf;
+
+        if (not match_keyword("verbatim")) {
+            return false;
+        }
+
+        skip();
+        
+        auto start_loc = current_loc;
+        otf = expect_identifier(true);
+        if (not otf) {
+            record_error("expecting location identifier");
+        } else {
+            while (1) {
+                if (match_char('.')) {
+                    otf = expect_identifier(true);
+                    if (not otf) {
+                        record_error("verbatim locations cannot end in dot");
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            new_verbatim.location = pl_to_tf(start_loc, current_loc);
+        }
+
+        skip();
+        otf = match_actionblock();
+        if (otf) {
+            new_verbatim.text = *otf;
+        }
+
+        stmts.emplace_back(std::move(new_verbatim));
+
+        return true;
+    }
+
+
     // 
     // 'parser' 'class' IDENT ';'
     //
@@ -634,7 +682,7 @@ struct parser_guts {
      * Identifiers must start with a letter or underbar.
      ************************************************************************/
     // Match an identifier (but not a keyword)
-    optional_text_fragment match_identifier() {
+    optional_text_fragment match_identifier(bool allow_keyword=false) {
         auto start_loc = current_loc;
         int count = 0;
 
@@ -650,7 +698,7 @@ struct parser_guts {
 
         auto ret_sv = current_loc.sv.substr(0, count);
 
-        if (keywords.count(ret_sv) > 0) {
+        if ((not allow_keyword) and keywords.count(ret_sv) > 0) {
             return std::nullopt;
         }
 
@@ -659,8 +707,8 @@ struct parser_guts {
 
     }
 
-    optional_text_fragment expect_identifier() {
-        auto retval = match_identifier();
+    optional_text_fragment expect_identifier(bool allow_keyword=false) {
+        auto retval = match_identifier(allow_keyword);
 
         if (not retval) {
             record_error("Expecting identifier");
@@ -668,9 +716,9 @@ struct parser_guts {
         return retval;
     }
 
-    /******************************************************
+    /************************************************************************
      * CHAR Matching
-     *****************************************************/
+     ************************************************************************/
     bool match_char(char e) {
         if (peek() == e) {
             consume(1);

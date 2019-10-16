@@ -4,17 +4,18 @@ cmake_minimum_required(VERSION 3.13)
 add_custom_command(
     OUTPUT calculator.yalr.hpp
     COMMAND yalr ${CMAKE_CURRENT_SOURCE_DIR}/calculator.yalr -o calculator.yalr.hpp
-    DEPENDS yalr
+    DEPENDS yalr calculator.yalr
     VERBATIM
     )
 
-add_custom_target( gen_calc DEPENDS calculator.yalr.hpp )
+add_custom_target( gen_calc DEPENDS calculator.yalr.hpp calculator.yalr)
 
 add_executable(calculator)
 
 target_sources(calculator
     PRIVATE
         "calculator_main.cpp"
+        "${CMAKE_CURRENT_BINARY_DIR}/calculator.yalr.hpp"
     )
 
 add_dependencies(calculator gen_calc)

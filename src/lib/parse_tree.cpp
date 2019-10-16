@@ -22,6 +22,8 @@ struct pp_visitor {
     }
     void operator()(option const &o) {
     }
+    void operator()(verbatim const &v) {
+    }
 };
 
 std::ostream &parse_tree::pretty_print(std::ostream &strm) const {

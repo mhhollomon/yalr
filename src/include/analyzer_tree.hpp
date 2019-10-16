@@ -7,13 +7,21 @@
 #include "symbols.hpp"
 #include "production.hpp"
 
+#include <list>
+#include <memory>
+#include <map>
+#include <unordered_set>
+
 namespace yalr {
+
+extern std::unordered_set<std::string_view> verbatim_locations;
 
     struct analyzer_tree {
         bool success;
         std::list<error_info>    errors;
         option_list              options;
         symbol_table             symbols;
+        std::multimap<std::string, std::string_view> verbatim_map;
         std::vector<production>  productions;
         production_identifier_t  target_prod;
         std::list<std::string>   atoms;

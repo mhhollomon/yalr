@@ -14,6 +14,12 @@ R"DELIM(/* build time date version goes here */
 #include <variant>
 #include <string_view>
 
+/***** verbatim file.top ********/
+## for v in verbatim.file_top
+<% v %>
+## endfor
+/***** verbatim file.top ********/
+
 #ifndef NDEBUG
 #define YALR_DEBUG
 #endif
@@ -33,6 +39,12 @@ R"DELIM(/* build time date version goes here */
 #endif
 
 namespace <%namespace%> {
+
+/***** verbatim namespace.top ********/
+## for v in verbatim.namespace_top
+<% v %>
+## endfor
+/***** verbatim namespace.top ********/
 
 enum token_type {
 ## for entry in enums
@@ -66,13 +78,16 @@ using semantic_value = std::variant<
 
 struct value_printer {
     void operator()(const std::monostate& m) {
-        std::cerr << "(mono)";
+        std::cerr << "(void)";
     }
-## for t in types
-    void operator()(const <%t%>& v) {
-        std::cerr << v;
+    void operator()(const std::string& s) {
+        std::cerr << "'" << s << "'";
     }
-## endfor
+
+    template<typename T>
+    void operator()(const T & t) {
+        std::cerr << t;
+    }
 };
 
 struct token_value {
@@ -138,6 +153,11 @@ std::vector<std::pair<match_ptr, token_type>> patterns = {
 
 
 class <%lexerclass%> {
+/***** verbatim lexer.top ********/
+## for v in verbatim.lexer_top
+<% v %>
+## endfor
+/***** verbatim lexer.top ********/
 public:
 #if defined(YALR_DEBUG)
     bool debug = false;
@@ -154,6 +174,7 @@ public:
 
         token_type ret_type = undef;
         std::size_t max_len = 0;
+        YALR_LDEBUG("current character = '" << *current << "'\n");
 
         for (const auto &[m, tt] : patterns) {
             YALR_LDEBUG("Matching for token # " << tt);
@@ -202,6 +223,12 @@ public:
 private:
     std::string::const_iterator current;
     const std::string::const_iterator last;
+
+/***** verbatim lexer.bottom ********/
+## for v in verbatim.lexer_bottom
+<% v %>
+## endfor
+/***** verbatim lexer.bottom ********/
 };
 
 
@@ -212,9 +239,9 @@ class <%parserclass%> {
 
     void printstack() {
         value_printer vp;
-        std::cerr << "[" << la.t.toktype << "]" ;
+        std::cerr << "[la= " << la.t.toktype << "]" ;
         for (const auto& x : tokstack) {
-            std::cerr << " " << x.t.toktype << "(";
+            std::cerr << " (t=" << x.t.toktype << ",v=";
             std::visit(vp, x.v);
             std::cerr << ")";
         }
@@ -235,6 +262,11 @@ class <%parserclass%> {
             tokstack.pop_back();
         }
     }
+/***** verbatim parser.top ********/
+## for v in verbatim.parser_top
+<% v %>
+## endfor
+/***** verbatim parser.top ********/
 /************** states *****************/
 
 ## for state in states
@@ -337,9 +369,28 @@ public:
 
         return false;
     }
+
+/***** verbatim parser.bottom ********/
+## for v in verbatim.parser_bottom
+<% v %>
+## endfor
+/***** verbatim parser.bottom ********/
+
 }; // class <%parserclass%>
 
+/***** verbatim namespace.bottom ********/
+## for v in verbatim.namespace_bottom
+<% v %>
+## endfor
+/***** verbatim namespace.bottom ********/
+
 } // namespace <%namespace%>
+
+/***** verbatim file.bottom ********/
+## for v in verbatim.file_bottom
+<% v %>
+## endfor
+/***** verbatim file.bottom ********/
 
 )DELIM"s;
 

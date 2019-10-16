@@ -133,6 +133,9 @@ TEST_CASE("prec in rules - [parser]") {
     SUBCASE("positive") {
         auto tree = parse_string("rule A { => 'x' @prec=2; }");
         CHECK(tree.success);
+        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        auto alt = ruleA.alternatives[0];
+        CHECK(alt.precedence->text == "2");
     }
     SUBCASE("multiple") {
         auto tree = parse_string("rule A { => 'x' @prec=2 @prec=foo; }");
@@ -151,5 +154,34 @@ TEST_CASE("prec in rules - [parser]") {
         CHECK(tree.errors.size() == 1);
     }
 }
+
+TEST_CASE("verbatim - [parser]") {
+    SUBCASE("positive 1") {
+        auto tree = parse_string("verbatim X <%{ ... }%>");
+        for (auto const &e : tree.errors) {
+            e.output(std::cout);
+        }
+
+        REQUIRE(tree.success);
+        auto verb = std::get<yalr::verbatim>(tree.statements[0]);
+        CHECK(verb.location.text == "X");
+        CHECK(verb.text.text == " ... ");
+    }
+
+    SUBCASE("positive multipart location") {
+        auto tree = parse_string("verbatim X.Y.Z <%{ ... }%>");
+        REQUIRE(tree.success);
+        auto verb = std::get<yalr::verbatim>(tree.statements[0]);
+        CHECK(verb.location.text == "X.Y.Z");
+        CHECK(verb.text.text == " ... ");
+    }
+
+    SUBCASE("negative - trailing dot") {
+        auto tree = parse_string("verbatim X.Y. <%{ ... }%>");
+        REQUIRE(not tree.success);
+    }
+}
+
+
 
 

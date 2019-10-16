@@ -163,9 +163,10 @@ term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
 
 ##### Terminal Precedence and Associativity
 
-Parser terminals can be assigned a precedence and associativity in order to help
-resolve possible conflicts in the grammar. Please see the section below  on
-Action Conflict Resolution for details on the algorithm.
+Parser terminals can be assigned a precedence and associativity in order to
+help resolve possible conflicts in the grammar. Please see the section below
+on [Action Conflict Resolution](#action-conflict-resolution) for details on the
+algorithm.
 
 Associativity is assigned to the terminal using the `@assoc=` flag. It can be
 assigned either `left` or `right` associativity. By default, terminals are
@@ -298,6 +299,34 @@ rule S {
     => 'x' 'a' E           ; // also default
     => 'x' 'a' R @prec='x' ; // this will have prec=200
 }
+```
+
+## Verbatim Code Injection
+
+Sections of code may be injected into the generated code via the `verbatim`
+statement.
+
+```
+verbatim $location $actionblock
+```
+
+The possible locations are:
+
+location | description
+---------|-------------
+file.top | Just after the generated includes
+file.bottom | Just before the closing inclusion guard
+namespace.top | Just after openng the namespace
+namespace.bottom | Just before the closing brace for the namespace
+lexer.top | Near the top of the lexer class definition
+lexer.bottom | just before the closing brace for the lexer class
+parser.top | Near the top of the parser class, after helper routines, but before the state methods.
+parser.bottom | Just before the closing brace for the parser class
+
+```
+verbatim file.top <%{
+#include "project.hpp"
+}%>
 ```
 
 ## Action Conflict Resolution
