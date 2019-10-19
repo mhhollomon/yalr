@@ -51,7 +51,26 @@ namespace yalr {
         text_fragment text;
     };
 
-    using statement = std::variant<terminal, skip, option, rule, verbatim>;
+    struct associativity {
+        text_fragment assoc_text;
+        std::vector<text_fragment> symbol_refs;
+    };
+
+    struct precedence {
+        text_fragment prec_ref;
+        std::vector<text_fragment> symbol_refs;
+    };
+
+    struct termset {
+        text_fragment name;
+        optional_text_fragment type_str;
+        optional_text_fragment associativity;
+        optional_text_fragment precedence;
+        std::vector<text_fragment> symbol_refs;
+    };
+
+    using statement = std::variant<terminal, skip, option, rule, verbatim,
+                                    associativity, precedence, termset>;
 
     using statement_list = std::vector<statement>;
     struct parse_tree {

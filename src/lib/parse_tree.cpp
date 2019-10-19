@@ -24,6 +24,12 @@ struct pp_visitor {
     }
     void operator()(verbatim const &v) {
     }
+    void operator()(precedence const &v) {
+    }
+    void operator()(associativity const &v) {
+    }
+    void operator()(termset const &v) {
+    }
 };
 
 std::ostream &parse_tree::pretty_print(std::ostream &strm) const {

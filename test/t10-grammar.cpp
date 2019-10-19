@@ -10,6 +10,12 @@ auto parse_string(std::string s) {
     return p.parse(); 
 }
 
+void output_errors(yalr::parse_tree const &t) {
+    for (auto const &e : t.errors) {
+        e.output(std::cout);
+    }
+}
+
 TEST_CASE("grammar - [parser]") {
 
     SUBCASE("Parse single quotes in productions - [parser]") {
@@ -182,6 +188,56 @@ TEST_CASE("verbatim - [parser]") {
     }
 }
 
+TEST_CASE("associativity statement - [grammar]") {
+    SUBCASE("positive") {
+        auto tree = parse_string("associativity left 'a' X;");
+        REQUIRE(tree.success);
+        auto assoc = std::get<yalr::associativity>(tree.statements[0]);
+        CHECK(assoc.assoc_text.text == "left");
+        CHECK(assoc.symbol_refs.size() == 2);
+    }
+}
 
+TEST_CASE("precedence statement - [grammar]") {
+    SUBCASE("positive integer") {
+        auto tree = parse_string("precedence 100 'a' X;");
+        REQUIRE(tree.success);
+        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        CHECK(prec.prec_ref.text == "100");
+        CHECK(prec.symbol_refs.size() == 2);
+    }
+    SUBCASE("positive identifier") {
+        auto tree = parse_string("precedence FOO 'a' X;");
+        REQUIRE(tree.success);
+        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        CHECK(prec.prec_ref.text == "FOO");
+        CHECK(prec.symbol_refs.size() == 2);
+    }
+    SUBCASE("positive single quote") {
+        auto tree = parse_string("precedence 'x' 'a' X;");
+        output_errors(tree);
+        REQUIRE(tree.success);
+        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        CHECK(prec.prec_ref.text == "'x'");
+        CHECK(prec.symbol_refs.size() == 2);
+    }
+}
 
-
+TEST_CASE("termset - [parser]") {
+    SUBCASE("just assoc") {
+        auto tree = parse_string("termset foo @assoc=left  'X' x;");
+        CHECK(tree.success);
+    }
+    SUBCASE("just prec") {
+        auto tree = parse_string("termset <int> foo @prec=100 'x' abc;");
+        CHECK(tree.success);
+    }
+    SUBCASE("prec first") {
+        auto tree = parse_string("termset <std::string> arg @prec=foo @assoc=left 'X';");
+        CHECK(tree.success);
+    }
+    SUBCASE("assoc first") {
+        auto tree = parse_string("termset flah @assoc=left @prec='+' zed;");
+        CHECK(tree.success);
+    }
+}

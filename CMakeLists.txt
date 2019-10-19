@@ -35,7 +35,7 @@ option(YALR_BUILD_TESTS "Set to ON to build tests" ON)
 option(YALR_ENABLE_INSTALL "Generate the install target" ${YALR_DEFAULT_INSTALL_OPTION})
 
 
-add_compile_options("$<$<CONFIG:Developer>:-g;-O1;-Wall;-pedantic>")
+add_compile_options("$<$<CONFIG:Developer>:-g;-O0;-Wall;-pedantic>")
 add_compile_options("$<$<CONFIG:CI>:-O1;-Wall;-pedantic>")
 add_compile_options("$<$<CONFIG:Release>:-O3>")
 

@@ -8,5 +8,5 @@ lexer class my_cool_lexer_class ;
 goal rule foo { => 'a' ; }
 .blockend
 
-.e regex class my_cool_lexer_class \{\npublic:
+.e regex class my_cool_lexer_class \{\n\/\*\*
 

@@ -20,22 +20,25 @@ term PRINT 'print' ;
 term <std::string> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* <%{ return std::move(lexeme); }%>
 
 term<float> NUMBER r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
-term PLUS '+'  @assoc=left @prec=100 ;
-term MINUS '-' @assoc=left @prec=PLUS ;
-term MULTI '*' @assoc=left @prec=200 ;
-term DIV   '/' @assoc=left @prec='*' ;
+
+//
+// associativity will define the terminals for us.
+//
+associativity left '+' '-' '*' '/';
+precedence 100 '+' '-';
+precedence 200 '*' '/';
 
 goal rule statement_list {
     => statement;
-    => statement statement_list ;
+    => statement_list statement ;
 }
 
 rule statement { 
-    => expression <%{ std::cout << "(e)answer = " << _v1 << "\n"; }%> 
+    => expression         <%{ std::cout << "(e)answer = " << _v1 << "\n"; }%> 
     => 'print' expression <%{ std::cout << "(p)answer = " << _v2 << "\n"; }%> 
-    => VARIABLE ':=' expression @prec=50 <%{
-        std::cout << "assigning " << _v3 << " to '" << _v1 << "'\n"; 
-        variables[_v1] = _v3;
+    => var:VARIABLE ':=' expr:expression <%{
+        std::cout << "assigning " << expr << " to '" << var << "'\n"; 
+        variables[var] = expr;
     }%>
 
 }
