@@ -152,7 +152,7 @@ It is fine to use an already defined terminal. However, if the termset set
 precedence, then the used terminal cannot already have precedence set, or it
 will result in an analysis phase error.
 
-ALso the type of the terminal must match the termset - unless the termset shows
+Also the type of the terminal must match the termset - unless the termset shows
 void.
 
 ```
@@ -176,3 +176,4 @@ termset FOO A 'b' ;
 // they are the same number
 term A 'a' @prec=200 ;
 termset FOO @prec=200 A 'b' ;
+```

@@ -215,7 +215,49 @@ rule Foo { => WS ; }
 ```
 
 
-### Non-terminals
+### Associativity statement
+
+Terms can be given an assoviativity setting using the `associativity`
+statement. This statment will also create single-quote style terminals "inline"
+
+```yalr
+term foo 'foo';
+associativity left foo 'x' 'y' ;
+```
+
+If a pre-existing terminal is mentioned in an a `associativity` statement, it
+cannot already have its associaitivty set.
+
+```yalr
+term foo 'foo' @assoc=left;
+
+// !ERROR!
+associativity left foo 'x' 'y';
+```
+### Precedence statement
+
+Terminals can be given a precedence setting by using the `precedence`
+statement. This statement will also create single-quote style terminals
+"inline".
+
+The precedence can be given either as a number, or as a reference to an
+existing terminal that has precedence set.
+
+```yalr
+term foo 'foo';
+precedence 200 foo 'x' 'y';
+```
+
+If a pre-existing terminal is mentioned in a `precedence` statement, it cannot
+already have it precedence set.
+
+```yalr
+term foo 'foo' @prec=200 ;
+// !ERROR!
+precedence 200 foo;
+```
+
+### Rules
 
 Rules are declared with the `rule` keyword.
 Each alternative is introduced with `=>` and terminated with a semicolon.

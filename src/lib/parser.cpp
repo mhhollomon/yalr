@@ -18,7 +18,8 @@ struct parse_loc {
 
 std::set<std::string, std::less<>> keywords = {
     "parser", "class", "rule", "term", "skip", "global",
-    "namespace", "lexer", "option", "verbatim"
+    "namespace", "lexer", "option", "verbatim", "precedence",
+    "asssociativity", "termset"
 };
 
 struct parser_guts {
@@ -211,6 +212,9 @@ struct parser_guts {
             if (parse_term(retval.statements)) continue;
             if (parse_skip(retval.statements)) continue;
             if (parse_verbatim(retval.statements)) continue;
+            if (parse_precedence(retval.statements)) continue;
+            if (parse_associativity(retval.statements)) continue;
+            if (parse_termset(retval.statements)) continue;
             record_error("Expecting a statement (rule, term, skip, verbatim)");
             break;
         }
@@ -277,7 +281,6 @@ struct parser_guts {
             return false;
         }
 
-        bool error = false;
         bool saw_prec = false;
         while(skip() and not eoi() and error_list.size() < 5) {
             // ';" closes the alternative, so leave the loop if we see it.
@@ -294,7 +297,6 @@ struct parser_guts {
             if (prec_spec) {
                 if (saw_prec) {
                     record_error("Multiple precedence specifiers for alternative");
-                    error = true;
                 } else {
                     new_alt.precedence = prec_spec;
                     saw_prec = true;
@@ -310,7 +312,6 @@ struct parser_guts {
                 if (saw_prec) {
                     record_error("item seen after precedence specifier", 
                             new_item->symbol_ref);
-                    error = true;
                 } else {
                     new_alt.items.emplace_back(*new_item);
                 }
@@ -324,7 +325,6 @@ struct parser_guts {
             } else {
                 record_error("Expecting precedence, rule item, action or closing semicolon.");
             }
-            error = true;
             // skip a token and try again.
             consume_to_space();
         }
@@ -512,6 +512,125 @@ struct parser_guts {
         stmts.emplace_back(std::move(new_verbatim));
 
         return true;
+    }
+
+    
+    /* precedence INDENT|NUM|SQ item+ */
+    bool parse_precedence(statement_list& stmts) {
+        yalr::precedence new_prec;
+        optional_text_fragment otf;
+
+        if (not match_keyword("precedence")) {
+            return false;
+        }
+
+        skip();
+        if ((otf = match_precedence(false))) {
+            new_prec.prec_ref = *otf;
+        }
+
+        skip();
+        auto item = match_simple_item();
+        while (item) {
+            new_prec.symbol_refs.push_back(*item);
+            skip();
+            item = match_simple_item();
+        }
+
+        skip();
+        if (not match_char(';')) {
+            record_error("expecting closing semicolon");
+        }
+
+        stmts.emplace_back(std::move(new_prec));
+
+        return true;
+ 
+    }
+
+    /* associativity IDENT item+  */
+    bool parse_associativity(statement_list& stmts) {
+        yalr::associativity new_assoc;
+        optional_text_fragment otf;
+
+        if (not match_keyword("associativity")) {
+            return false;
+        }
+
+        skip();
+        if ((otf = match_identifier())) {
+            new_assoc.assoc_text = *otf;
+        } else {
+            record_error("expecting associativity specifier");
+        }
+
+        skip();
+
+        auto item = match_simple_item();
+        while (item) {
+            new_assoc.symbol_refs.push_back(*item);
+            skip();
+            item = match_simple_item();
+        }
+
+        skip();
+        if (not match_char(';')) {
+            record_error("expecting closing semicolon");
+        }
+
+        stmts.emplace_back(std::move(new_assoc));
+
+        return true;
+    }
+
+    /* termset <typestr>INDENT @proc=? @assoc=? items+ */
+    bool parse_termset(statement_list& stmts) {
+        yalr::termset new_termset;
+        optional_text_fragment otf;
+
+        if (not match_keyword("termset")) {
+            return false;
+        }
+
+        skip();
+        new_termset.type_str = match_typestring();
+
+        skip();
+        if ((otf = match_identifier())) {
+            new_termset.name = *otf;
+        } else {
+            record_error("expecting termset name");
+        }
+
+        /* @assoc and @prec can come in either order */
+        skip();
+        if ( (otf = match_assoc()) ) {
+            new_termset.associativity = otf;
+            skip();
+            new_termset.precedence = match_precedence();
+        } else if ( (otf = match_precedence()) ) {
+            new_termset.precedence = otf;
+            skip();
+            new_termset.associativity = match_assoc();
+        }
+
+        skip();
+        auto item = match_simple_item();
+        while (item) {
+            new_termset.symbol_refs.push_back(*item);
+            skip();
+            item = match_simple_item();
+        }
+
+        skip();
+        if (not match_char(';')) {
+            record_error("expecting closing semicolon");
+        }
+
+        stmts.emplace_back(std::move(new_termset));
+
+        return true;
+
     }
 
 
@@ -949,8 +1068,8 @@ struct parser_guts {
     /************************************************************************
      * Precedence Matching
      ************************************************************************/
-    optional_text_fragment match_precedence() {
-        if (not match_string("@prec=")) {
+    optional_text_fragment match_precedence(bool check_keyword=true) {
+        if (check_keyword and not match_string("@prec=")) {
             return std::nullopt;
         }
 

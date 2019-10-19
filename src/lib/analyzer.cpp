@@ -15,6 +15,41 @@ std::unordered_set<std::string_view> verbatim_locations = {
 };
 
 namespace analyzer {
+//
+// Helper function to register a pttern as a new terminal
+//
+auto register_pattern_terminal(yalr::analyzer_tree& out, std::string_view pattern) {
+
+    out.atoms.emplace_back("0TERM"s + std::to_string(out.atoms.size()+1));
+    terminal_symbol t;
+    t.name = out.atoms.back();
+    t.pattern = pattern;
+    t.type_str = "void"sv;
+    t.is_inline = true;
+    auto [ inserted, new_sym ] = out.symbols.add(t.name, t);
+    assert(inserted);
+    out.symbols.register_key(t.pattern, new_sym);
+    return new_sym;
+}
+
+//
+// Helper function to parse an associativity specifier
+//
+assoc_type parse_assoc(yalr::analyzer_tree& out, text_fragment spec) {
+    if (spec.text == "left") {
+        return assoc_type::left;
+    }
+
+    if (spec.text == "right") {
+        return assoc_type::right;
+    }
+
+    out.record_error("Invalid associativity specifier", spec);
+
+    return assoc_type::undef;
+}
+
+
 
 //
 // Helper function used to dereference a precedence specifier.
@@ -116,13 +151,7 @@ struct phase_i_visitor {
         // associativity
 
         if (t.associativity) {
-            if (t.associativity->text == "left") {
-                ts.associativity = assoc_type::left;
-            } else if (t.associativity->text == "right") {
-                ts.associativity = assoc_type::right;
-            } else {
-                out.record_error("invalid associativity", *t.associativity);
-            }
+            ts.associativity =  parse_assoc(out, *t.associativity);
         }
 
         // precedence
@@ -207,6 +236,128 @@ struct phase_i_visitor {
         }
     }
 
+    //
+    //// Handle precedence
+    //
+    void operator()(const yalr::precedence &t) {
+        auto precedence = parse_precedence(out, t.prec_ref);
+        for (auto const& i : t.symbol_refs) {
+            auto sym = out.symbols.find(i.text);
+            if (sym) {
+                if (sym->isterm()) {
+                    auto data = sym->get_data<symbol_type::terminal>();
+                    if (data->precedence) {
+                        out.record_error("terminal already has precedence set", i);
+                    } else {
+                        data->precedence = precedence;
+                    }
+                } else {
+                    out.record_error("symbol reference is not a terminal", i);
+                }
+            } else if (i.text[0] == '\'') {
+                auto new_sym = register_pattern_terminal(out, i.text);
+                auto data = new_sym.get_data<symbol_type::terminal>();
+                data->precedence = precedence;
+            } else {
+                out.record_error("Unknown symbol used in statement", i);
+            }
+        }
+
+    }
+
+    //
+    //// Handle associativity
+    //
+    void operator()(const yalr::associativity &t) {
+        assoc_type associativity = parse_assoc(out, t.assoc_text);
+
+        for (auto const& i : t.symbol_refs) {
+            auto sym = out.symbols.find(i.text);
+            if (sym) {
+                if (sym->isterm()) {
+                    auto data = sym->get_data<symbol_type::terminal>();
+                    if (data->associativity != assoc_type::undef) {
+                        out.record_error("terminal already has associativity set", i);
+                    } else {
+                        data->associativity = associativity;
+                    }
+                } else {
+                    out.record_error("symbol reference is not a terminal", i);
+                }
+            } else if (i.text[0] == '\'') {
+                auto new_sym = register_pattern_terminal(out, i.text);
+                auto data = new_sym.get_data<symbol_type::terminal>();
+                data->associativity = associativity;
+            } else {
+                out.record_error("Unknown symbol used in statement", i);
+            }
+        }
+    }
+
+    //
+    //// Handle termset
+    //
+    void operator()(const yalr::termset &t) {
+        bool has_assoc = false;
+        assoc_type assoc;
+
+        if (t.associativity) {
+            has_assoc = true;
+            assoc = parse_assoc(out, *t.associativity);
+        }
+
+        bool has_prec = false;
+        std::optional<int> prec;
+        if (t.precedence) {
+            has_prec = true;
+            prec = parse_precedence(out, *t.precedence);
+        }
+
+        std::vector<symbol>symlist;
+
+        for (auto const& i : t.symbol_refs) {
+            auto sym = out.symbols.find(i.text);
+            if (sym) {
+                if (sym->isterm()) {
+                    auto data = sym->get_data<symbol_type::terminal>();
+                    if (has_assoc) {
+                        if (data->associativity != assoc_type::undef) {
+                            out.record_error(
+                                    "terminal already has associativity set",
+                                    i);
+                        } else {
+                            data->associativity = assoc;
+                        }
+                    }
+                    if (has_prec) {
+                        if (data->precedence) {
+                            out.record_error(
+                                    "terminal already has precedence set", i);
+                        } else {
+                            data->precedence = prec;
+                        }
+                    }
+                } else {
+                    out.record_error("symbol reference is not a terminal", i);
+                }
+            } else if (i.text[0] == '\'') {
+                auto new_sym = register_pattern_terminal(out, i.text);
+                auto data = new_sym.get_data<symbol_type::terminal>();
+                if (has_assoc) {
+                    data->associativity = assoc;
+                }
+
+                if (has_prec) {
+                    data->precedence =prec;
+                }
+            } else {
+                out.record_error("Unknown symbol used in statement", i);
+            }
+        }
+
+
+    }
+
 };
 
 //
@@ -254,16 +405,7 @@ struct phase_ii_visitor {
                     s.emplace_back(*sym, alias);
                 } else if (p.symbol_ref.text[0] == '\'') {
                     // add an inline terminal
-                    // We'll need to come up with a nice name.
-                    out.atoms.emplace_back("0TERM"s + std::to_string(++inline_terminal_count));
-                    terminal_symbol t;
-                    t.name = out.atoms.back();
-                    t.pattern = p.symbol_ref.text;
-                    t.type_str = "void"sv;
-                    t.is_inline = true;
-                    auto [ inserted, new_sym ] = out.symbols.add(t.name, t);
-                    assert(inserted);
-                    out.symbols.register_key(t.pattern, new_sym);
+                    auto new_sym = register_pattern_terminal(out, p.symbol_ref.text);
                     s.emplace_back(new_sym, std::nullopt);
 
                 } else {
