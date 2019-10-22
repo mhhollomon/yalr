@@ -429,6 +429,11 @@ void compute_first_and_follow(lrtable& lt) {
 
 }
 
+/*******************************************
+ *
+ *  Pretty Printing Routines
+ *
+ *******************************************/
 void pretty_print(const item_set& is,
        const production_map& productions, std::ostream& strm) {
     for (const auto &i : is) {
@@ -436,7 +441,10 @@ void pretty_print(const item_set& is,
         //NOLINTNEXTLINE
         assert(i.prod_id == prod.prod_id);
 
-        strm << "   [" << i.prod_id << "] ";
+        strm << "   [";
+        auto oldwidth = strm.width(3);
+        strm << i.prod_id << "] ";
+        strm.width(oldwidth);
 
         strm << prod.rule.name() << " => ";
 
@@ -454,21 +462,49 @@ void pretty_print(const item_set& is,
     }
 }
 
+void pretty_print( const production_map& productions, std::ostream& strm) {
+    std::streamsize max_name_len = 5;
+    for (const auto [_, p] : productions) {
+        max_name_len = std::max(max_name_len, std::streamsize(p.rule.name().size()));
+    }
+
+    if (max_name_len > 15) max_name_len = 15;
+
+    for (const auto [_, p] : productions) {
+        strm << "   [";
+        strm.width(3);
+        strm << p.prod_id << "] ";
+
+        strm.width(max_name_len);
+
+        strm << p.rule.name() << " => ";
+        if (p.precedence) {
+            strm << "(" << *p.precedence << ")";
+        }
+        for (auto const &i : p.items) {
+            strm << ' ' << i.sym.pretty_name();
+        }
+        strm << "\n";
+    }
+}
+
 void pretty_print(
-        const lrstate& lr, 
-        const production_map& productions,
+        const lrstate& lr, const production_map& productions,
         std::ostream& strm) {
     strm << "--------- State " << lr.id << " " << 
-        (lr.initial ? "Initial" : "") << "\n";
+        (lr.initial ? "Initial" : "") << "\n\n";
+    strm << "Items:\n";
     pretty_print(lr.items, productions, strm);
     
+    /*
     strm << "Transitions:\n";
     for (const auto& iter : lr.transitions) {
         const auto t = iter.second;
         strm << "  " << t.on_symbol.pretty_name() << " => state " << t.new_state_id << "\n";
     }
+    */
     
-    strm << "Actions:\n";
+    strm << "\nActions:\n";
     for (const auto& iter : lr.actions) {
         strm << "  " << iter.first.pretty_name() << " => " << iter.second.type_name();
         switch(iter.second.type) {
@@ -486,7 +522,7 @@ void pretty_print(
         strm << "\n";
     }
 
-    strm << "Gotos:\n";
+    strm << "\nGotos:\n";
     for (const auto& iter : lr.gotos) {
         strm << "  " << iter.first.pretty_name() << " => state " << 
             iter.second << "\n";
@@ -502,21 +538,104 @@ void pretty_print(const std::string& desc, const std::map<symbol, symbol_set>& s
     for (const auto& m_iter : s) {
         strm << pfx << m_iter.first.pretty_name() << " :";
         for(const auto& symb : m_iter.second) {
-            strm << " " << symb.name();
+            strm << " " << symb.pretty_name();
         }
         strm << "\n";
     }
 }
 
+void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) {
+    strm << "[";
+    strm.width(3);
+    strm << sym.id() << "] ";
+    if (name_width != 0) {
+        strm.width(name_width);
+    }
+    strm << std::left << sym.pretty_name() << std::right;
+    switch(sym.type()) {
+        case symbol_type::terminal :
+            {
+                auto data = sym.get_data<symbol_type::terminal>();
+                if (data->precedence) {
+                    strm << " p=";
+                    strm.width(5);
+                    strm << std::left;
+                    strm << *(data->precedence);
+                    strm << std::right;
+                } else {
+                    strm << "        ";
+                }
+
+
+                std::string assoc_str[] = { "undef", "left", "right" };
+
+                if (data->associativity == assoc_type::undef) {
+                    strm << "        ";
+                } else {
+                    strm << " a=";
+                    strm.width(5);
+                    strm << std::left;
+                    strm << assoc_str[int(data->associativity)];
+                    strm << std::right;
+                }
+
+                if (data->type_str != "void") {
+                    strm << ' ' << data->type_str;
+                }
+            }
+            break;
+        case symbol_type::rule :
+            {
+                auto data = sym.get_data<symbol_type::rule>();
+                if (data->type_str != "void") {
+                    strm << "                 " << data->type_str;
+                }
+
+            }
+            break;
+        default :
+            assert(false);
+
+    }
+    strm << "\n";
+}
+
 void pretty_print(const lrtable& lt, std::ostream& strm) {
+    /*
     pretty_print("First Set", lt.first_set, strm);
+    strm << "\n";
     pretty_print("Follow Set", lt.follow_set, strm);
+    strm << "\n";
     strm << "Epsilons:\n";
     for (const auto& symb : lt.epsilon) {
         strm << "    " << symb.name() << "\n";
     }
+    strm << "\n";
+    */
+    strm << "============= TOKENS ========================\n\n";
+    std::streamsize max_name_len = 5;
+    for (auto const &[id, sym] : lt.symbols) {
+        if (sym.isterm() or sym.isrule()) {
+            max_name_len = std::max(max_name_len, std::streamsize(sym.pretty_name().size()));
+        }
+    }
+
+    if (max_name_len > 15) max_name_len = 15;
+
+    for (auto const &[id, sym] : lt.symbols) {
+        if (sym.isterm() or sym.isrule()) {
+            strm << "   ";
+            pretty_print(sym, strm, max_name_len);
+        }
+    }
+    strm << "\n";
+    strm << "============= PRODUCTIONS ===================\n\n";
+    pretty_print(lt.productions, strm);
+    strm << "\n";
+    strm << "============= STATES ========================\n\n";
     for (const auto& state : lt.states) {
         pretty_print(state, lt.productions, strm);
+        strm << "\n";
     }
 }
 
