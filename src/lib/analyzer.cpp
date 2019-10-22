@@ -107,7 +107,8 @@ struct phase_i_visitor {
     // to a rule)
     //
     void operator()(const yalr::rule &r) {
-        auto [ inserted, new_sym ] = out.symbols.add(r.name.text, rule_symbol{r});
+        auto rs = rule_symbol{r};
+        auto [ inserted, new_sym ] = out.symbols.add(r.name.text, rs);
 
         if (! inserted ) {
             out.record_error(r.name, "'", r.name.text, 
@@ -125,6 +126,12 @@ struct phase_i_visitor {
                 goal_rule = r;
             }
         }
+
+        if (r.type_str) {
+            if (r.type_str->text == "@lexeme") {
+                rs.type_str = "std::string";
+            }
+        }
     }
 
     //
@@ -139,7 +146,15 @@ struct phase_i_visitor {
         terminal_symbol ts{t};
 
         if (t.type_str) {
-            if (t.type_str->text != "void" and not t.action) {
+            if (t.type_str->text == "@lexeme") {
+                if (t.action) {
+                    out.record_error(t.name, "terminal has type @lexeme but "
+                            "already has an action");
+                } else {
+                    ts.action = "return std::move(lexeme);";
+                    ts.type_str = "std::string";
+                }
+            } else if (t.type_str->text != "void" and not t.action) {
                 out.record_error(t.name, "'", t.name,
                     "' has non-void type but no action to assign a "
                     " value");

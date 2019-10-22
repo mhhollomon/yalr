@@ -17,9 +17,9 @@ term PRINT 'print' ;
 // allowed __a___
 // not allowed __3
 //
-term <std::string> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* <%{ return std::move(lexeme); }%>
+term <@lexeme> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* ;
 
-term<float> NUMBER r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
+term <float>   NUMBER   r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
 
 //
 // associativity will define the terminals for us.
