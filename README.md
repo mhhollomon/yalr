@@ -161,6 +161,26 @@ then some efficency can be gained by doing so as a move:
 term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
 ```
 
+##### @lexeme special type
+
+The special type `@lexeme` can be used to give a short cut for the common
+pattern of returning the parsed text as the semantic value.
+
+When a terminal is given the type `@lexeme`, this is transformed internally
+into `std::string`. Additionally, the action set to return the lexeme. If the
+terminal is given an action, this is an error.
+
+```yalr
+// This
+term <@lexeme> IDENT r:_*[a-zA-Z]+ ;
+
+// becomes this:
+term <std::string> IDENT r:_*[a-zA-Z]+ <%{ return std::move(lexeme); }%>
+
+// THIS is an ERROR
+term <@lexeme IDENT r:_*[a-zA-Z]+ <%{ /* blah, blah */ }%>
+```
+
 ##### Terminal Precedence and Associativity
 
 Parser terminals can be assigned a precedence and associativity in order to

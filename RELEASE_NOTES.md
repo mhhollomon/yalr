@@ -6,10 +6,25 @@
   rules. See the [README](Readme.md) for details and the calculator example to
   see it in action.
 
+- bug #22 - The examples had not kept up with some of the changes to the
+  languages. They have been cleaned up a bit. In particular, the calculator
+  example now acts as a good endto-end look at most of the features of the tool
+
+- enhancement #23 - There is now a true install target.
+
+- enhancement #25 - New Precedence and associativity statements. These allow
+  you to define terminals and set either precedence or associativity in one
+  statement. This keeps you from having to give a name to small operators, etc.
+
+- enhancement #27 - the special type `@lexeme` can now be used in terminals
+  and rules. For terminals, it acts as short hand for the common pattern of
+  simply returning the parsed text as the semantic value.
+
 ### Non-functional Changes
 
 - issue #15 - Now using the error_info system to report errors from the
   analyzer. This will allow better error messages in the future.
+
 - Add a set of technical diagrams to the docs/ directory. These were created in
   [Umlet](http://www.umlet.com)
 
