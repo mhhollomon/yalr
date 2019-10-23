@@ -149,6 +149,12 @@ int main(int argc, char* argv[]) {
         yalr::pretty_print(*lrtbl, state_out);
     }
 
+    //
+    // exit after having a chance to dump the state table.
+    // That will have the info needed to allow the user to fix the problems.
+    //
+    if (not lrtbl->success) exit(1);
+
 
     std::cout << "--- Generating code into " << outfilename << "\n";
     std::ofstream code_out(outfilename, std::ios_base::out);
