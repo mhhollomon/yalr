@@ -20,9 +20,6 @@ namespace yalr {
 
 using state_set = std::set<item_set>;
 
-void pretty_print(const item_set& i, std::ostream& strm);
-void pretty_print(const lrstate& lr, std::ostream& strm);
-
 /* Compute the closure of the set of items
  *
  * For each item in `items`, add to the return value.
@@ -249,6 +246,7 @@ void compute_first_and_follow(lrtable& lt) {
  */
  std::unique_ptr<lrtable> generate_table(const analyzer_tree& g) {
 
+    int error_count = 0;
     auto retval = std::make_unique<lrtable>();
 
     retval->symbols = g.symbols;
@@ -357,10 +355,12 @@ void compute_first_and_follow(lrtable& lt) {
                                     action(action_type::reduce, item.prod_id));
                             if (!placed) {
                                 if (new_iter->first.type() == symbol_type::terminal) {
+                                    //
+                                    // Shift/Reduce Conflict
+                                    //
                                     symbol shift_sym = new_iter->first;
-                                    std::cerr << "Shift/reduce conflict in state " << state.id <<
-                                        " between term " << shift_sym.pretty_name() << " and "
-                                        << "production = " << item.prod_id << "\n";
+                                    auto &shift_action = new_iter->second;
+
 
                                     auto term_ptr = shift_sym.get_data<symbol_type::terminal>();
                                     auto term_precedence = term_ptr->precedence ? *(term_ptr->precedence) : -99;
@@ -374,32 +374,43 @@ void compute_first_and_follow(lrtable& lt) {
                                              (term_ptr->associativity == assoc_type::left));
 
                                     if (not will_shift and not will_reduce) {
-                                        std::cerr << " Forcing it to a parse time error\n";
-                                        state.actions.erase(sym);
+                                        std::cerr << "Shift/reduce conflict in state " << state.id <<
+                                            " between term " << shift_sym.pretty_name() << " and "
+                                            << "production = " << item.prod_id << "\n";
+                                        error_count += 1;
+
+                                        shift_action.conflict = conflict_action(action_type::reduce,
+                                                item.prod_id);
+                                        shift_action.conflict->resolved = false;
+
                                     } else if (will_shift) {
-                                        std::cerr << " Resolving to a shift\n";
+                                        shift_action.conflict = conflict_action(action_type::reduce,
+                                                item.prod_id);
+
                                     } else if (will_reduce) {
-                                        std::cerr << " Resolving to a reduce\n";
+                                        action new_act{action_type::reduce, item.prod_id};
+                                        // TODO - clean this up by putting some of the constructors
+                                        // in a separate cpp file along with the pretty printing stuff.
+                                        new_act.conflict = conflict_action(action_base(shift_action));
                                         state.actions.erase(sym);
                                         auto [ act, placed ] = state.actions.try_emplace(sym,
-                                                action(action_type::reduce, item.prod_id));
+                                                new_act);
                                         //NOLINTNEXTLINE
                                         assert(placed);
                                     }
                                 } else {
-                                    std::cerr << "Reduce/reduce conflict in state " << state.id
-                                        << " between production = " << item.prod_id << " and "
-                                        << "production = " << new_iter->second.production_id << "\n";
-
+                                    //
+                                    // Reduce/Reduce conflict
+                                    //
                                     auto const &old_prod = retval->productions.find(new_iter->second.production_id)->second;
                                     auto orig_precedence = old_prod.precedence ? *old_prod.precedence : -99;
                                     auto new_precedence = prod.precedence ? *prod.precedence : -99;
 
                                     if (new_precedence > orig_precedence) {
-                                        std::cerr << " Resolving to reduce by " << item.prod_id << "\n";
+                                        action new_act{action_type::reduce, item.prod_id};
+                                        new_act.conflict = conflict_action(action_base(new_iter->second));
                                         state.actions.erase(sym);
-                                        auto [ act, placed ] = state.actions.try_emplace(sym,
-                                                action(action_type::reduce, item.prod_id));
+                                        auto [ act, placed ] = state.actions.try_emplace(sym,new_act);
                                         //NOLINTNEXTLINE
                                         assert(placed);
                                     } else {
@@ -423,6 +434,8 @@ void compute_first_and_follow(lrtable& lt) {
     std::sort(retval->states.begin(), retval->states.end(), 
             [](const lrstate& a, const lrstate& b) { return (a.id < b.id); }
             );
+
+    retval->success = (error_count == 0);
 
 
     return retval;
@@ -488,6 +501,40 @@ void pretty_print( const production_map& productions, std::ostream& strm) {
     }
 }
 
+void pretty_print( const action& a, const std::string& prefix, std::ostream& strm) {
+    strm << " => " << a.type_name();
+    switch(a.type) {
+        case action_type::shift:
+            strm << " and move to state " <<  a.new_state_id;
+            break;
+        case action_type::reduce:
+            {
+                strm << " by production " << a.production_id;
+            }
+            break;
+        default :
+            break;
+    }
+    strm << "\n";
+
+    if (a.conflict) {
+        strm << prefix << "Conflict" << (a.conflict->resolved?"(resolved)":"") <<
+            ": " << a.conflict->type_name();
+        switch(a.conflict->type) {
+            case action_type::shift:
+                strm << " and move to state " <<  a.conflict->new_state_id;
+                break;
+            case action_type::reduce:
+                {
+                    strm << " by production " << a.conflict->production_id;
+                }
+                break;
+            default :
+                break;
+        }
+        strm << "\n";
+    }
+}
 void pretty_print(
         const lrstate& lr, const production_map& productions,
         std::ostream& strm) {
@@ -506,20 +553,8 @@ void pretty_print(
     
     strm << "\nActions:\n";
     for (const auto& iter : lr.actions) {
-        strm << "  " << iter.first.pretty_name() << " => " << iter.second.type_name();
-        switch(iter.second.type) {
-            case action_type::shift:
-               strm << " and move to state " <<  iter.second.new_state_id;
-               break;
-            case action_type::reduce:
-               {
-                   strm << " by production " << iter.second.production_id;
-               }
-               break;
-            default :
-               break;
-        }
-        strm << "\n";
+        strm << "  " << iter.first.pretty_name() ;
+        pretty_print(iter.second, "     ", strm);
     }
 
     strm << "\nGotos:\n";

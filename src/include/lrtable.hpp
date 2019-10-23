@@ -55,22 +55,22 @@ namespace yalr {
             on_symbol(s), new_state_id(id) {}
     };
 
-    struct action {
+    struct action_base {
         action_type type;
         state_identifier_t new_state_id;
         production_identifier_t production_id;
 
-        action(yalr::action_type at) : type(at) {}
+        action_base(yalr::action_type at) : type(at) {}
 
-        action(yalr::action_type at,
+        action_base(yalr::action_type at,
                 state_identifier_t sid) :
             type(at), new_state_id(sid) {}
 
-        action(yalr::action_type at,
+        action_base(yalr::action_type at,
                 production_identifier_t pid) :
             type(at), production_id(pid) {}
 
-        action(yalr::action_type at,
+        action_base(yalr::action_type at,
                 state_identifier_t sid,
                 production_identifier_t pid) :
             type(at), new_state_id(sid),
@@ -84,6 +84,21 @@ namespace yalr {
         static inline std::string names[] = {
             "shift"s, "reduce"s, "accept"s
         };
+    };
+
+    struct conflict_action : public action_base {
+        bool resolved = true;
+        using action_base::action_base;
+        using action_base::type_name;
+
+        conflict_action(action_base&& a) : action_base(a) {}
+    };
+
+    struct action : public action_base {
+        using action_base::action_base;
+        using action_base::type_name;
+
+        std::optional<conflict_action> conflict = std::nullopt;
     };
 
     struct lrstate {
@@ -110,6 +125,7 @@ namespace yalr {
         symbol_set epsilon;
         production_identifier_t target_prod;
         option_list options;
+        bool success;
     };
 
 
