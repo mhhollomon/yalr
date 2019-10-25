@@ -21,6 +21,66 @@ namespace analyzer {
 symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern);
 
 //
+// Pattern helper
+//
+template<class T>
+void fix_up_pattern(T& x, optional_text_fragment case_text, yalr::analyzer_tree& out) {
+    case_type ct = case_type::undef;
+
+    if (case_text) {
+        if (case_text->text == "@cmatch") {
+            ct = case_type::match;
+        } else if (case_text->text == "@cfold") {
+            ct = case_type::fold;
+        } else {
+            // parser did something wrong.
+            assert(false);
+        }
+    }
+    auto full_pattern = x.pattern;
+    if (x.pattern[0] == '\'') {
+        x.pattern = x.pattern.substr(1, full_pattern.size()-2);
+        x.pat_type = pattern_type::string;
+        // This will have to reference the option once
+        // that is in place
+        if (ct == case_type::undef) {
+            x.case_match = case_type::match;
+        } else {
+            x.case_match = ct;
+        }
+
+    } else if (!x.pattern.compare(0, 3, "rf:")) {
+        x.pattern = x.pattern.substr(3, full_pattern.size()-2);
+        x.pat_type = pattern_type::regex;
+        if (ct == case_type::undef) {
+            x.case_match = case_type::fold;
+        } else {
+            out.record_error(*case_text, "multiple case specifiers");
+        }
+    } else if (!x.pattern.compare(0, 3, "rm:")) {
+        x.pattern = x.pattern.substr(3, full_pattern.size()-2);
+        x.pat_type = pattern_type::regex;
+        if (ct == case_type::undef) {
+            x.case_match = case_type::match;
+        } else {
+            out.record_error(*case_text, "multiple case specifiers");
+        }
+    } else if (!x.pattern.compare(0, 2, "r:")) {
+        x.pattern = x.pattern.substr(2, full_pattern.size()-1);
+        x.pat_type = pattern_type::regex;
+        // This will have to reference the option once
+        // that is in place
+        if (ct == case_type::undef) {
+            x.case_match = case_type::match;
+        } else {
+            x.case_match = ct;
+        }
+    } else {
+        assert(false);
+    }
+}
+
+//
 // Helper function to parse an associativity specifier
 //
 assoc_type parse_assoc(yalr::analyzer_tree& out, text_fragment spec) {
@@ -166,26 +226,7 @@ struct phase_i_visitor {
         std::string_view full_pattern = ts.pattern;
         ts.case_match = case_type::match;
 
-        if (ts.pattern[0] == '\'') {
-            ts.pattern = ts.pattern.substr(1, full_pattern.size()-2);
-            ts.pat_type = pattern_type::string;
-        } else if (!ts.pattern.compare(0, 3, "rf:")) {
-            ts.pattern = ts.pattern.substr(3, full_pattern.size()-2);
-            ts.pat_type = pattern_type::regex;
-            ts.case_match = case_type::fold;
-        } else if (!ts.pattern.compare(0, 3, "rm:")) {
-            ts.pattern = ts.pattern.substr(3, full_pattern.size()-2);
-            ts.pat_type = pattern_type::regex;
-            ts.case_match = case_type::match;
-        } else if (!ts.pattern.compare(0, 2, "r:")) {
-            ts.pattern = ts.pattern.substr(2, full_pattern.size()-1);
-            ts.pat_type = pattern_type::regex;
-            // This will have to reference the option once
-            // that is in place
-            ts.case_match = case_type::match;
-        } else {
-            assert(false);
-        }
+        fix_up_pattern(ts, t.case_match, out);
 
 
         ts.is_inline = t.is_inline;
@@ -198,12 +239,13 @@ struct phase_i_visitor {
             //
             assert (ts.pat_type == pattern_type::string);
             out.atoms.emplace_back("0TERM"s + std::to_string(out.atoms.size()+1));
-            ts.name = out.atoms.back();
+            ts.token_name = out.atoms.back();
+            ts.name = full_pattern;
             auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
             assert(inserted);
-            out.symbols.register_key(full_pattern, new_sym);
 
         } else {
+            ts.token_name = ts.name;
             // insert the name
             auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
 
@@ -224,9 +266,6 @@ struct phase_i_visitor {
                 }
             }
         }
-
-
-
     }
 
     //
@@ -237,29 +276,24 @@ struct phase_i_visitor {
     void operator()(const yalr::skip &s) {
         skip_symbol ss(s);
 
-        std::string_view full_pattern = ss.pattern;
-        if (ss.pattern[0] == '\'') {
-            ss.pattern = ss.pattern.substr(1, full_pattern.size()-2);
-            ss.pat_type = pattern_type::string;
-            ss.case_match = case_type::match;
-
-        } else if (!ss.pattern.compare(0, 3, "rf:")) {
-            ss.pattern = ss.pattern.substr(3, full_pattern.size()-2);
-            ss.pat_type = pattern_type::regex;
-            ss.case_match = case_type::fold;
-        } else if (!ss.pattern.compare(0, 3, "rm:")) {
-            ss.pattern = ss.pattern.substr(3, full_pattern.size()-2);
-            ss.pat_type = pattern_type::regex;
-            ss.case_match = case_type::match;
-        } else if (!ss.pattern.compare(0, 2, "r:")) {
-            ss.pattern = ss.pattern.substr(2, full_pattern.size()-1);
-            ss.pat_type = pattern_type::regex;
-            // This will have to reference the option once
-            // that is in place
-            ss.case_match = case_type::match;
-        } else {
-            assert(false);
+        if (s.associativity) {
+            out.record_error(*s.associativity,
+                    "skip terminals may not have associativity specified"
+                    );
         }
+        if (s.precedence) {
+            out.record_error(*s.precedence,
+                    "skip terminals may not have precedence specified"
+                    );
+        }
+        if (s.action) {
+            out.record_error(*s.action,
+                    "skip terminals may not have an action defined"
+                    );
+        }
+        std::string_view full_pattern = ss.pattern;
+        fix_up_pattern(ss, s.case_match, out);
+        ss.token_name = ss.name;
 
 
         auto [ inserted, new_sym ] = out.symbols.add(ss.name, ss);
@@ -682,7 +716,7 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
         strm << " =>";
 
         for (auto const& i : p.items) {
-            strm << " " << i.sym.pretty_name();
+            strm << " " << i.sym.name();
         }
 
         strm << "\n";

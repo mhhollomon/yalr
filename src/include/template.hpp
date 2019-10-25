@@ -122,6 +122,24 @@ struct string_matcher : matcher {
     }
 };
 
+struct fold_string_matcher : matcher {
+    std::string pattern;
+    fold_string_matcher(std::string p) : pattern{p} {};
+    virtual std::pair<bool, int>
+    try_match(iter_type first, const iter_type last) override {
+        if (std::size_t(last - first) < pattern.size()) {
+            return std::make_pair(false, 0);
+        } else if (std::equal(pattern.begin(), pattern.end(), first, 
+                [](char cA, char cB) {
+                        return toupper(cA) == toupper(cB);
+                   })) {
+            return std::make_pair(true, pattern.size());
+        } else {
+            return std::make_pair(false, 0);
+        }
+    }
+};
+
 struct regex_matcher : matcher {
     std::regex pattern;
     regex_matcher(std::string p, const std::regex_constants::syntax_option_type& opt) try : pattern{p, opt} {

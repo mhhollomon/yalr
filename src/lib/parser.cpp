@@ -127,6 +127,17 @@ struct parser_guts {
         return matched;
     }
 
+    optional_text_fragment match_text(std::string_view o) {
+        if (check_string(o)) {
+            auto start_loc = current_loc;
+            consume(o.size());
+            return pl_to_tf(start_loc, o.size());
+        } else {
+            return std::nullopt;
+        }
+    }
+
+
     //
     // Remove `count` characters from the input.
     //
@@ -390,22 +401,20 @@ struct parser_guts {
         return std::nullopt;
     }
 
-    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
-    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
-    bool parse_term(statement_list& stmts) {
-        terminal new_term;
+    template<class T>
+    bool parse_term_thing(T&& nt, std::string keyword, statement_list& stmts) {
         optional_text_fragment otf;
 
-        if (not match_keyword("term")) {
+        if (not match_keyword(keyword)) {
             return false;
         }
 
         skip();
-        new_term.type_str = match_typestring();
+        nt.type_str = match_typestring();
 
         skip();
         if ( (otf = expect_identifier()) ) {
-            new_term.name = *otf;
+            nt.name = *otf;
         } else {
             consume_to_space();
         }
@@ -413,34 +422,65 @@ struct parser_guts {
 
         skip();
         if ( (otf = expect_pattern()) ) {
-            new_term.pattern = *otf;
+            nt.pattern = *otf;
         } else {
             consume_to_space();
         }
 
-        /* @assoc and @prec can come in either order */
-        skip();
-        if ( (otf = match_assoc()) ) {
-            new_term.associativity = otf;
+        /* @assoc, @prec, @cmatch, and @cfold can come in any order */
+        while (1) {
             skip();
-            new_term.precedence = match_precedence();
-        } else if ( (otf = match_precedence()) ) {
-            new_term.precedence = otf;
-            skip();
-            new_term.associativity = match_assoc();
+            auto start_loc = current_loc;
+            if ( (otf = match_assoc()) ) {
+                if (nt.associativity) {
+                    record_error("Duplicate associativity specified", start_loc);
+                } else { 
+                    nt.associativity = otf;
+                }
+                continue;
+            } else if ( (otf = match_precedence()) ) {
+                if (nt.precedence) {
+                    record_error("Duplicate precedence specified", start_loc);
+                } else { 
+                    nt.precedence = otf;
+                }
+                continue;
+            } else if ((otf = match_cmatch())) {
+                if (nt.case_match) {
+                    record_error("Duplicate case matching specified", start_loc);
+                } else { 
+                    nt.case_match = otf;
+                }
+                continue;
+            } else if ((otf = match_cfold())) {
+                if (nt.case_match) {
+                    record_error("Duplicate case matching specified", start_loc);
+                } else { 
+                    nt.case_match = otf;
+                }
+                continue;
+            }
+            break;
         }
 
         skip();
-        new_term.action = match_actionblock();
-        if (not new_term.action) {
+        nt.action = match_actionblock();
+        if (not nt.action) {
             // if we don't see an action block, we better see the closing semi-colon.
             // Record the error, but don't quit. Assume we got and keep going.
             expect_char(';');
         }
 
-        stmts.emplace_back(std::move(new_term));
+        stmts.emplace_back(std::move(nt));
 
         return true;
+    }
+    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
+    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
+    bool parse_term(statement_list& stmts) {
+        yalr::terminal new_term;
+
+        return parse_term_thing(new_term, "term", stmts);
     }
 
 
@@ -449,28 +489,7 @@ struct parser_guts {
      * A skip cannot have a type */
     bool parse_skip(statement_list& stmts) {
         yalr::skip new_skip;
-        optional_text_fragment otf;
-
-        if (not match_keyword("skip")) {
-            return false;
-        }
-
-        skip();
-        otf = expect_identifier();
-        if (not otf) return false;
-        new_skip.name = *otf;
-
-        skip();
-        otf = expect_pattern();
-        if (not otf) return false;
-        new_skip.pattern = *otf;
-
-        skip();
-        if (not expect_char(';')) return false;
-
-        stmts.emplace_back(std::move(new_skip));
-
-        return true;
+        return parse_term_thing(new_skip, "skip", stmts);
     }
 
     /* verbatim loc.loc.loc <%{ action }%> */
@@ -1047,6 +1066,15 @@ struct parser_guts {
 
     }
 
+    /************************************************************************
+     * Case Matching
+     ************************************************************************/
+    optional_text_fragment match_cfold() {
+        return match_text("@cfold");
+    }
+    optional_text_fragment match_cmatch() {
+        return match_text("@cmatch");
+    }
     /************************************************************************
      * Associativity Matching
      ************************************************************************/

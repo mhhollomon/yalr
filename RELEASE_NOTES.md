@@ -20,8 +20,9 @@
   and rules. For terminals, it acts as short hand for the common pattern of
   simply returning the parsed text as the semantic value.
 
-- Regex terminal patterns can now be made case insensitive via the `rf:`
-  prefix. Fixed strings cannot (yet) be made insensitive.
+- Terminal patterns can now be made case insensitive using the
+  `@cfold` modifier. THe `@cmatch` modifier is also available to explicitly
+  choose the default behavior.
 
 ### Non-functional Changes
 
