@@ -20,6 +20,9 @@
   and rules. For terminals, it acts as short hand for the common pattern of
   simply returning the parsed text as the semantic value.
 
+- Regex terminal patterns can now be made case insensitive via the `rf:`
+  prefix. Fixed strings cannot (yet) be made insensitive.
+
 ### Non-functional Changes
 
 - issue #15 - Now using the error_info system to report errors from the

@@ -463,13 +463,13 @@ void pretty_print(const item_set& is,
 
         for (int index = 0; index < int(prod.items.size()); ++index) {
             if (i.position == index ) {
-                strm << " *";
+                strm << " |*|";
             }
 
             strm << " " << prod.items[index].sym.pretty_name();
         }
         if (i.position >= int(prod.items.size())) {
-            strm << " *";
+            strm << " |*|";
         }
         strm << "\n";
     }

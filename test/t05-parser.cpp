@@ -202,12 +202,12 @@ TEST_CASE("match_singlequote() - [parser]") {
 
 TEST_CASE("match_regex() - [parser]") {
     SUBCASE("positive 1") {
-        auto p = mk_parser("r:abc[\"\\ ]: ");
+        auto p = mk_parser(R"d(r:abc["\\\ ]: )d");
         auto lexeme = p.match_regex();
         REQUIRE(lexeme);
-        CHECK(lexeme->text == "r:abc[\"\\ ]:");
+        CHECK(lexeme->text == R"d(r:abc["\\\ ]:)d");
         CHECK(not p.eoi());
-        CHECK(p.current_loc.offset == 11);
+        CHECK(p.current_loc.offset == 13);
     }
     SUBCASE("positive 2") {
         auto p = mk_parser(R"d(r:\s+ )d");
@@ -216,6 +216,14 @@ TEST_CASE("match_regex() - [parser]") {
         CHECK(lexeme->text == "r:\\s+");
         CHECK(not p.eoi());
         CHECK(p.current_loc.offset == 5);
+    }
+    SUBCASE("positive ri 1") {
+        auto p = mk_parser(R"d(rf:abc["\\\ ]: )d");
+        auto lexeme = p.match_regex();
+        REQUIRE(lexeme);
+        CHECK(lexeme->text == R"d(rf:abc["\\\ ]:)d");
+        CHECK(not p.eoi());
+        CHECK(p.current_loc.offset == 14);
     }
     SUBCASE("negative") {
         auto p = mk_parser("x:abc[\"\\ ]: ");

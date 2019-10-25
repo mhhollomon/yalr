@@ -124,6 +124,12 @@ struct string_matcher : matcher {
 
 struct regex_matcher : matcher {
     std::regex pattern;
+    regex_matcher(std::string p, const std::regex_constants::syntax_option_type& opt) try : pattern{p, opt} {
+         {}
+    } catch (std::regex_error &e) {
+        std::cerr << "Error when compiling pattern '" << p << "'\n";
+        throw e;
+    }
     regex_matcher(std::string p) try : pattern{p} {
          {}
     } catch (std::regex_error &e) {
@@ -147,7 +153,7 @@ using match_ptr = std::shared_ptr<matcher>;
 
 std::vector<std::pair<match_ptr, token_type>> patterns = {
 ## for pat in patterns
-    { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> ), <%pat.token%> },
+    { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%> },
 ##endfor
 };
 

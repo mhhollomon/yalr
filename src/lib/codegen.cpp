@@ -256,23 +256,31 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
         auto tdata = json::object();
 
         std::string pattern;
+        case_type ct;
+        pattern_type pt;
         const auto* info_ptr = sym.get_data<symbol_type::terminal>();
 
         if (info_ptr == nullptr) {
             const auto *skip_ptr = sym.get_data<symbol_type::skip>();
             pattern = std::string(skip_ptr->pattern);
+            pt = skip_ptr->pat_type;
+            ct = skip_ptr->case_match;
         } else {
             pattern =  std::string(info_ptr->pattern);
+            pt = info_ptr->pat_type;
+            ct = info_ptr->case_match;
         }
 
-        if (pattern[0] == '\'') {
+        tdata["flags"] = " ";
+        if (pt == pattern_type::string) {
             tdata["matcher"] = "string_matcher";
-            tdata["pattern"] = 
-                "R\"%_^xx(" + pattern.substr(1, pattern.size()-2) + ")%_^xx\"" ;
+            tdata["pattern"] = "R\"%_^xx(" + pattern + ")%_^xx\"" ;
         } else {
             tdata["matcher"] = "regex_matcher";
-            tdata["pattern"] =
-                "R\"%_^xx(" + pattern.substr(2)  + ")%_^xx\"" ;
+            tdata["pattern"] = "R\"%_^xx(" + pattern  + ")%_^xx\"" ;
+            if (ct == case_type::fold) {
+                tdata["flags"] = ", std::regex::icase";
+            }
         }
 
         if (sym.isterm()) {
