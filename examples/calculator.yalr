@@ -1,3 +1,4 @@
+// This will be inserted close to the top of the file
 verbatim file.top <%{
 #include <map>
 }%>
@@ -6,10 +7,13 @@ verbatim namespace.top <%{
 std::map<std::string, float> variables;
 }%>
 
-skip WS      r:\s+     ;
+skip WS   r:\s+ ;
 
-// basically here so that it is prefered to VARAIBLE
-term PRINT rf:print ;
+// basically here so that it is prefered to VARIABLE
+// But, it also gives a chance to show case folding. 
+// This will accept print or PRINT or PrInT, etc.
+//
+term PRINT 'print' @cfold ;
 
 //
 // zero to many underbar followed by a letter followed by as many digits,

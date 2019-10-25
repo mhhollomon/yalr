@@ -223,6 +223,21 @@ TEST_CASE("precedence statement - [grammar]") {
     }
 }
 
+TEST_CASE("case - [parser]") {
+    SUBCASE("simple") {
+        auto tree = parse_string("term FOO 'x' @cmatch;");
+        CHECK(tree.success);
+        auto term = std::get<yalr::terminal>(tree.statements[0]);
+        CHECK(term.case_match);
+        CHECK(term.case_match->text == "@cmatch");
+    }
+    SUBCASE("dups") {
+        auto tree = parse_string("term FOO 'x' @cfold @cmatch");
+        CHECK(not tree.success);
+    }
+}
+
+
 TEST_CASE("termset - [parser]") {
     SUBCASE("just assoc") {
         auto tree = parse_string("termset foo @assoc=left  'X' x;");

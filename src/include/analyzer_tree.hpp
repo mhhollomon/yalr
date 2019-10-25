@@ -26,12 +26,12 @@ extern std::unordered_set<std::string_view> verbatim_locations;
         production_identifier_t  target_prod;
         std::list<std::string>   atoms;
 
-        void record_error(const std::string& msg, text_fragment tf) {
+        void record_error(const std::string& msg, const text_fragment tf) {
             errors.emplace_back(msg, tf); 
         }
 
         template <class ...Args>
-        void record_error(text_fragment tf, Args&&... args) {
+        void record_error(const text_fragment tf, Args&&... args) {
             errors.emplace_back(util::concat(args...), tf);
         }
 

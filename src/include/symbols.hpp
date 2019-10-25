@@ -32,6 +32,7 @@ struct terminal_symbol {
     std::string_view    name;
     std::string_view    type_str;
     std::string_view    pattern;
+    std::string_view    token_name;
     std::string_view    action;
     // These will need to be computed in the analyzer
     assoc_type          associativity = assoc_type::undef;
@@ -50,6 +51,7 @@ struct skip_symbol {
     symbol_identifier_t id;
     std::string_view    name;
     std::string_view    pattern;
+    std::string_view    token_name;
     // These will need to be computed in the analyzer
     case_type           case_match = case_type::undef;
     pattern_type        pat_type = pattern_type::undef;
@@ -113,13 +115,11 @@ class symbol {
         return std::visit( [](auto&& V) { return V.name; }, *data);
     }
 
-    std::string_view pretty_name() const {
+    std::string_view token_name() const {
         return std::visit( overloaded {
-            [](skip_symbol V) { return V.name; },
+            [](skip_symbol V) { return V.token_name; },
             [](rule_symbol V) { return V.name; },
-            [](terminal_symbol V) { 
-                if (V.is_inline) return V.pattern;
-                return V.name; }
+            [](terminal_symbol V) { return V.token_name; }
             }, *data);
     }
 

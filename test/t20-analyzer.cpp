@@ -73,7 +73,7 @@ TEST_CASE("[analyzer] allow single quotes to define a new term") {
         REQUIRE(*tree);
         auto sym = tree->symbols.find("'bar'");
         REQUIRE(sym);
-        CHECK(sym->name() == "0TERM1");
+        CHECK(sym->token_name() == "0TERM1");
     }
 }
 
@@ -82,14 +82,14 @@ TEST_CASE("[analyzer] precedence") {
     REQUIRE(*tree);
     auto sym = tree->symbols.find("'bar'");
     REQUIRE(sym);
-    CHECK(sym->name() == "0TERM1");
+    CHECK(sym->token_name() == "0TERM1");
     auto data = sym->get_data<yalr::symbol_type::terminal>();
     REQUIRE(data);
     CHECK(*(data->precedence) == 100);
 
     auto baz_sym = tree->symbols.find("'baz'");
     REQUIRE(baz_sym);
-    CHECK(baz_sym->name() == "0TERM2");
+    CHECK(baz_sym->token_name() == "0TERM2");
     auto baz_data = baz_sym->get_data<yalr::symbol_type::terminal>();
     REQUIRE(baz_data);
 

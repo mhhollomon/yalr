@@ -14,7 +14,7 @@ std::ostream& production_printer(std::ostream& strm, const production& p) {
     strm << "[" << p.prod_id << "] " << 
         p.rule.name() << "(" << p.rule.id() << ") =>";
     for (const auto& i : p.items) {
-        strm << " " << i.sym.pretty_name() << "(" << i.sym.id() << ")";
+        strm << " " << i.sym.name() << "(" << i.sym.id() << ")";
     }
 
     return strm;
@@ -32,7 +32,7 @@ auto generate_state_data(const lrstate& state,const lrtable& lt) {
         if (sym.name() == "$") {
             adata["token"] = "eoi" ;
         } else {
-            adata["token"] = "TOK_" + std::string(sym.name());
+            adata["token"] = "TOK_" + std::string(sym.token_name());
         }
 
         switch (action.type) {
@@ -59,7 +59,7 @@ auto generate_state_data(const lrstate& state,const lrtable& lt) {
                         adata["returnlevels"] = prod.items.size() - 1;
                     }
 
-                    adata["symbol"] = "TOK_" + std::string(prod.rule.name()) ;
+                    adata["symbol"] = "TOK_" + std::string(prod.rule.token_name()) ;
                     adata["valuetype"] = std::string(prod.rule.get_data<symbol_type::rule>()->type_str);
                     if (adata["valuetype"] != "void") { 
                         adata["hasvaluetype"] = "Y";
@@ -84,7 +84,7 @@ auto generate_state_data(const lrstate& state,const lrtable& lt) {
     auto gotos_data = json::array();
     for (const auto& g_iter : state.gotos) {
         auto gdata = json::object();
-        gdata["symbol"] = "TOK_" + std::string(g_iter.first.name());
+        gdata["symbol"] = "TOK_" + std::string(g_iter.first.token_name());
         gdata["stateid"] = int(g_iter.second);
         gotos_data.push_back(gdata);
     }
@@ -188,7 +188,7 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     std::set<std::string>type_names;
 
     for (const auto &[_, sym] : lt.symbols) {
-        std::string tok_name = "TOK_" + std::string(sym.name());
+        std::string tok_name = "TOK_" + std::string(sym.token_name());
         if (sym.isterm()) {
             // terms go in the enum and the term list
             // type names go in the set
@@ -273,7 +273,11 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
 
         tdata["flags"] = " ";
         if (pt == pattern_type::string) {
-            tdata["matcher"] = "string_matcher";
+            if (ct == case_type::fold) {
+                tdata["matcher"] = "fold_string_matcher";
+            } else {
+                tdata["matcher"] = "string_matcher";
+            }
             tdata["pattern"] = "R\"%_^xx(" + pattern + ")%_^xx\"" ;
         } else {
             tdata["matcher"] = "regex_matcher";
@@ -284,7 +288,7 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
         }
 
         if (sym.isterm()) {
-            tdata["token"] = "TOK_" + std::string(info_ptr->name);
+            tdata["token"] = "TOK_" + std::string(info_ptr->token_name);
         } else {
             tdata["token"] = "skip" ;
         }

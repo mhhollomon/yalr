@@ -13,18 +13,20 @@ namespace yalr {
         text_fragment          name;
         optional_text_fragment type_str;
         text_fragment          pattern;
-        optional_text_fragment action = std::nullopt;
-        optional_text_fragment associativity = std::nullopt;
-        optional_text_fragment precedence = std::nullopt;
+        optional_text_fragment action;
+        optional_text_fragment associativity;
+        optional_text_fragment precedence;
+        optional_text_fragment case_match;
         // not used by the parser. Used by the analyzer
         // when it is talking to itself. This will be
         // false for anything coming from the parser.
         bool is_inline = false;
     };
 
-    struct skip {
-        text_fragment name;
-        text_fragment pattern;
+    // skip is a strict subset of terminal. The restrictions
+    // will be enforced in the analyzer. But this lets both
+    // the parser and the analyzer share code.
+    struct skip : public terminal {
     };
 
     struct option {

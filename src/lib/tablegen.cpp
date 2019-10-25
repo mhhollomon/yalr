@@ -375,7 +375,7 @@ void compute_first_and_follow(lrtable& lt) {
 
                                     if (not will_shift and not will_reduce) {
                                         std::cerr << "Shift/reduce conflict in state " << state.id <<
-                                            " between term " << shift_sym.pretty_name() << " and "
+                                            " between term " << shift_sym.name() << " and "
                                             << "production = " << item.prod_id << "\n";
                                         error_count += 1;
 
@@ -466,7 +466,7 @@ void pretty_print(const item_set& is,
                 strm << " |*|";
             }
 
-            strm << " " << prod.items[index].sym.pretty_name();
+            strm << " " << prod.items[index].sym.name();
         }
         if (i.position >= int(prod.items.size())) {
             strm << " |*|";
@@ -495,7 +495,7 @@ void pretty_print( const production_map& productions, std::ostream& strm) {
             strm << "(" << *p.precedence << ")";
         }
         for (auto const &i : p.items) {
-            strm << ' ' << i.sym.pretty_name();
+            strm << ' ' << i.sym.name();
         }
         strm << "\n";
     }
@@ -547,19 +547,19 @@ void pretty_print(
     strm << "Transitions:\n";
     for (const auto& iter : lr.transitions) {
         const auto t = iter.second;
-        strm << "  " << t.on_symbol.pretty_name() << " => state " << t.new_state_id << "\n";
+        strm << "  " << t.on_symbol.name() << " => state " << t.new_state_id << "\n";
     }
     */
     
     strm << "\nActions:\n";
     for (const auto& iter : lr.actions) {
-        strm << "  " << iter.first.pretty_name() ;
+        strm << "  " << iter.first.name() ;
         pretty_print(iter.second, "     ", strm);
     }
 
     strm << "\nGotos:\n";
     for (const auto& iter : lr.gotos) {
-        strm << "  " << iter.first.pretty_name() << " => state " << 
+        strm << "  " << iter.first.name() << " => state " << 
             iter.second << "\n";
     }
 
@@ -571,9 +571,9 @@ void pretty_print(const std::string& desc, const std::map<symbol, symbol_set>& s
     std::string pfx = "    ";
 
     for (const auto& m_iter : s) {
-        strm << pfx << m_iter.first.pretty_name() << " :";
+        strm << pfx << m_iter.first.name() << " :";
         for(const auto& symb : m_iter.second) {
-            strm << " " << symb.pretty_name();
+            strm << " " << symb.name();
         }
         strm << "\n";
     }
@@ -586,7 +586,7 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
     if (name_width != 0) {
         strm.width(name_width);
     }
-    strm << std::left << sym.pretty_name() << std::right;
+    strm << std::left << sym.name() << std::right;
     switch(sym.type()) {
         case symbol_type::terminal :
             {
@@ -651,7 +651,7 @@ void pretty_print(const lrtable& lt, std::ostream& strm) {
     std::streamsize max_name_len = 5;
     for (auto const &[id, sym] : lt.symbols) {
         if (sym.isterm() or sym.isrule()) {
-            max_name_len = std::max(max_name_len, std::streamsize(sym.pretty_name().size()));
+            max_name_len = std::max(max_name_len, std::streamsize(sym.name().size()));
         }
     }
 

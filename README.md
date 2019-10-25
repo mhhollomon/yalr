@@ -144,6 +144,22 @@ angle brackets afte the keyword term :
 term <int> INTEGER r:[-+]?[0-9]+ ;
 ```
 
+The handling of case can be shifted using the `@cfold` and `@cmatch` modifiers.
+They have the following affect on the pattern.
+
+modifier | effect
+---------|-------
+`@cfold` | Fold case when checking for match.
+`@cmatch`| Match case "as-is" (This is the default).
+
+The case modifier goes between the pattern and the action or closing
+semi-colon.
+
+```
+// match print or PRINT or PrInT, etc
+term PRINT_KEYWORD 'print' @cfold ;
+```
+
 The computation is given as an action encased in `<%{ ... }%>` . If an action
 is given, then the normal terminating semi-colon is not required.
 
