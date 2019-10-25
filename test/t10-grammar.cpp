@@ -47,7 +47,7 @@ R"DELIM(term<int> FOO 'foo' <%{ // here is my action block
     /* don't need a semicolon */
     return 3;
     }%>
-term <std::string> BAR 'bar' ;
+term <std::string> BAR rf:bar ;
 )DELIM" );
         CHECK(tree.success);
         // BAR should be in the list

@@ -16,21 +16,9 @@ std::unordered_set<std::string_view> verbatim_locations = {
 
 namespace analyzer {
 //
-// Helper function to register a pttern as a new terminal
+// Helper function to register a pattern as a new terminal
 //
-auto register_pattern_terminal(yalr::analyzer_tree& out, std::string_view pattern) {
-
-    out.atoms.emplace_back("0TERM"s + std::to_string(out.atoms.size()+1));
-    terminal_symbol t;
-    t.name = out.atoms.back();
-    t.pattern = pattern;
-    t.type_str = "void"sv;
-    t.is_inline = true;
-    auto [ inserted, new_sym ] = out.symbols.add(t.name, t);
-    assert(inserted);
-    out.symbols.register_key(t.pattern, new_sym);
-    return new_sym;
-}
+symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern);
 
 //
 // Helper function to parse an associativity specifier
@@ -174,24 +162,66 @@ struct phase_i_visitor {
             ts.precedence = parse_precedence(out, *t.precedence);
         }
 
+        // pattern type
+        std::string_view full_pattern = ts.pattern;
+        ts.case_match = case_type::match;
 
-        // insert the name
-        auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
-
-        if (! inserted ) {
-            out.record_error(t.name, "symbol"
-                "' has already been defined as a ",
-                new_sym.type_name());
+        if (ts.pattern[0] == '\'') {
+            ts.pattern = ts.pattern.substr(1, full_pattern.size()-2);
+            ts.pat_type = pattern_type::string;
+        } else if (!ts.pattern.compare(0, 3, "rf:")) {
+            ts.pattern = ts.pattern.substr(3, full_pattern.size()-2);
+            ts.pat_type = pattern_type::regex;
+            ts.case_match = case_type::fold;
+        } else if (!ts.pattern.compare(0, 3, "rm:")) {
+            ts.pattern = ts.pattern.substr(3, full_pattern.size()-2);
+            ts.pat_type = pattern_type::regex;
+            ts.case_match = case_type::match;
+        } else if (!ts.pattern.compare(0, 2, "r:")) {
+            ts.pattern = ts.pattern.substr(2, full_pattern.size()-1);
+            ts.pat_type = pattern_type::regex;
+            // This will have to reference the option once
+            // that is in place
+            ts.case_match = case_type::match;
+        } else {
+            assert(false);
         }
 
-        // insert the pattern (maybe)
-        if (ts.pattern[0] == '\'') {
-            auto [ inserted, pattsym ] = out.symbols.register_key(ts.pattern, new_sym);
+
+        ts.is_inline = t.is_inline;
+
+        if (ts.is_inline) {
+            //
+            // all the is_inline stuff should be coming from (e.g.) rule code
+            // that has already checked that the symbol isn't there.
+            // So, we don't have to be quite as picky here.
+            //
+            assert (ts.pat_type == pattern_type::string);
+            out.atoms.emplace_back("0TERM"s + std::to_string(out.atoms.size()+1));
+            ts.name = out.atoms.back();
+            auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
+            assert(inserted);
+            out.symbols.register_key(full_pattern, new_sym);
+
+        } else {
+            // insert the name
+            auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
 
             if (! inserted ) {
-                out.record_error(t.pattern, "pattern '", ts.pattern,
-                    "' has already been defined by ",
-                    pattsym.type_name(), " ", pattsym.name());
+                out.record_error(t.name, "symbol"
+                    "' has already been defined as a ",
+                    new_sym.type_name());
+            }
+
+            // insert the pattern (maybe)
+            if (ts.pat_type == pattern_type::string) {
+                auto [ inserted, pattsym ] = out.symbols.register_key(full_pattern, new_sym);
+
+                if (! inserted ) {
+                    out.record_error(t.pattern, "pattern '", full_pattern,
+                        "' has already been defined by ",
+                        pattsym.type_name(), " ", pattsym.name());
+                }
             }
         }
 
@@ -206,6 +236,32 @@ struct phase_i_visitor {
     //
     void operator()(const yalr::skip &s) {
         skip_symbol ss(s);
+
+        std::string_view full_pattern = ss.pattern;
+        if (ss.pattern[0] == '\'') {
+            ss.pattern = ss.pattern.substr(1, full_pattern.size()-2);
+            ss.pat_type = pattern_type::string;
+            ss.case_match = case_type::match;
+
+        } else if (!ss.pattern.compare(0, 3, "rf:")) {
+            ss.pattern = ss.pattern.substr(3, full_pattern.size()-2);
+            ss.pat_type = pattern_type::regex;
+            ss.case_match = case_type::fold;
+        } else if (!ss.pattern.compare(0, 3, "rm:")) {
+            ss.pattern = ss.pattern.substr(3, full_pattern.size()-2);
+            ss.pat_type = pattern_type::regex;
+            ss.case_match = case_type::match;
+        } else if (!ss.pattern.compare(0, 2, "r:")) {
+            ss.pattern = ss.pattern.substr(2, full_pattern.size()-1);
+            ss.pat_type = pattern_type::regex;
+            // This will have to reference the option once
+            // that is in place
+            ss.case_match = case_type::match;
+        } else {
+            assert(false);
+        }
+
+
         auto [ inserted, new_sym ] = out.symbols.add(ss.name, ss);
 
         if (! inserted ) {
@@ -214,11 +270,11 @@ struct phase_i_visitor {
                 new_sym.type_name());
         }
         // insert the pattern (maybe)
-        if (ss.pattern[0] == '\'') {
-            auto [ inserted, pattsym ] = out.symbols.register_key(ss.pattern, new_sym);
+        if (ss.pat_type == pattern_type::string) {
+            auto [ inserted, pattsym ] = out.symbols.register_key(full_pattern, new_sym);
 
             if (! inserted ) {
-                out.record_error(s.name, "pattern '" , ss.pattern,
+                out.record_error(s.name, "pattern '" , full_pattern,
                     "' has already been defined by ",
                     pattsym.type_name() , " ", pattsym.name());
             }
@@ -270,7 +326,7 @@ struct phase_i_visitor {
                     out.record_error("symbol reference is not a terminal", i);
                 }
             } else if (i.text[0] == '\'') {
-                auto new_sym = register_pattern_terminal(out, i.text);
+                auto new_sym = register_pattern_terminal(out, i);
                 auto data = new_sym.get_data<symbol_type::terminal>();
                 data->precedence = precedence;
             } else {
@@ -300,7 +356,7 @@ struct phase_i_visitor {
                     out.record_error("symbol reference is not a terminal", i);
                 }
             } else if (i.text[0] == '\'') {
-                auto new_sym = register_pattern_terminal(out, i.text);
+                auto new_sym = register_pattern_terminal(out, i);
                 auto data = new_sym.get_data<symbol_type::terminal>();
                 data->associativity = associativity;
             } else {
@@ -356,7 +412,7 @@ struct phase_i_visitor {
                     out.record_error("symbol reference is not a terminal", i);
                 }
             } else if (i.text[0] == '\'') {
-                auto new_sym = register_pattern_terminal(out, i.text);
+                auto new_sym = register_pattern_terminal(out, i);
                 auto data = new_sym.get_data<symbol_type::terminal>();
                 if (has_assoc) {
                     data->associativity = assoc;
@@ -420,8 +476,9 @@ struct phase_ii_visitor {
                     s.emplace_back(*sym, alias);
                 } else if (p.symbol_ref.text[0] == '\'') {
                     // add an inline terminal
-                    auto new_sym = register_pattern_terminal(out, p.symbol_ref.text);
+                    auto new_sym = register_pattern_terminal(out, p.symbol_ref);
                     s.emplace_back(new_sym, std::nullopt);
+                    implied_precedence = new_sym.get_data<symbol_type::terminal>()->precedence;
 
                 } else {
                     out.record_error(p.symbol_ref, 
@@ -449,6 +506,26 @@ struct phase_ii_visitor {
     }
 
 };
+
+//
+//
+//
+symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern) {
+
+    terminal t;
+    t.pattern = pattern;
+    t.is_inline = true;
+
+    phase_i_visitor sv{out};
+
+    sv(t);
+
+    auto sym = out.symbols.find(pattern.text);
+    assert(sym);
+
+    return *sym;
+
+}
 
 std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
     auto retval = std::make_unique<yalr::analyzer_tree>();

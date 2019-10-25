@@ -68,10 +68,46 @@ TEST_CASE("[analyzer] Can't use skips in rules") {
 }
 
 TEST_CASE("[analyzer] allow single quotes to define a new term") {
+    SUBCASE("[analyzer] simple") {
         auto tree = parse_string("goal rule A { => 'bar' ; }");
-        CHECK(*tree);
+        REQUIRE(*tree);
         auto sym = tree->symbols.find("'bar'");
         REQUIRE(sym);
         CHECK(sym->name() == "0TERM1");
+    }
 }
 
+TEST_CASE("[analyzer] precedence") {
+    auto tree = parse_string("precedence 100 'bar' ; goal rule A { => 'bar' 'baz' ; }");
+    REQUIRE(*tree);
+    auto sym = tree->symbols.find("'bar'");
+    REQUIRE(sym);
+    CHECK(sym->name() == "0TERM1");
+    auto data = sym->get_data<yalr::symbol_type::terminal>();
+    REQUIRE(data);
+    CHECK(*(data->precedence) == 100);
+
+    auto baz_sym = tree->symbols.find("'baz'");
+    REQUIRE(baz_sym);
+    CHECK(baz_sym->name() == "0TERM2");
+    auto baz_data = baz_sym->get_data<yalr::symbol_type::terminal>();
+    REQUIRE(baz_data);
+
+    {
+    CAPTURE(baz_data->pattern);
+    CHECK(baz_data->pattern == "baz");
+    }
+
+    {
+    CAPTURE(*(baz_data->precedence));
+    CHECK(not baz_data->precedence);
+    }
+
+    // The precedence of a production is the precedence ofthe 
+    // right-most terminal (unless otherwise specified). In this case,
+    // the right-most terminal is inlne and has no precedence. So the 
+    // production should alo not have precedence.
+    //
+    CAPTURE(*(tree->productions[0].precedence));
+    CHECK(not tree->productions[0].precedence);
+}

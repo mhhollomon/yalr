@@ -161,6 +161,22 @@ then some efficency can be gained by doing so as a move:
 term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
 ```
 
+##### More about regex patterns
+
+The regex patterns are interpreted according to the rules of [modified
+ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript). It is
+currently not possible for yalr to find errors in the regex expression. So,
+pattern compilation may occur when running the generated lexer.
+
+There are three different regex prefixes `r:`, `rm:`, `rf:`.  The difference is
+how they treat case.
+
+prefix | behavior
+-------|---------
+`r:`   | Default case behavior (currently case sensitive).
+`rm:`  | Match case - ie case sensitive.
+`rf:`  | Fold case - i.e. case insensitive.
+
 ##### @lexeme special type
 
 The special type `@lexeme` can be used to give a short cut for the common

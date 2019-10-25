@@ -445,7 +445,7 @@ struct parser_guts {
 
 
     /* skip Z "'" pattern "'" ';'
-     * skip Z 'r:' pattern ';'
+     * skip Z 'ri?:' pattern ';'
      * A skip cannot have a type */
     bool parse_skip(statement_list& stmts) {
         yalr::skip new_skip;
@@ -930,12 +930,16 @@ struct parser_guts {
      * REGEX Matching
      *****************************************************/
     optional_text_fragment match_regex() {
-        if (not check_string("r:")) {
+        int count = 0;
+        if (check_string("r:")) {
+            count = 1;
+        } else if (check_string("rm:") or check_string("rf:")){
+            count = 2;
+        } else {
             return std::nullopt;
         }
         int state = 0;
         int stop = false;
-        int count = 1;
         // check our flag first so we don't advance
         // if we are stopping. We don't want to consume the character
         // that made us stop.

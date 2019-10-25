@@ -18,6 +18,14 @@ enum class assoc_type {
     undef, left, right
 };
 
+enum class case_type {
+    undef, match, fold
+};
+
+enum class pattern_type {
+    undef, string, regex
+};
+
 struct terminal_symbol {
     symbol_identifier_t id;
     bool                is_inline = false;
@@ -25,9 +33,11 @@ struct terminal_symbol {
     std::string_view    type_str;
     std::string_view    pattern;
     std::string_view    action;
-    // These two will need to be computed in the analyzer
+    // These will need to be computed in the analyzer
     assoc_type          associativity = assoc_type::undef;
-    std::optional<int>  precedence;
+    std::optional<int>  precedence = std::nullopt;
+    case_type           case_match = case_type::undef;
+    pattern_type        pat_type = pattern_type::undef;
 
     terminal_symbol(const terminal& t) :
         name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
@@ -40,6 +50,9 @@ struct skip_symbol {
     symbol_identifier_t id;
     std::string_view    name;
     std::string_view    pattern;
+    // These will need to be computed in the analyzer
+    case_type           case_match = case_type::undef;
+    pattern_type        pat_type = pattern_type::undef;
 
     skip_symbol(const skip& s): 
         name(s.name.text), 

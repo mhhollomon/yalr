@@ -6,7 +6,7 @@ int main(int argc, char*argv[]) {
         R"(a := 5 * 3.0 + 5.6 / 2
 print a
 b := a+1
-print b
+PRint b
 )";
 
 

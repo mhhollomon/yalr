@@ -9,7 +9,7 @@ std::map<std::string, float> variables;
 skip WS      r:\s+     ;
 
 // basically here so that it is prefered to VARAIBLE
-term PRINT 'print' ;
+term PRINT rf:print ;
 
 //
 // zero to many underbar followed by a letter followed by as many digits,
@@ -17,7 +17,7 @@ term PRINT 'print' ;
 // allowed __a___
 // not allowed __3
 //
-term <@lexeme> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* ;
+term <@lexeme> VARIABLE rm:_*[a-zA-Z][_a-zA-Z0-9]* ;
 
 term <float>   NUMBER   r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
 
@@ -35,7 +35,7 @@ goal rule statement_list {
 
 rule statement { 
     => expression         <%{ std::cout << "(e)answer = " << _v1 << "\n"; }%> 
-    => 'print' expression <%{ std::cout << "(p)answer = " << _v2 << "\n"; }%> 
+    => PRINT expression   <%{ std::cout << "(p)answer = " << _v2 << "\n"; }%> 
     => var:VARIABLE ':=' expr:expression <%{
         std::cout << "assigning " << expr << " to '" << var << "'\n"; 
         variables[var] = expr;
