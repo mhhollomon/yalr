@@ -3,6 +3,8 @@
 #include "utils.hpp"
 #include "analyzer_tree.hpp"
 
+#include "yassert.hpp"
+
 #include <iostream>
 #include <sstream>
 
@@ -71,8 +73,7 @@ auto generate_state_data(const lrstate& state,const lrtable& lt) {
                 }
                 break;
             default :
-                //NOLINTNEXTLINE
-                assert(false);
+                yfail("action_type out of range");
                 break;
         }
 
@@ -124,7 +125,7 @@ json generate_reduce_functions(const lrtable& lt) {
 
             rdata["production"] = ss.str();
             auto rule_data = prod.rule.get_data<symbol_type::rule>();
-            assert(rule_data);
+            yassert(rule_data, "Could not get the data pointer for a rule.");
             rdata["rule_type"] = rule_data->type_str;
 
             funcs.push_back(rdata);
@@ -200,8 +201,7 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
                         { "name" , tok_name }, {"value", int(sym.id()) } }));
                 terms.push_back(sym);
                 const auto* info_ptr = sym.get_data<symbol_type::terminal>();
-                // NOLINTNEXTLINE
-                assert(info_ptr != nullptr);// should never happen
+                yassert(info_ptr, "could not get data pointer for terminal");
                 if (info_ptr->type_str != "void") {
                     type_names.insert(std::string(info_ptr->type_str));
                 }
@@ -222,8 +222,7 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
             // Skips only go in the term list
             terms.push_back(sym);
         } else {
-            //NOLINTNEXTLINE
-            assert(false);
+            yfail("Unknown symobl type");
         }
     }
 
