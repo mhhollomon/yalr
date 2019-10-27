@@ -18,13 +18,13 @@ namespace analyzer {
 //
 // Helper function to register a pattern as a new terminal
 //
-symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern);
+symbol register_pattern_terminal(analyzer_tree& out, text_fragment pattern);
 
 //
 // Pattern helper
 //
 template<class T>
-void fix_up_pattern(T& x, optional_text_fragment case_text, yalr::analyzer_tree& out) {
+void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) {
     case_type ct = case_type::undef;
 
     if (case_text) {
@@ -83,7 +83,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, yalr::analyzer_tree&
 //
 // Helper function to parse an associativity specifier
 //
-assoc_type parse_assoc(yalr::analyzer_tree& out, text_fragment spec) {
+assoc_type parse_assoc(analyzer_tree& out, text_fragment spec) {
     if (spec.text == "left") {
         return assoc_type::left;
     }
@@ -102,7 +102,7 @@ assoc_type parse_assoc(yalr::analyzer_tree& out, text_fragment spec) {
 //
 // Helper function used to dereference a precedence specifier.
 //
-std::optional<int> parse_precedence(yalr::analyzer_tree& out, text_fragment spec) {
+std::optional<int> parse_precedence(analyzer_tree& out, text_fragment spec) {
     if (spec.text[0] == '-') {
         out.record_error("precedence cannot be negative", spec);
     } else if (std::isdigit(spec.text[0])) {
@@ -139,12 +139,12 @@ std::optional<int> parse_precedence(yalr::analyzer_tree& out, text_fragment spec
 // the symbols we can do other things.
 //
 struct phase_i_visitor {
-    yalr::analyzer_tree &out;
+    analyzer_tree &out;
     int rule_count = 0;
 
-    std::optional<rule> goal_rule = std::nullopt;
+    std::optional<rule_stmt> goal_rule = std::nullopt;
 
-    explicit phase_i_visitor(yalr::analyzer_tree& g_) : out(g_) {};
+    explicit phase_i_visitor(analyzer_tree& g_) : out(g_) {};
 
 
     //
@@ -154,7 +154,7 @@ struct phase_i_visitor {
     // (may need to loosen this to allow the addition of productions
     // to a rule)
     //
-    void operator()(const yalr::rule &r) {
+    void operator()(const rule_stmt &r) {
         auto rs = rule_symbol{r};
         auto [ inserted, new_sym ] = out.symbols.add(r.name.text, rs);
 
@@ -189,7 +189,7 @@ struct phase_i_visitor {
     // term has a non-void type. Check for dups. Fill out the assoc 
     // and precedence.
     //
-    void operator()(const yalr::terminal &t) {
+    void operator()(const terminal_stmt &t) {
 
         terminal_symbol ts{t};
 
@@ -273,7 +273,7 @@ struct phase_i_visitor {
     // Add the name and (maybe) pattern to the symbol table.
     // Check for name clashes.
     //
-    void operator()(const yalr::skip &s) {
+    void operator()(const skip_stmt &s) {
         skip_symbol ss(s);
 
         if (s.associativity) {
@@ -318,7 +318,7 @@ struct phase_i_visitor {
     //
     // Handle options.
     //
-    void operator()(const yalr::option &t) {
+    void operator()(const option_stmt &t) {
         if (out.options.contains(t.name.text)) {
             if (not out.options.set_option(t.name.text, t.setting)) {
                 out.record_error(t.name, "option '", t.name,
@@ -333,7 +333,7 @@ struct phase_i_visitor {
     //
     //// Handle verbatim.
     //
-    void operator()(const yalr::verbatim &t) {
+    void operator()(const verbatim_stmt &t) {
         if (verbatim_locations.count(t.location.text) > 0) {
             out.verbatim_map.emplace(t.location.text, t.text.text);
         } else {
@@ -344,7 +344,7 @@ struct phase_i_visitor {
     //
     //// Handle precedence
     //
-    void operator()(const yalr::precedence &t) {
+    void operator()(const precedence_stmt &t) {
         auto precedence = parse_precedence(out, t.prec_ref);
         for (auto const& i : t.symbol_refs) {
             auto sym = out.symbols.find(i.text);
@@ -373,7 +373,7 @@ struct phase_i_visitor {
     //
     //// Handle associativity
     //
-    void operator()(const yalr::associativity &t) {
+    void operator()(const associativity_stmt &t) {
         assoc_type associativity = parse_assoc(out, t.assoc_text);
 
         for (auto const& i : t.symbol_refs) {
@@ -402,7 +402,7 @@ struct phase_i_visitor {
     //
     //// Handle termset
     //
-    void operator()(const yalr::termset &t) {
+    void operator()(const termset_stmt &t) {
         bool has_assoc = false;
         assoc_type assoc;
 
@@ -471,12 +471,12 @@ struct phase_i_visitor {
 // Focused on the rules. Link the items from the rule_defs to actual symbols.
 //
 struct phase_ii_visitor {
-    yalr::analyzer_tree &out;
+    analyzer_tree &out;
     int inline_terminal_count = 0;
 
     explicit phase_ii_visitor(yalr::analyzer_tree &g_) : out(g_) {};
 
-    void operator()(const yalr::rule &r) {
+    void operator()(const rule_stmt &r) {
         /* run through each alternative and generate a production.
          * Make sure every referenced item exists.
          */
@@ -546,7 +546,7 @@ struct phase_ii_visitor {
 //
 symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern) {
 
-    terminal t;
+    terminal_stmt t;
     t.pattern = pattern;
     t.is_inline = true;
 

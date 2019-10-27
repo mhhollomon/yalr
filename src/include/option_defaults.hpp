@@ -9,6 +9,7 @@ namespace yalr {
         { options::PARSER_CLASS, "Parser"sv },
         { options::LEXER_CLASS,  "Lexer"sv },
         { options::NAMESPACE,    "YalrParser"sv },
+        { options::LEXER_CASE,   "cmatch"sv },
     }; 
 
 } // namespace yalr

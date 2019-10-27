@@ -5,6 +5,8 @@
 #include "utils.hpp"
 #include "overload.hpp"
 
+#include "constants.hpp"
+
 #include <set>
 
 
@@ -14,17 +16,6 @@ struct symbol_identifier_t : public util::identifier_t<symbol_identifier_t> {
     using util::identifier_t<symbol_identifier_t>::identifier_t;
 };
 
-enum class assoc_type {
-    undef, left, right
-};
-
-enum class case_type {
-    undef, match, fold
-};
-
-enum class pattern_type {
-    undef, string, regex
-};
 
 struct terminal_symbol {
     symbol_identifier_t id;
@@ -40,7 +31,7 @@ struct terminal_symbol {
     case_type           case_match = case_type::undef;
     pattern_type        pat_type = pattern_type::undef;
 
-    terminal_symbol(const terminal& t) :
+    terminal_symbol(const terminal_stmt& t) :
         name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
         pattern(t.pattern.text), action(t.action ? t.action->text : ""sv)
         {}
@@ -56,7 +47,7 @@ struct skip_symbol {
     case_type           case_match = case_type::undef;
     pattern_type        pat_type = pattern_type::undef;
 
-    skip_symbol(const skip& s): 
+    skip_symbol(const skip_stmt& s): 
         name(s.name.text), 
         pattern(s.pattern.text) {}
     skip_symbol() = default;
@@ -68,7 +59,7 @@ struct rule_symbol {
     std::string_view    type_str;
     bool                isgoal;
 
-    rule_symbol(const rule& r) : name(r.name.text),
+    rule_symbol(const rule_stmt& r) : name(r.name.text),
         type_str(r.type_str? (*r.type_str).text : "void"sv),
         isgoal(r.isgoal) { }
     rule_symbol() = default;
