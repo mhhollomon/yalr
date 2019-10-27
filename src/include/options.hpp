@@ -81,6 +81,7 @@ class option_list {
 
 struct options {
     constexpr static inline auto PARSER_CLASS = "parser.class"sv;
+    constexpr static inline auto LEXER_CASE   = "lexer.case"sv;
     constexpr static inline auto LEXER_CLASS  = "lexer.class"sv;
     constexpr static inline auto NAMESPACE    = "namespace"sv;
 };

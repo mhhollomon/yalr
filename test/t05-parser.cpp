@@ -318,3 +318,33 @@ TEST_CASE("match_precedence() - [parser]") {
     }
 
 }
+
+TEST_CASE("match_dotted_identifier") {
+    SUBCASE("positive") {
+        auto p = mk_parser("foo.bar");
+        auto lexeme = p.match_dotted_identifier();
+        REQUIRE(lexeme);
+        CHECK(lexeme->text == "foo.bar");
+    }
+    SUBCASE("negative 1 - no dot") {
+        auto p = mk_parser("this_has_no_dot");
+        auto lexeme = p.match_dotted_identifier();
+        CHECK(not lexeme);
+        auto expected = R"(test:1:16: error:Expecting a dotted identifier
+this_has_no_dot
+~~~~~~~~~~~~~~~^
+)"s;
+        CHECK(error_string(p) == expected);
+    }
+    SUBCASE("negative 1 - no dot") {
+        auto p = mk_parser("this.end.in.a.dot.");
+        auto lexeme = p.match_dotted_identifier();
+        CHECK(not lexeme);
+        auto expected = R"(test:1:19: error:Trailing dot on identifier
+this.end.in.a.dot.
+~~~~~~~~~~~~~~~~~~^
+)"s;
+        CHECK(error_string(p) == expected);
+    }
+
+}

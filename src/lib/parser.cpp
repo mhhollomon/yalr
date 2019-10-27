@@ -226,6 +226,7 @@ struct parser_guts {
             if (parse_precedence(retval.statements)) continue;
             if (parse_associativity(retval.statements)) continue;
             if (parse_termset(retval.statements)) continue;
+            if (parse_option(retval.statements)) continue;
             record_error("Expecting a statement (rule, term, skip, verbatim)");
             break;
         }
@@ -241,7 +242,7 @@ struct parser_guts {
     //-----------------------------------------------------
     //
     bool parse_rule(statement_list& stmts) {
-        rule new_rule;
+        rule_stmt new_rule;
 
         new_rule.isgoal = match_keyword("goal");
         skip();
@@ -478,7 +479,7 @@ struct parser_guts {
     /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
     /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
     bool parse_term(statement_list& stmts) {
-        yalr::terminal new_term;
+        terminal_stmt new_term;
 
         return parse_term_thing(new_term, "term", stmts);
     }
@@ -488,13 +489,13 @@ struct parser_guts {
      * skip Z 'ri?:' pattern ';'
      * A skip cannot have a type */
     bool parse_skip(statement_list& stmts) {
-        yalr::skip new_skip;
+        skip_stmt new_skip;
         return parse_term_thing(new_skip, "skip", stmts);
     }
 
     /* verbatim loc.loc.loc <%{ action }%> */
     bool parse_verbatim(statement_list& stmts) {
-        yalr::verbatim new_verbatim;
+        verbatim_stmt new_verbatim;
         optional_text_fragment otf;
 
         if (not match_keyword("verbatim")) {
@@ -536,7 +537,7 @@ struct parser_guts {
     
     /* precedence INDENT|NUM|SQ item+ */
     bool parse_precedence(statement_list& stmts) {
-        yalr::precedence new_prec;
+        precedence_stmt new_prec;
         optional_text_fragment otf;
 
         if (not match_keyword("precedence")) {
@@ -569,7 +570,7 @@ struct parser_guts {
 
     /* associativity IDENT item+  */
     bool parse_associativity(statement_list& stmts) {
-        yalr::associativity new_assoc;
+        associativity_stmt new_assoc;
         optional_text_fragment otf;
 
         if (not match_keyword("associativity")) {
@@ -604,7 +605,7 @@ struct parser_guts {
 
     /* termset <typestr>INDENT @proc=? @assoc=? items+ */
     bool parse_termset(statement_list& stmts) {
-        yalr::termset new_termset;
+        termset_stmt new_termset;
         optional_text_fragment otf;
 
         if (not match_keyword("termset")) {
@@ -653,11 +654,38 @@ struct parser_guts {
     }
 
 
+    //
+    // Generic option parser
+    // 'option' dotted-ident ident
+    //
+    bool parse_option(statement_list& stmts) {
+        option_stmt new_opt;
+        optional_text_fragment otf;
+
+        if (not match_keyword("option")) {
+            return false;
+        }
+
+        skip();
+        if ((otf = match_dotted_identifier())) {
+            new_opt.name = *otf;
+        }
+        skip();
+        if ((otf = expect_identifier())) {
+            new_opt.setting = *otf;
+        }
+
+        skip();
+        expect_char(';');
+
+        stmts.emplace_back(std::move(new_opt));
+        return true;
+    }
     // 
     // 'parser' 'class' IDENT ';'
     //
     bool parse_parser_class(statement_list& stmts) {
-        option new_opt;
+        option_stmt new_opt;
         optional_text_fragment otf;
 
         if (not match_keyword("parser")) {
@@ -688,7 +716,7 @@ struct parser_guts {
     // 'lexer' 'class' IDENT ';'
     //
     bool parse_lexer_class(statement_list& stmts) {
-        option new_opt;
+        option_stmt new_opt;
         optional_text_fragment otf;
 
         if (not match_keyword("lexer")) {
@@ -720,7 +748,7 @@ struct parser_guts {
     // 'namespace' single-quote ';'
     //
     bool parse_namespace(statement_list& stmts) {
-        option new_opt;
+        option_stmt new_opt;
         optional_text_fragment otf;
 
         if (not match_keyword("namespace")) {
@@ -853,6 +881,42 @@ struct parser_guts {
         }
         return retval;
     }
+
+    /************************************************************************
+     * DOTTED IDENTIFIER Matching
+     ************************************************************************/
+    optional_text_fragment match_dotted_identifier() {
+        auto start_loc = current_loc;
+        optional_text_fragment otf;
+
+        int dot_count = 0;
+        bool last_match_dot = false;
+        otf = match_identifier(true);
+        while(otf) {
+            last_match_dot = false;
+            // no skip
+            if (not match_char('.')) {
+                break;
+            }
+            dot_count += 1;
+            last_match_dot = true;
+            otf = match_identifier();
+        }
+
+        if (dot_count == 0) {
+            record_error("Expecting a dotted identifier");
+            return std::nullopt;
+        }
+
+        if (last_match_dot) {
+            record_error("Trailing dot on identifier");
+            return std::nullopt;
+        }
+
+        auto ret_sv = start_loc.sv.substr(0, current_loc.offset - start_loc.offset);
+        return text_fragment{ret_sv, pl_to_tl(start_loc)};
+    }
+
 
     /************************************************************************
      * CHAR Matching
@@ -1242,4 +1306,4 @@ parse_tree& yalr_parser::parse() {
 }
 
 /***************************************/
-} // namespace
+} // namespace yalr

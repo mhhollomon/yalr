@@ -5,6 +5,8 @@
 #include "symbols.hpp"
 #include "utils.hpp"
 
+#include "constants.hpp"
+
 
 #include <set>
 #include <vector>
@@ -16,10 +18,6 @@ namespace yalr {
         using util::identifier_t<state_identifier_t>::identifier_t;
     };
 
-    enum class action_type {
-        invalid = -1,
-        shift, reduce, accept
-    };
 
     struct lr_item {
         production_identifier_t prod_id;

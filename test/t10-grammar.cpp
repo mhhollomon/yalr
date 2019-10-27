@@ -26,17 +26,17 @@ TEST_CASE("grammar - [parser]") {
     SUBCASE("type names for terms - [parser]") {
         auto tree = parse_string("term<int> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
         CHECK(tree.success);
-        auto term = std::get<yalr::terminal>(tree.statements[0]);
+        auto term = std::get<yalr::terminal_stmt>(tree.statements[0]);
         CHECK(term.type_str->text == "int");
 
         tree = parse_string("term<std::string> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
         CHECK(tree.success);
-        term = std::get<yalr::terminal>(tree.statements[0]);
+        term = std::get<yalr::terminal_stmt>(tree.statements[0]);
         CHECK(term.type_str->text == "std::string");
 
         tree = parse_string("term<unsigned long long> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
         CHECK(tree.success);
-        term = std::get<yalr::terminal>(tree.statements[0]);
+        term = std::get<yalr::terminal_stmt>(tree.statements[0]);
         CHECK(term.type_str->text == "unsigned long long");
         
     }
@@ -57,24 +57,24 @@ term <std::string> BAR rf:bar ;
     SUBCASE("Type names for rules - [parser]") {
         auto tree = parse_string("rule <int> A { => A A ; => ; }");
         CHECK(tree.success);
-        auto rule = std::get<yalr::rule>(tree.statements[0]);
+        auto rule = std::get<yalr::rule_stmt>(tree.statements[0]);
         CHECK(rule.type_str->text == "int");
 
         tree = parse_string("rule <my_thing<int>> A { => A A ; => ; }");
         CHECK(tree.success);
-        rule = std::get<yalr::rule>(tree.statements[0]);
+        rule = std::get<yalr::rule_stmt>(tree.statements[0]);
         CHECK(rule.type_str->text == "my_thing<int>");
 
         tree = parse_string("rule <my_thing::your_thing<funky::int>> A { => A A ; => ; }");
         CHECK(tree.success);
-        rule = std::get<yalr::rule>(tree.statements[0]);
+        rule = std::get<yalr::rule_stmt>(tree.statements[0]);
         CHECK(rule.type_str->text == "my_thing::your_thing<funky::int>");
     }
 
     SUBCASE("aliases for terms - [parser]") {
         auto tree = parse_string("rule A { => i:FOO ; => j:'foo' ; }");
         CHECK(tree.success);
-        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        auto ruleA = std::get<yalr::rule_stmt>(tree.statements[0]);
         auto alt = ruleA.alternatives[0];
         CHECK(alt.items[0].alias->text == "i");
         alt = ruleA.alternatives[1];
@@ -84,7 +84,7 @@ term <std::string> BAR rf:bar ;
     SUBCASE("actions for alternatives - [parser]") {
         auto tree = parse_string("rule A { => <%{ return 1; }%> => x ; }");
         CHECK(tree.success);
-        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        auto ruleA = std::get<yalr::rule_stmt>(tree.statements[0]);
         CHECK(ruleA.alternatives.size() == 2);
         auto alt = ruleA.alternatives[0];
         REQUIRE(alt.action);
@@ -99,14 +99,14 @@ TEST_CASE("namespace - [parser]") {
         auto tree = parse_string("namespace FOO ;");
 
         CHECK(tree.success);
-        auto opt = std::get<yalr::option>(tree.statements[0]);
+        auto opt = std::get<yalr::option_stmt>(tree.statements[0]);
         CHECK(opt.setting.text == "FOO");
     }
     SUBCASE("quoted string as the name") {
         auto tree = parse_string("namespace 'one::two' ;");
 
         CHECK(tree.success);
-        auto opt = std::get<yalr::option>(tree.statements[0]);
+        auto opt = std::get<yalr::option_stmt>(tree.statements[0]);
         CHECK(opt.setting.text == "one::two");
     }
 }
@@ -139,7 +139,7 @@ TEST_CASE("prec in rules - [parser]") {
     SUBCASE("positive") {
         auto tree = parse_string("rule A { => 'x' @prec=2; }");
         CHECK(tree.success);
-        auto ruleA = std::get<yalr::rule>(tree.statements[0]);
+        auto ruleA = std::get<yalr::rule_stmt>(tree.statements[0]);
         auto alt = ruleA.alternatives[0];
         CHECK(alt.precedence->text == "2");
     }
@@ -169,7 +169,7 @@ TEST_CASE("verbatim - [parser]") {
         }
 
         REQUIRE(tree.success);
-        auto verb = std::get<yalr::verbatim>(tree.statements[0]);
+        auto verb = std::get<yalr::verbatim_stmt>(tree.statements[0]);
         CHECK(verb.location.text == "X");
         CHECK(verb.text.text == " ... ");
     }
@@ -177,7 +177,7 @@ TEST_CASE("verbatim - [parser]") {
     SUBCASE("positive multipart location") {
         auto tree = parse_string("verbatim X.Y.Z <%{ ... }%>");
         REQUIRE(tree.success);
-        auto verb = std::get<yalr::verbatim>(tree.statements[0]);
+        auto verb = std::get<yalr::verbatim_stmt>(tree.statements[0]);
         CHECK(verb.location.text == "X.Y.Z");
         CHECK(verb.text.text == " ... ");
     }
@@ -192,7 +192,7 @@ TEST_CASE("associativity statement - [grammar]") {
     SUBCASE("positive") {
         auto tree = parse_string("associativity left 'a' X;");
         REQUIRE(tree.success);
-        auto assoc = std::get<yalr::associativity>(tree.statements[0]);
+        auto assoc = std::get<yalr::associativity_stmt>(tree.statements[0]);
         CHECK(assoc.assoc_text.text == "left");
         CHECK(assoc.symbol_refs.size() == 2);
     }
@@ -202,14 +202,14 @@ TEST_CASE("precedence statement - [grammar]") {
     SUBCASE("positive integer") {
         auto tree = parse_string("precedence 100 'a' X;");
         REQUIRE(tree.success);
-        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        auto prec = std::get<yalr::precedence_stmt>(tree.statements[0]);
         CHECK(prec.prec_ref.text == "100");
         CHECK(prec.symbol_refs.size() == 2);
     }
     SUBCASE("positive identifier") {
         auto tree = parse_string("precedence FOO 'a' X;");
         REQUIRE(tree.success);
-        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        auto prec = std::get<yalr::precedence_stmt>(tree.statements[0]);
         CHECK(prec.prec_ref.text == "FOO");
         CHECK(prec.symbol_refs.size() == 2);
     }
@@ -217,7 +217,7 @@ TEST_CASE("precedence statement - [grammar]") {
         auto tree = parse_string("precedence 'x' 'a' X;");
         output_errors(tree);
         REQUIRE(tree.success);
-        auto prec = std::get<yalr::precedence>(tree.statements[0]);
+        auto prec = std::get<yalr::precedence_stmt>(tree.statements[0]);
         CHECK(prec.prec_ref.text == "'x'");
         CHECK(prec.symbol_refs.size() == 2);
     }
@@ -227,7 +227,7 @@ TEST_CASE("case - [parser]") {
     SUBCASE("simple") {
         auto tree = parse_string("term FOO 'x' @cmatch;");
         CHECK(tree.success);
-        auto term = std::get<yalr::terminal>(tree.statements[0]);
+        auto term = std::get<yalr::terminal_stmt>(tree.statements[0]);
         CHECK(term.case_match);
         CHECK(term.case_match->text == "@cmatch");
     }
@@ -254,5 +254,15 @@ TEST_CASE("termset - [parser]") {
     SUBCASE("assoc first") {
         auto tree = parse_string("termset flah @assoc=left @prec='+' zed;");
         CHECK(tree.success);
+    }
+}
+
+TEST_CASE("option - [parser]") {
+    SUBCASE("positive") {
+        auto tree = parse_string("option boogy.woogy zed;");
+        REQUIRE(tree.success);
+        auto opt = std::get<yalr::option_stmt>(tree.statements[0]);
+        CHECK(opt.name.text == "boogy.woogy");
+        CHECK(opt.setting.text == "zed");
     }
 }

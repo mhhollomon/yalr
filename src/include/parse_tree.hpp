@@ -9,7 +9,7 @@
 
 namespace yalr {
 
-    struct terminal {
+    struct terminal_stmt {
         text_fragment          name;
         optional_text_fragment type_str;
         text_fragment          pattern;
@@ -26,10 +26,10 @@ namespace yalr {
     // skip is a strict subset of terminal. The restrictions
     // will be enforced in the analyzer. But this lets both
     // the parser and the analyzer share code.
-    struct skip : public terminal {
+    struct skip_stmt : public terminal_stmt {
     };
 
-    struct option {
+    struct option_stmt {
         text_fragment name;
         text_fragment setting;
     };
@@ -45,29 +45,29 @@ namespace yalr {
         optional_text_fragment action;
     };
 
-    struct rule {
+    struct rule_stmt {
         bool isgoal;
         text_fragment name;
         optional_text_fragment type_str;
         std::vector<alternative> alternatives;
     };
 
-    struct verbatim {
+    struct verbatim_stmt {
         text_fragment location;
         text_fragment text;
     };
 
-    struct associativity {
+    struct associativity_stmt {
         text_fragment assoc_text;
         std::vector<text_fragment> symbol_refs;
     };
 
-    struct precedence {
+    struct precedence_stmt {
         text_fragment prec_ref;
         std::vector<text_fragment> symbol_refs;
     };
 
-    struct termset {
+    struct termset_stmt {
         text_fragment name;
         optional_text_fragment type_str;
         optional_text_fragment associativity;
@@ -75,8 +75,10 @@ namespace yalr {
         std::vector<text_fragment> symbol_refs;
     };
 
-    using statement = std::variant<terminal, skip, option, rule, verbatim,
-                                    associativity, precedence, termset>;
+    using statement = std::variant<
+            terminal_stmt, skip_stmt, option_stmt,
+            rule_stmt, verbatim_stmt,
+            associativity_stmt, precedence_stmt, termset_stmt>;
 
     using statement_list = std::vector<statement>;
     struct parse_tree {
