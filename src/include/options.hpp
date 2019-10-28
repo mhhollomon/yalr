@@ -19,7 +19,6 @@ struct _option_table_base {
     std::unordered_map<std::string_view, std::function<bool(std::string_view)>> valid_funcs;
 
     void _register(std::string_view k, std::function<bool(std::string_view)> f) {
-        std::cerr << "registering '" << k << "'\n";
         valid_funcs.emplace(k, f);
     }
 
