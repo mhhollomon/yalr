@@ -1,6 +1,7 @@
 #include "codegen.hpp"
 #include "template.hpp"
 #include "utils.hpp"
+#include "template_genmain.hpp"
 #include "analyzer_tree.hpp"
 
 #include "yassert.hpp"
@@ -315,6 +316,10 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     // write the template
     auto main_templ = env.parse(yalr::codegen::main_template);
     env.render_to(outstrm, main_templ, data);
+
+    if (lt.options.code_main.get() == true) {
+        outstrm << yalr::codegen::gen_main_code;
+    }
 
 }
 

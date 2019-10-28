@@ -13,7 +13,7 @@
 
 - bug #22 - The examples had not kept up with some of the changes to the
   languages. They have been cleaned up a bit. In particular, the calculator
-  example now acts as a good endto-end look at most of the features of the tool
+  example now acts as a good end-to-end look at most of the features of the tool
 
 - enhancement #23 - There is now a true install target.
 
@@ -24,6 +24,9 @@
 - enhancement #27 - the special type `@lexeme` can now be used in terminals
   and rules. For terminals, it acts as short hand for the common pattern of
   simply returning the parsed text as the semantic value.
+
+- The option `code.main` can be set to true to have yalr append the definition
+  for a simple `main()` to the generated output.
 
 ### Non-functional Changes
 

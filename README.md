@@ -116,6 +116,8 @@ The available options are:
 option-id | setting
 ----------|---------
 lexer.case| default case matching. Setting is `cfold` and `cmatch`
+code.main | When set to true, will case the generator to include a simple
+main() function (See below).
 
 ### Terminals
 
@@ -642,13 +644,40 @@ int main() {
 }
 ```
 
-See [calculator_main](examples/calculator_main.cpp) for a larger example.
+### Generated main
+
+The main generated with code.main option has the following properties.
+
+```
+foo [-l|-p|-b] [-f file | - | "string..."]
+```
+
+-l, -p, -b :
+    Set debugging on for the lexer, parser, or both, respectively
+
+-f <file> :
+    Read input from the file <file>
+
+- :
+    Read input from stdin
+
+"string ..." :
+    Take this as literal input. QUotes will be needed to get around the shell.
+
+If input is being read from stdin, it is **NOT** interactive. It will read
+until the end of input (normally Ctrl-D - Ctrl-Z on windows).
+
+This `main()` is useful mostly for demos (like the [calculator
+example](examples/calculator.yalr)) or as a starting point for early
+development.
+
 
 ## References
 - [Elkhound](http://scottmcpeak.com/elkhound/sources/elkhound/index.html)
 - [Lemon](http://www.hwaci.com/sw/lemon/)
 - [Boost::Spirit::X3](https://www.boost.org/doc/libs/develop/libs/spirit/doc/x3/html/index.html)
 - [ANTLR](https://www.antlr.org/)
+- [Quex](http://quex.sourceforge.net/)
 - [Grammophone](http://mdaines.github.io/grammophone/) - explore grammars.
 - [LR on Wikipedia](https://en.wikipedia.org/wiki/LR_parser)
 - [GLR on Wikipedia](https://en.wikipedia.org/wiki/GLR_parser)
@@ -668,4 +697,4 @@ See [calculator_main](examples/calculator_main.cpp) for a larger example.
 
 ## License
 
-MIT &copy; 2018 Mark Hollomon
+MIT &copy; 2018-2019 Mark Hollomon

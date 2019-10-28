@@ -2,3 +2,5 @@ build
 build-*
 tags
 *.sublime-workspace
+.gdb_history
+a.out
