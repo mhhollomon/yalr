@@ -210,6 +210,7 @@ struct parser_guts {
     parse_tree& parse() {
 
         auto & retval = *(new parse_tree());
+        retval.source = source;
 
         while (skip() and not eoi() and error_list.size() < 5) {
             if (parse_parser_class(retval.statements)) continue;

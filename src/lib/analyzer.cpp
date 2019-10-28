@@ -576,7 +576,7 @@ std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
 
     // Make sure there is a goal defined
     if (not sv.goal_rule) {
-        retval->record_error("No goal rule was declared.", text_fragment{});
+        retval->record_error("No goal rule was declared.", text_fragment{"", text_location{0, tree.source}});
     }
 
     if (retval->errors.size() > 0) {

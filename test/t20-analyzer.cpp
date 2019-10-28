@@ -32,6 +32,14 @@ TEST_CASE("grammar - [analyzer]") {
 
 }
 
+TEST_CASE("NO goal rule - [analyzer]") {
+    auto tree = parse_string("term foo 'x'; rule A { => foo; }");
+    REQUIRE(not bool(*tree));
+    auto error = tree->errors.front();
+    CHECK(error.message == "No goal rule was declared.");
+}
+
+
 TEST_CASE("[analyzer] Error on dups") {
     SUBCASE("[analyzer] dup skip/term") {
         auto tree = parse_string("term foo 'x';skip foo 'y'; goal rule X { => foo ; }");
