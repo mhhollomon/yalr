@@ -1,5 +1,7 @@
 #include "tablegen.hpp"
 
+#include "yassert.hpp"
+
 #include <set>
 #include <queue>
 #include <algorithm>
@@ -61,10 +63,7 @@ item_set closure(
                 break;
             case symbol_type::skip :
                 // its a skip, this isn;t right
-                std::cerr << "There is a skip in a production, but analyze "
-                    "was supposed to take care of that\n";
-                //NOLINTNEXTLINE
-                assert(false);
+                yfail("There is a skip in a production during table generation");
                 break;
             case symbol_type::rule :
                 {
@@ -82,8 +81,7 @@ item_set closure(
             default :
                 std::cerr << "This isn't right -- " << curr_item.prod_id << 
                     ":"<< curr_item.position << " -- " << prod.items.size() << "\n";
-                //NOLINTNEXTLINE
-                assert(false);
+                yfail("Unkown symbol type in production");
                 break;
         }
     }
@@ -330,8 +328,7 @@ void compute_first_and_follow(lrtable& lt) {
             } else {
                 // Other code should make sure that skips aren't
                 // here. But trap it - just in case.
-                //NOLINTNEXTLINE
-                assert(false);
+                yfail("Invalid symbol type in transition");
             }
         }
         /* Reduce Actions
@@ -395,8 +392,7 @@ void compute_first_and_follow(lrtable& lt) {
                                         state.actions.erase(sym);
                                         auto [ act, placed ] = state.actions.try_emplace(sym,
                                                 new_act);
-                                        //NOLINTNEXTLINE
-                                        assert(placed);
+                                        yassert(placed, "Could not place new action on shift/reduce conflict resolution");
                                     }
                                 } else {
                                     //
@@ -411,10 +407,7 @@ void compute_first_and_follow(lrtable& lt) {
                                         new_act.conflict = conflict_action(action_base(new_iter->second));
                                         state.actions.erase(sym);
                                         auto [ act, placed ] = state.actions.try_emplace(sym,new_act);
-                                        //NOLINTNEXTLINE
-                                        assert(placed);
-                                    } else {
-                                        std::cerr << " Resolving to reduce by " << old_prod.prod_id << "\n";
+                                        yassert(placed, "Could not place new action on reduce/reduce conflict resolution");
                                     }
                                 }
                             }
@@ -452,7 +445,7 @@ void pretty_print(const item_set& is,
     for (const auto &i : is) {
         const auto prod = productions.at(i.prod_id);
         //NOLINTNEXTLINE
-        assert(i.prod_id == prod.prod_id);
+        yassert(i.prod_id == prod.prod_id, "Did not find correct production");
 
         strm << "   [";
         auto oldwidth = strm.width(3);
@@ -594,6 +587,7 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
                 if (data->precedence) {
                     strm << " p=";
                     strm.width(5);
+
                     strm << std::left;
                     strm << *(data->precedence);
                     strm << std::right;
@@ -629,7 +623,7 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
             }
             break;
         default :
-            assert(false);
+            yfail("Invalid symbol type");
 
     }
     strm << "\n";

@@ -772,7 +772,7 @@ struct parser_guts {
         skip();
         if (not expect_char(';')) return false;
 
-        new_opt.name = { "namespace"sv, new_opt.setting.location };
+        new_opt.name = { "code.namespace"sv, new_opt.setting.location };
         stmts.emplace_back(std::move(new_opt));
 
         return true;
