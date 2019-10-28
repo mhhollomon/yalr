@@ -7,6 +7,7 @@
 
 #include <string_view>
 #include <unordered_map>
+#include <set>
 #include <functional>
 
 namespace yalr {
@@ -86,11 +87,16 @@ struct sv_once_option : public option<std::string_view, sv_once_option> {
  * Option class for bool value which can be set mutiple times
  *********************************************************/
 struct bool_option : public option<bool, bool_option> {
+    std::set<std::string_view> true_things = { "yes", "YES", "true", "TRUE", "1" };
     bool_option(std::string_view v, _option_table_base& parent, bool def) : 
         option{v, *this, parent, true, def} {}
 
     bool validate(std::string_view val) {
-        return true;
+        if (true_things.count(val) > 0) {
+            return set(true);
+        } else {
+            return set(false);
+        } 
     };
 };
 
@@ -117,12 +123,12 @@ struct lexer_case_option : public option<case_type, lexer_case_option> {
  *****************************************************************************/
 struct option_table : public _option_table_base {
 
-    //                             name                  default
-    sv_once_option      lexer_class{"lexer.class",  *this, "Lexer"};
-    sv_once_option     parser_class{"parser.class", *this, "Parser"};
+    //                             name                      default
+    sv_once_option      lexer_class{"lexer.class",    *this, "Lexer"};
+    sv_once_option     parser_class{"parser.class",   *this, "Parser"};
     sv_once_option   code_namespace{"code.namespace", *this, "YalrParser"};
-    lexer_case_option    lexer_case{"lexer.case",   *this, case_type::match};
-    bool_option         global_main{"global.main",  *this, false};
+    lexer_case_option    lexer_case{"lexer.case",     *this, case_type::match};
+    bool_option           code_main{"code.main",      *this, false};
 
 };
 
