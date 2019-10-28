@@ -122,7 +122,7 @@ namespace yalr {
         std::multimap<std::string, std::string_view> verbatim_map;
         symbol_set epsilon;
         production_identifier_t target_prod;
-        option_list options;
+        option_table options;
         bool success;
     };
 

@@ -111,3 +111,41 @@ TEST_CASE("[analyzer] precedence") {
     CAPTURE(*(tree->productions[0].precedence));
     CHECK(not tree->productions[0].precedence);
 }
+
+TEST_CASE("namespace - [analyzer]") {
+    SUBCASE("positive - simple") {
+        auto tree = parse_string("namespace my_cool_ns; goal rule A { => 'a' ; }");
+        REQUIRE(*tree);
+    }
+}
+
+TEST_CASE("case scoping - [analyzer]") {
+        auto tree = parse_string(R"x(
+term A 'a' ;
+option lexer.case cfold;
+term B 'b' ;
+option lexer.case cmatch;
+term C 'c' ;
+
+goal rule R { => 'a' ; }
+)x");
+        REQUIRE(*tree);
+
+        auto sym_a = tree->symbols.find("A");
+        REQUIRE(sym_a);
+        auto a_data_ptr = sym_a->get_data<yalr::symbol_type::terminal>();
+        REQUIRE(a_data_ptr);
+        CHECK(a_data_ptr->case_match == yalr::case_type::match);
+
+        auto sym_b = tree->symbols.find("B");
+        REQUIRE(sym_b);
+        auto b_data_ptr = sym_b->get_data<yalr::symbol_type::terminal>();
+        REQUIRE(b_data_ptr);
+        CHECK(b_data_ptr->case_match == yalr::case_type::fold);
+
+        auto sym_c = tree->symbols.find("C");
+        REQUIRE(sym_c);
+        auto c_data_ptr = sym_c->get_data<yalr::symbol_type::terminal>();
+        REQUIRE(c_data_ptr);
+        CHECK(c_data_ptr->case_match == yalr::case_type::match);
+}

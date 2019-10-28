@@ -6,8 +6,10 @@
 #include "overload.hpp"
 
 #include "constants.hpp"
+#include "yassert.hpp"
 
 #include <set>
+#include <map>
 
 
 namespace yalr {
@@ -199,7 +201,7 @@ class symbol_table {
         }
 
         auto [id_iter, id_inserted ] = id_map.try_emplace(t.id, iter->second);
-        assert(id_inserted);
+        yassert(id_inserted, "New symbol not inserted into id map.");
 
         return { true, iter->second };
     }

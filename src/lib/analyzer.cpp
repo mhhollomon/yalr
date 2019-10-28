@@ -1,6 +1,6 @@
 #include "analyzer.hpp"
 
-#include "option_defaults.hpp"
+#include "yassert.hpp"
 
 #include <unordered_set>
 
@@ -34,7 +34,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
             ct = case_type::fold;
         } else {
             // parser did something wrong.
-            assert(false);
+            yfail("Invalid pattern case specifier");
         }
     }
     auto full_pattern = x.pattern;
@@ -44,7 +44,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
         // This will have to reference the option once
         // that is in place
         if (ct == case_type::undef) {
-            x.case_match = case_type::match;
+            x.case_match = out.options.lexer_case.get();
         } else {
             x.case_match = ct;
         }
@@ -61,7 +61,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
         x.pattern = x.pattern.substr(3, full_pattern.size()-2);
         x.pat_type = pattern_type::regex;
         if (ct == case_type::undef) {
-            x.case_match = case_type::match;
+            x.case_match = out.options.lexer_case.get();
         } else {
             out.record_error(*case_text, "multiple case specifiers");
         }
@@ -76,7 +76,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
             x.case_match = ct;
         }
     } else {
-        assert(false);
+        yfail("Could not deduce pattern type from string start");
     }
 }
 
@@ -237,12 +237,12 @@ struct phase_i_visitor {
             // that has already checked that the symbol isn't there.
             // So, we don't have to be quite as picky here.
             //
-            assert (ts.pat_type == pattern_type::string);
+            yassert (ts.pat_type == pattern_type::string, "inline pattern must be a fixed string pattern");
             out.atoms.emplace_back("0TERM"s + std::to_string(out.atoms.size()+1));
             ts.token_name = out.atoms.back();
             ts.name = full_pattern;
             auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
-            assert(inserted);
+            yassert(inserted, "Failed to insert new inline symbol");
 
         } else {
             ts.token_name = ts.name;
@@ -320,12 +320,12 @@ struct phase_i_visitor {
     //
     void operator()(const option_stmt &t) {
         if (out.options.contains(t.name.text)) {
-            if (not out.options.set_option(t.name.text, t.setting)) {
+            if (not out.options.validate(std::string(t.name.text), t.setting.text)) {
                 out.record_error(t.name, "option '", t.name,
                     "' has already be set");
             }
         } else {
-            out.record_error(t.name,"Unknown option '", t.name, "'");
+            out.record_error(t.name, "Unknown option '", t.name, "'");
         }
 
     }
@@ -481,8 +481,7 @@ struct phase_ii_visitor {
          * Make sure every referenced item exists.
          */
         auto rsym = out.symbols.find(r.name.text);
-        //NOLINTNEXTLINE
-        assert(rsym); // if not found, something went wrong up above.
+        yassert(rsym, "Could not find symbol for rule in Phase 2"); // if not found, something went wrong up above.
 
         for (const auto& alt : r.alternatives) {
             std::vector<yalr::prod_item> s;
@@ -555,7 +554,7 @@ symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern
     sv(t);
 
     auto sym = out.symbols.find(pattern.text);
-    assert(sym);
+    yassert(sym, "Could not find symbol just register for inline terminal");
 
     return *sym;
 
@@ -563,8 +562,6 @@ symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern
 
 std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
     auto retval = std::make_unique<yalr::analyzer_tree>();
-
-    retval->options.init_defaults(option_defaults);
 
 
     /* sort the defs out into terms and rules
@@ -611,7 +608,7 @@ std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
 
     auto [ added, new_sym ] = retval->symbols.add(aug_rule.name, aug_rule);
 
-    assert(added);
+    yassert(added, "Could not add synthetic goal rule");
 
     // add the production.
     std::vector<yalr::prod_item>ts;
@@ -670,7 +667,7 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
                             strm << "right\n";
                             break;
                         default :
-                            assert(false);
+                            yfail("Invalid association type while printing");
                             break;
                     }
                     strm << "      prec    = ";

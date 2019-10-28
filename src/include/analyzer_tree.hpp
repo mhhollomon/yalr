@@ -19,7 +19,7 @@ extern std::unordered_set<std::string_view> verbatim_locations;
     struct analyzer_tree {
         bool success;
         std::list<error_info>    errors;
-        option_list              options;
+        option_table             options;
         symbol_table             symbols;
         std::multimap<std::string, std::string_view> verbatim_map;
         std::vector<production>  productions;

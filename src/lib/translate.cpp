@@ -20,7 +20,7 @@ void grammophone::output(const yalr::analyzer_tree& gr, CLIOptions &clopts) cons
     if (not clopts.output_file.empty()) {
         outfilename = clopts.output_file;
     } else {
-        outfilename = std::string(gr.options.get_setting(options::PARSER_CLASS).get_value())
+        outfilename = std::string(gr.options.parser_class.get())
             + ".txt";
     }
 

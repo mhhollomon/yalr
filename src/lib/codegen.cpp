@@ -161,12 +161,9 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     env.set_expression("<%", "%>");
 
     json data;
-    data["namespace"] = std::string(lt.options.get_setting(
-            options::NAMESPACE).get_value());
-    data["parserclass"] = std::string(lt.options.get_setting(
-            options::PARSER_CLASS).get_value());
-    data["lexerclass"] = std::string(lt.options.get_setting(
-            options::LEXER_CLASS).get_value());
+    data["namespace"] = std::string(lt.options.code_namespace.get());
+    data["parserclass"] = std::string(lt.options.parser_class.get());
+    data["lexerclass"] = std::string(lt.options.lexer_class.get());
 
 
     // dump the tokens
