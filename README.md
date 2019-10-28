@@ -102,6 +102,21 @@ namespace 'one::two';
 
 This statement may only appear once in the file.
 
+### Option statements
+
+A number settings can be changed via an option statement. The general syntax
+is:
+
+```
+option <option-id> <setting> ;
+```
+
+The available options are:
+
+option-id | setting
+----------|---------
+lexer.case| default case matching. Setting is `cfold` and `cmatch`
+
 ### Terminals
 
 There are two types of terminals - "parser" terminals and "lexer" terminals.
