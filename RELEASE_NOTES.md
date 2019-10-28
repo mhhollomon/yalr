@@ -2,6 +2,11 @@
 
 ### Functional Changes
 
+- enhancement #3 - Terminals can now be set to case sensitive either
+  individually or globally. The new option `lexer.case` sets the default. The
+  new markers @cfold and @cmatch can be used in individual terminal definitions
+  to override the global default.
+
 - enhancement #20 - Add associativity and precedences markers to terminal and
   rules. See the [README](Readme.md) for details and the calculator example to
   see it in action.
@@ -19,10 +24,6 @@
 - enhancement #27 - the special type `@lexeme` can now be used in terminals
   and rules. For terminals, it acts as short hand for the common pattern of
   simply returning the parsed text as the semantic value.
-
-- Terminal patterns can now be made case insensitive using the
-  `@cfold` modifier. THe `@cmatch` modifier is also available to explicitly
-  choose the default behavior.
 
 ### Non-functional Changes
 
