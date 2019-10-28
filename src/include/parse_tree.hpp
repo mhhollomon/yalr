@@ -84,6 +84,7 @@ namespace yalr {
     struct parse_tree {
         bool success;
         statement_list statements;
+        std::shared_ptr<text_source> source;
         std::list<error_info> errors;
 
         operator bool() { return success; }
