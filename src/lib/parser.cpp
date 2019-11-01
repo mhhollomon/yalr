@@ -37,7 +37,7 @@ struct parser_guts {
     //
     // Errors that have been encountered so far.
     //
-    std::list<error_info> error_list;
+    error_list errors;
 
     //
     // Constructor
@@ -61,26 +61,13 @@ struct parser_guts {
     // Add an error at the given location
     //
     void record_error(const std::string& msg, parse_loc& loc) {
-        error_list.emplace_back(msg, 
-                text_fragment{std::string_view(), pl_to_tl(loc)});
+        errors.add(msg, text_fragment{std::string_view(), pl_to_tl(loc)});
     }
 
     void record_error(const std::string& msg, text_fragment tf) {
-        error_list.emplace_back(msg, tf); 
+        errors.add(msg, tf); 
     }
 
-    //
-    // Output the errors to the given ostream.
-    //
-    std::ostream& stream_errors(std::ostream& ostrm) const {
-        for (const auto& iter : error_list) {
-            iter.output(ostrm);
-        }
-
-        return ostrm;
-    }
-
-    
     /****************************************************************
      * Input Utilities
      ****************************************************************/
@@ -212,14 +199,14 @@ struct parser_guts {
         auto & retval = *(new parse_tree());
         retval.source = source;
 
-        while (skip() and not eoi() and error_list.size() < 5) {
+        while (skip() and not eoi() and errors.size() < 5) {
             if (parse_parser_class(retval.statements)) continue;
             if (parse_lexer_class(retval.statements))  continue;
             if (parse_namespace(retval.statements))    continue;
             break;
         }
 
-        while (skip() and not eoi() and error_list.size() < 5) {
+        while (skip() and not eoi() and errors.size() < 5) {
             if (parse_rule(retval.statements)) continue;
             if (parse_term(retval.statements)) continue;
             if (parse_skip(retval.statements)) continue;
@@ -232,8 +219,13 @@ struct parser_guts {
             break;
         }
 
-        retval.success = (eoi() and error_list.size() == 0);
-        retval.errors = std::move(error_list);
+        //
+        // This isn't quite right. It assumes every message in the error_list is
+        // an error. But at the moment, the parser doesn't have any warnings, so,
+        // I guess we'll go with it.
+        //
+        retval.success = (eoi() and errors.size() == 0);
+        retval.errors = std::move(errors);
 
         return retval; 
     }
@@ -272,7 +264,7 @@ struct parser_guts {
             return false;
         }
 
-        while (skip() and not eoi() and error_list.size() < 5) {
+        while (skip() and not eoi() and errors.size() < 5) {
             if (match_char('}')) break;
             if (not parse_alternative(new_rule.alternatives)) {
                 record_error("Expecting alternative or rule closing '}'");
@@ -295,7 +287,7 @@ struct parser_guts {
         }
 
         bool saw_prec = false;
-        while(skip() and not eoi() and error_list.size() < 5) {
+        while(skip() and not eoi() and errors.size() < 5) {
             // ';" closes the alternative, so leave the loop if we see it.
             if (match_char(';')) break;
 
@@ -1297,10 +1289,6 @@ yalr_parser::yalr_parser(std::shared_ptr<yalr::text_source> src) :
 // c.f. e.g. https://www.fluentcpp.com/2017/09/22/make-pimpl-using-unique_ptr/
 //
 yalr_parser::~yalr_parser() = default;
-
-std::ostream& yalr_parser::stream_errors(std::ostream& ostrm) {
-    return guts->stream_errors(ostrm); 
-}
 
 parse_tree& yalr_parser::parse() {
     return guts->parse();

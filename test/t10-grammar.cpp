@@ -11,9 +11,7 @@ auto parse_string(std::string s) {
 }
 
 void output_errors(yalr::parse_tree const &t) {
-    for (auto const &e : t.errors) {
-        e.output(std::cout);
-    }
+    t.errors.output(std::cout);
 }
 
 TEST_CASE("grammar - [parser]") {
@@ -146,17 +144,13 @@ TEST_CASE("prec in rules - [parser]") {
     SUBCASE("multiple") {
         auto tree = parse_string("rule A { => 'x' @prec=2 @prec=foo; }");
         CHECK(not tree);
-        for (auto const &e : tree.errors) {
-            e.output(std::cout);
-        }
+        tree.errors.output(std::cout);
         CHECK(tree.errors.size() == 1);
     }
     SUBCASE("trailing item") {
         auto tree = parse_string("rule A { => 'x' @prec=2 'y'; }");
         CHECK(not tree);
-        for (auto const &e : tree.errors) {
-            e.output(std::cout);
-        }
+        tree.errors.output(std::cout);
         CHECK(tree.errors.size() == 1);
     }
 }
@@ -164,9 +158,7 @@ TEST_CASE("prec in rules - [parser]") {
 TEST_CASE("verbatim - [parser]") {
     SUBCASE("positive 1") {
         auto tree = parse_string("verbatim X <%{ ... }%>");
-        for (auto const &e : tree.errors) {
-            e.output(std::cout);
-        }
+        tree.errors.output(std::cout);
 
         REQUIRE(tree.success);
         auto verb = std::get<yalr::verbatim_stmt>(tree.statements[0]);

@@ -2,13 +2,24 @@
 
 namespace yalr {
 
+    const std::string level[] = {
+        "info", "warning", "error"
+    };
+
+    std::ostream& error_list::output(std::ostream& strm) const {
+        for (auto const & e : errors) {
+            e.output(strm);
+        }
+        return strm;
+    }
+
     std::ostream& error_info::output(std::ostream& strm) const {
 
         auto li = fragment.location.line_info();
 
         strm << fragment.location.source->name << ":" << 
             li.line_num << ':' <<
-            li.col_num << ": error:" <<
+            li.col_num << ": " << level[int(msg_type)] << ": " <<
             message << "\n";
         //
         // put out the formatted line
@@ -19,6 +30,11 @@ namespace yalr {
             strm << "\n";
         std::string filler(li.col_num-1, '~');
         strm << filler << "^\n";
+
+        //
+        // Now the nested infos
+        //
+        aux_info.output(strm);
 
         return strm;
 

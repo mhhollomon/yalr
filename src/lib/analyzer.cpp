@@ -92,7 +92,7 @@ assoc_type parse_assoc(analyzer_tree& out, text_fragment spec) {
         return assoc_type::right;
     }
 
-    out.record_error("Invalid associativity specifier", spec);
+    out.record_error(spec, "Invalid associativity specifier");
 
     return assoc_type::undef;
 }
@@ -104,7 +104,7 @@ assoc_type parse_assoc(analyzer_tree& out, text_fragment spec) {
 //
 std::optional<int> parse_precedence(analyzer_tree& out, text_fragment spec) {
     if (spec.text[0] == '-') {
-        out.record_error("precedence cannot be negative", spec);
+        out.record_error(spec, "precedence cannot be negative");
     } else if (std::isdigit(spec.text[0])) {
         return atoi(std::string(spec.text).data());
     } else {
@@ -115,19 +115,16 @@ std::optional<int> parse_precedence(analyzer_tree& out, text_fragment spec) {
                 if (prec) {
                     return prec;
                 } else {
-                    out.record_error(
-                            "Referenced symbol does not have precedence set",
-                            spec); 
+                    out.record_error(spec,
+                            "Referenced symbol does not have precedence set");
                 }
             } else {
-                out.record_error(
-                        "Referenced symbol is not a terminal",
-                        spec);
+                out.record_error(spec,
+                        "Referenced symbol is not a terminal");
             }
         } else {
-            out.record_error(
-                    "Undefined terminal used for precedence",
-                    spec);
+            out.record_error(spec,
+                    "Undefined terminal used for precedence");
         }
     }
     return std::nullopt;
@@ -162,6 +159,7 @@ struct phase_i_visitor {
             out.record_error(r.name, "'", r.name.text, 
                     "' has already been defined as a ",
                     new_sym.type_name());
+
         }
 
         if (r.isgoal) {
@@ -337,7 +335,7 @@ struct phase_i_visitor {
         if (verbatim_locations.count(t.location.text) > 0) {
             out.verbatim_map.emplace(t.location.text, t.text.text);
         } else {
-            out.record_error("Unknown location for verbatim section", t.location);
+            out.record_error(t.location, "Unknown location for verbatim section");
         }
     }
 
@@ -352,19 +350,19 @@ struct phase_i_visitor {
                 if (sym->isterm()) {
                     auto data = sym->get_data<symbol_type::terminal>();
                     if (data->precedence) {
-                        out.record_error("terminal already has precedence set", i);
+                        out.record_error(i, "terminal already has precedence set");
                     } else {
                         data->precedence = precedence;
                     }
                 } else {
-                    out.record_error("symbol reference is not a terminal", i);
+                    out.record_error(i, "symbol reference is not a terminal");
                 }
             } else if (i.text[0] == '\'') {
                 auto new_sym = register_pattern_terminal(out, i);
                 auto data = new_sym.get_data<symbol_type::terminal>();
                 data->precedence = precedence;
             } else {
-                out.record_error("Unknown symbol used in statement", i);
+                out.record_error(i, "Unknown symbol used in statement");
             }
         }
 
@@ -382,19 +380,19 @@ struct phase_i_visitor {
                 if (sym->isterm()) {
                     auto data = sym->get_data<symbol_type::terminal>();
                     if (data->associativity != assoc_type::undef) {
-                        out.record_error("terminal already has associativity set", i);
+                        out.record_error(i, "terminal already has associativity set");
                     } else {
                         data->associativity = associativity;
                     }
                 } else {
-                    out.record_error("symbol reference is not a terminal", i);
+                    out.record_error(i, "symbol reference is not a terminal");
                 }
             } else if (i.text[0] == '\'') {
                 auto new_sym = register_pattern_terminal(out, i);
                 auto data = new_sym.get_data<symbol_type::terminal>();
                 data->associativity = associativity;
             } else {
-                out.record_error("Unknown symbol used in statement", i);
+                out.record_error(i, "Unknown symbol used in statement");
             }
         }
     }
@@ -427,23 +425,22 @@ struct phase_i_visitor {
                     auto data = sym->get_data<symbol_type::terminal>();
                     if (has_assoc) {
                         if (data->associativity != assoc_type::undef) {
-                            out.record_error(
-                                    "terminal already has associativity set",
-                                    i);
+                            out.record_error(i, 
+                                    "terminal already has associativity set");
                         } else {
                             data->associativity = assoc;
                         }
                     }
                     if (has_prec) {
                         if (data->precedence) {
-                            out.record_error(
-                                    "terminal already has precedence set", i);
+                            out.record_error(i, 
+                                    "terminal already has precedence set");
                         } else {
                             data->precedence = prec;
                         }
                     }
                 } else {
-                    out.record_error("symbol reference is not a terminal", i);
+                    out.record_error(i, "symbol reference is not a terminal");
                 }
             } else if (i.text[0] == '\'') {
                 auto new_sym = register_pattern_terminal(out, i);
@@ -456,7 +453,7 @@ struct phase_i_visitor {
                     data->precedence =prec;
                 }
             } else {
-                out.record_error("Unknown symbol used in statement", i);
+                out.record_error(i, "Unknown symbol used in statement");
             }
         }
 
@@ -490,8 +487,7 @@ struct phase_ii_visitor {
                 auto sym = out.symbols.find(p.symbol_ref.text);
                 if (sym) {
                     if (sym->isskip()) {
-                        out.record_error("alternative is using a skip terminal",
-                                p.symbol_ref);
+                        out.record_error(p.symbol_ref, "alternative is using a skip terminal");
                     } else if ((not alt.precedence) and sym->isterm()) {
                         //
                         // keep track of the precedence of the right-most terminal
@@ -576,7 +572,8 @@ std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
 
     // Make sure there is a goal defined
     if (not sv.goal_rule) {
-        retval->record_error("No goal rule was declared.", text_fragment{"", text_location{0, tree.source}});
+        retval->record_error(text_fragment{"", text_location{0, tree.source}},
+                "No goal rule was declared.");
     }
 
     if (retval->errors.size() > 0) {
