@@ -1,4 +1,4 @@
-## On Dev
+## Release v0.2.0
 
 ### Functional Changes
 
@@ -17,7 +17,7 @@
 
 - enhancement #23 - There is now a true install target.
 
-- enhancement #25 - New Precedence and associativity statements. These allow
+- enhancement #25 - New precedence and associativity statements. These allow
   you to define terminals and set either precedence or associativity in one
   statement. This keeps you from having to give a name to small operators, etc.
 
@@ -27,6 +27,9 @@
 
 - The option `code.main` can be set to true to have yalr append the definition
   for a simple `main()` to the generated output.
+
+- `verbatim` sections van now be used to inject code into various sections of
+  the generated file.
 
 ### Non-functional Changes
 
