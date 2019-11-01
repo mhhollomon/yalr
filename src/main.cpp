@@ -88,9 +88,7 @@ int main(int argc, char* argv[]) {
 
     if (!tree.success) {
         std::cerr << "Parse failed\n";
-        for (auto const& e : tree.errors) {
-            e.output(std::cerr);
-        }
+        tree.errors.output(std::cerr);
         return 1;
     } 
     
@@ -102,9 +100,7 @@ int main(int argc, char* argv[]) {
 
     auto anatree = yalr::analyzer::analyze(tree);
     if (not anatree->success) {
-        for (auto const& e : anatree->errors) {
-            e.output(std::cerr);
-        }
+        anatree->errors.output(std::cerr);
         exit(1);
     }
 

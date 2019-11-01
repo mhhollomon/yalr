@@ -20,7 +20,7 @@ parser mk_parser(const std::string &s) {
 
 std::string error_string(parser& p) {
     std::stringstream ss;
-    p.stream_errors(ss);
+    p.errors.output(ss);
 
     return ss.str();
 }
@@ -47,7 +47,7 @@ TEST_CASE("skip() - [parser]") {
         p =  mk_parser("  /*     X");
         CHECK(not p.skip());
         CHECK(p.eoi());
-        CHECK(p.error_list.size() > 0);
+        CHECK(p.errors.size() > 0);
 
         /* --- Multiline ---- */
         /* also make sure embedded openers don't cause problems */
@@ -69,9 +69,9 @@ TEST_CASE("skip() - [parser]") {
         p =  mk_parser("  //     X");
         CHECK(not p.skip());
         CHECK(p.eoi());
-        CHECK(p.error_list.size() > 0);
+        CHECK(p.errors.size() > 0);
 
-        std::string expected = R"x(test:1:3: error:Unterminated comment starting here
+        std::string expected = R"x(test:1:3: error: Unterminated comment starting here
   //     X
 ~~^
 )x";
@@ -109,7 +109,7 @@ TEST_CASE("expect_keyword() - [parser]") {
     SUBCASE("negative") {
         auto p = mk_parser("keyword_ ");
         CHECK(not p.expect_keyword("keyword"));
-        CHECK(p.error_list.size() == 1);
+        CHECK(p.errors.size() == 1);
     }
 }
 
@@ -189,12 +189,12 @@ TEST_CASE("match_singlequote() - [parser]") {
         {
         auto p = mk_parser("'abc\nxyz'");
         auto lexeme = p.match_singlequote();
-        CHECK(p.error_list.size() == 1);
+        CHECK(p.errors.size() == 1);
         }
         {
         auto p = mk_parser("'xyz");
         auto lexeme = p.match_singlequote();
-        CHECK(p.error_list.size() == 1);
+        CHECK(p.errors.size() == 1);
         }
 
     }
@@ -265,7 +265,7 @@ TEST_CASE("match_assoc() - [parser]") {
         auto p = mk_parser("@assoc= left");
         auto lexeme = p.match_assoc();
         CHECK(not lexeme);
-        auto expected = R"(test:1:8: error:missing or incorrect associativity specification
+        auto expected = R"(test:1:8: error: missing or incorrect associativity specification
 @assoc= left
 ~~~~~~~^
 )"s;
@@ -277,7 +277,7 @@ TEST_CASE("match_assoc() - [parser]") {
         auto p = mk_parser("@assoc=1234");
         auto lexeme = p.match_assoc();
         CHECK(not lexeme);
-        auto expected = R"(test:1:8: error:missing or incorrect associativity specification
+        auto expected = R"(test:1:8: error: missing or incorrect associativity specification
 @assoc=1234
 ~~~~~~~^
 )"s;
@@ -309,7 +309,7 @@ TEST_CASE("match_precedence() - [parser]") {
         auto p = mk_parser("@prec= foo");
         auto lexeme = p.match_precedence();
         CHECK(not lexeme);
-        auto expected = R"(test:1:7: error:Missing or bad precedence specifier
+        auto expected = R"(test:1:7: error: Missing or bad precedence specifier
 @prec= foo
 ~~~~~~^
 )"s;
@@ -330,19 +330,19 @@ TEST_CASE("match_dotted_identifier") {
         auto p = mk_parser("this_has_no_dot");
         auto lexeme = p.match_dotted_identifier();
         CHECK(not lexeme);
-        auto expected = R"(test:1:16: error:Expecting a dotted identifier
+        auto expected = R"(test:1:16: error: Expecting a dotted identifier
 this_has_no_dot
 ~~~~~~~~~~~~~~~^
 )"s;
         CHECK(error_string(p) == expected);
     }
-    SUBCASE("negative 1 - no dot") {
-        auto p = mk_parser("this.end.in.a.dot.");
+    SUBCASE("negative 2 - ends in dot") {
+        auto p = mk_parser("this.ends.in.a.dot.");
         auto lexeme = p.match_dotted_identifier();
         CHECK(not lexeme);
-        auto expected = R"(test:1:19: error:Trailing dot on identifier
-this.end.in.a.dot.
-~~~~~~~~~~~~~~~~~~^
+        auto expected = R"(test:1:20: error: Trailing dot on identifier
+this.ends.in.a.dot.
+~~~~~~~~~~~~~~~~~~~^
 )"s;
         CHECK(error_string(p) == expected);
     }

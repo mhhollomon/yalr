@@ -4,6 +4,13 @@
 
 namespace yalr {
 
+    //
+    // Message Types
+    //
+    enum class message_type {
+        info = 0, warning, error
+    };
+
     // 
     // Association types
     //

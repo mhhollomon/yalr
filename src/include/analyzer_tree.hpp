@@ -18,7 +18,7 @@ extern std::unordered_set<std::string_view> verbatim_locations;
 
     struct analyzer_tree {
         bool success;
-        std::list<error_info>    errors;
+        error_list               errors;
         option_table             options;
         symbol_table             symbols;
         std::multimap<std::string, std::string_view> verbatim_map;
@@ -26,13 +26,9 @@ extern std::unordered_set<std::string_view> verbatim_locations;
         production_identifier_t  target_prod;
         std::list<std::string>   atoms;
 
-        void record_error(const std::string& msg, const text_fragment tf) {
-            errors.emplace_back(msg, tf); 
-        }
-
         template <class ...Args>
-        void record_error(const text_fragment tf, Args&&... args) {
-            errors.emplace_back(util::concat(args...), tf);
+        error_info & record_error(const text_fragment tf, Args&&... args) {
+            return errors.add(util::concat(args...), tf);
         }
 
         operator bool() const { return success; }

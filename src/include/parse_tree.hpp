@@ -81,11 +81,14 @@ namespace yalr {
             associativity_stmt, precedence_stmt, termset_stmt>;
 
     using statement_list = std::vector<statement>;
+    //
+    // The top level structure
+    //
     struct parse_tree {
         bool success;
         statement_list statements;
         std::shared_ptr<text_source> source;
-        std::list<error_info> errors;
+        error_list errors;
 
         operator bool() { return success; }
 

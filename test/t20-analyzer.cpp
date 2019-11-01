@@ -10,9 +10,7 @@ auto parse_string(const std::string &s) {
     auto p = parser(std::make_shared<yalr::text_source>("test", std::string{s}));
     auto tree = p.parse();
     auto retval = yalr::analyzer::analyze(tree);
-    for (auto const& e : retval->errors) {
-        e.output(std::cout);
-    }
+    retval->errors.output(std::cout);
 
     return retval;
 }
@@ -35,7 +33,7 @@ TEST_CASE("grammar - [analyzer]") {
 TEST_CASE("NO goal rule - [analyzer]") {
     auto tree = parse_string("term foo 'x'; rule A { => foo; }");
     REQUIRE(not bool(*tree));
-    auto error = tree->errors.front();
+    auto error = tree->errors.errors.front();
     CHECK(error.message == "No goal rule was declared.");
 }
 
