@@ -902,7 +902,13 @@ struct parser_guts {
         }
 
         if (last_match_dot) {
-            record_error("Trailing dot on identifier");
+            //
+            // point to the dot rather than the char position after the dot.
+            //
+            auto err_loc = current_loc;
+            err_loc.offset -= 1;
+
+            record_error("Trailing dot on identifier", err_loc);
             return std::nullopt;
         }
 

@@ -73,7 +73,7 @@ TEST_CASE("skip() - [parser]") {
 
         std::string expected = R"x(test:1:3: error: Unterminated comment starting here
   //     X
-~~^
+ ~^~
 )x";
         CHECK(error_string(p) == expected);
    
@@ -267,7 +267,7 @@ TEST_CASE("match_assoc() - [parser]") {
         CHECK(not lexeme);
         auto expected = R"(test:1:8: error: missing or incorrect associativity specification
 @assoc= left
-~~~~~~~^
+      ~^~
 )"s;
 
         CHECK(error_string(p) == expected);
@@ -279,7 +279,7 @@ TEST_CASE("match_assoc() - [parser]") {
         CHECK(not lexeme);
         auto expected = R"(test:1:8: error: missing or incorrect associativity specification
 @assoc=1234
-~~~~~~~^
+      ~^~
 )"s;
 
         CHECK(error_string(p) == expected);
@@ -311,7 +311,7 @@ TEST_CASE("match_precedence() - [parser]") {
         CHECK(not lexeme);
         auto expected = R"(test:1:7: error: Missing or bad precedence specifier
 @prec= foo
-~~~~~~^
+     ~^~
 )"s;
 
         CHECK(error_string(p) == expected);
@@ -332,7 +332,7 @@ TEST_CASE("match_dotted_identifier") {
         CHECK(not lexeme);
         auto expected = R"(test:1:16: error: Expecting a dotted identifier
 this_has_no_dot
-~~~~~~~~~~~~~~~^
+              ~^~
 )"s;
         CHECK(error_string(p) == expected);
     }
@@ -340,9 +340,9 @@ this_has_no_dot
         auto p = mk_parser("this.ends.in.a.dot.");
         auto lexeme = p.match_dotted_identifier();
         CHECK(not lexeme);
-        auto expected = R"(test:1:20: error: Trailing dot on identifier
+        auto expected = R"(test:1:19: error: Trailing dot on identifier
 this.ends.in.a.dot.
-~~~~~~~~~~~~~~~~~~~^
+                 ~^~
 )"s;
         CHECK(error_string(p) == expected);
     }
