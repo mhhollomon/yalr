@@ -17,19 +17,36 @@ namespace yalr {
 
         auto li = fragment.location.line_info();
 
+        //
+        // Put out the actual error message
+        //
         strm << fragment.location.source->name << ":" << 
             li.line_num << ':' <<
             li.col_num << ": " << level[int(msg_type)] << ": " <<
             message << "\n";
         //
-        // put out the formatted line
+        // put out the source line
         //
         strm << fragment.location.source->content.substr(
                 li.line_start, li.line_end-li.line_start+1);
         if (fragment.location.source->content[li.line_end] != '\n')
             strm << "\n";
-        std::string filler(li.col_num-1, '~');
-        strm << filler << "^\n";
+
+
+        //
+        // Output the attention pointer
+        //
+        auto text_len = fragment.text.size();
+
+        if (text_len > 0) {
+            strm << std::string(size_t(li.col_num-1), ' ') << "^";
+            strm << std::string(size_t(text_len-1), '~') << "\n";
+        } else if (li.col_num > 1) {
+            strm << std::string(size_t(li.col_num-2), ' ') << "~^~";
+        } else {
+            strm << "^~";
+        }
+        strm << "\n";
 
         //
         // Now the nested infos

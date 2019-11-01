@@ -30,7 +30,7 @@ TEST_CASE("grammar - [analyzer]") {
 
 }
 
-TEST_CASE("NO goal rule - [analyzer]") {
+TEST_CASE("No goal rule - [analyzer]") {
     auto tree = parse_string("term foo 'x'; rule A { => foo; }");
     REQUIRE(not bool(*tree));
     auto error = tree->errors.errors.front();
