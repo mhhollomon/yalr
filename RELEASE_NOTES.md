@@ -30,7 +30,7 @@
 
 ### Non-functional Changes
 
-- issue #15 - Now using the error_info system to report errors from the
+- issue #15, #28 - Now using the error_info system to report errors from the
   analyzer. This will allow better error messages in the future.
 
 - Add a set of technical diagrams to the docs/ directory. These were created in
