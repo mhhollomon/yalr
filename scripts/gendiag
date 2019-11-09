@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+arg=$1
+
+if [ -f "$arg" ]; then
+    dir=$(dirname "$arg")
+else
+    dir=$arg
+fi
+
+common=${dir}/common.puml
+
+plantuml -I${common} $arg

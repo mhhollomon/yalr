@@ -1,0 +1,116 @@
+@startuml
+
+set namespaceSeparator ::
+
+class util::identifier_t <<dataType>> {
+    + {static} get_next_id() -> id
+}
+
+class symbol_identifier_t <<dataType>>
+
+class constants::assoc_type <<enum>> {
+    undef
+    left
+    right
+}
+
+class constants::case_type <<enum>> {
+    undef
+    match
+    fold
+}
+
+class constants::symbol_type <<enum>> {
+    invalid
+    terminal
+    skip
+    rule
+}
+
+class constants::pattern_type <<enum>> {
+    undef
+    string
+    regex
+}
+
+class terminal_symbol {
+    +id: symbol_identifier_t {id}
+    +is_inline: bool
+    +name: std::string_view
+    +token_name : std::string_view
+    type_str: st::string_view
+    +pattern: std::string_view
+    +action: std::string_view
+    +associativity: assoc_type
+    +precedence: ?int
+    +case_match: case_type
+    +pat_type: pattern_type
+    +{static} create(t: terminal_stmt)
+}
+
+class skip_symbol {
+    +id: symbol_identifier_t {id}
+    +name: std:string_view
+    +pattern: st::string_view
+    +token_name : std::string_view
+    +case_match: case_type
+    +pat_type: pattern_type
+    +{static} create(s: skip)
+}
+
+class rule_symbol {
+    +id: symbol_identifier_t {id}
+    +name: std:string_view
+    +type_str: st::string_view
+    +isgoal : bool
+
+    +{static} create(r: rule_stmt)
+}
+
+class symbol_data <<variant>> {
+    terminal_symbol
+    rule_symbol
+    skip_symbol
+    +id() -> symbol_identifier_t {query}
+    +name() -> std::string_view {query}
+}
+
+terminal_symbol -- symbol_data : <<uses>>
+rule_symbol -- symbol_data : <<uses>>
+skip_symbol -- symbol_data : <<uses>>
+
+class symbol <<dataType>> {
+    +id: symbol_identifier_t {query}
+    -data: symbol_data*
+    +name() -> std::string_view {query}
+    +type() -> symbol_type {query}
+    +typename() -> std:string_view {query}
+    +get_data<T>() -> T* {query}
+    +do_visit<T>(visitor: T&) -> ?
+}
+
+class symbol_table {
+    -key_map: std::map<std::string, symbol>
+    -id_map: std::map<identifier_t, symbol>
+    +find(key :std::string_view) -> ?symbol {query}
+    +find(id :symbol_identifier_t)-> ?symbol {query}
+    +add<T>(key :std::string_view, t: T) -> (added :bool, sym : symbol)
+    +register_key(key :std::string_view, s: symbol) -> (added :bool, sym : symbol)
+}
+
+
+
+class symbol_set {
+    +contains(s:symbol) -> bool {query}
+    +addset(ss:symbol_set) -> bool
+}
+
+symbol_data "1" <- "*" symbol
+symbol "*" o-- "1" symbol_set
+std::set "*" o-- "1" symbol_set
+symbol "*" o-- "1" symbol_table
+
+util::identifier_t <|-- symbol_identifier_t
+
+@enduml
+

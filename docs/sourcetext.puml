@@ -1,0 +1,36 @@
+@startuml
+
+hide circle
+hide empty members
+
+class text_offset_t <<dataType>>
+hide text_offset_t members 
+
+class line_info {
+    +line_num: int
+    +col_num: int
+    +line_start: text_offset_t
+    +line_end: text_offset_t
+}
+
+class text_source {
+    +name: std::string
+    +context: std::string_view
+    +offset_line_info(offset:text_offset_t) => line_info
+}
+
+class text_location <<dataType>> {
+    +offset: text_offset_t
+    +source: text_source*
+    +location_line_info() -> lineinfo
+}
+
+class text_fragment <<dataType>> {
+    +text: std::string_view
+    +location: text_location
+}
+
+text_source "1" <-- "0..n" text_location : Sourced From <
+text_location "1" --* "1" text_fragment : Located <
+
+@enduml
