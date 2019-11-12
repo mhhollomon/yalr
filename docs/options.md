@@ -21,7 +21,7 @@ grammar name with dots replaced with underbars. But a few a very different
 because the grammar has specific statement types:
 
 option name | member name
--------------------------
+------------|-------------
 code.main   | code_main
 lexer.case  | lexer_case
 lexer.class (lexer class statement) | lexer_class
@@ -55,7 +55,7 @@ if (ot.contains("foo.baz")) {
 In order to ease maintenance, an architecture was created where the option
 members register themselves - along with validation function and name - to the
 parent. To ensure that there would be no probems with initialization order, the
-`option_table` class was split into two pieces. THe base class
+`option_table` class was split into two pieces. The base class
 `_option_table_base` has the map between option names and validation funtions
 and the handles registering the individual members.
 
@@ -71,7 +71,7 @@ The complete initialization for an `option_table` objects is as follows:
 
 2. Each of the members of the `option_table` are initialized in turn.
 
-    1. the option\<T,Derived> subobject is initialized. The constructor
+    1. the `option<T,Derived>` subobject is initialized. The constructor
        registers the new option with the parent - which winds up calling into
        the `_option_table_base` subobject and gets added to the map.
 
