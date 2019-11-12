@@ -13,21 +13,23 @@ let g:project_path = expand('<sfile>:p:h')
 "
 execute 'set makeprg=' . 'cmake\ --build\ ' . g:project_path. '/build'
 
+let s:puml_make_cmd =  g:project_path . '/scripts/gendiag %'
 "
 " For PlantUML files, set the make program
 " to a wrapper in the scripts directory that
 " helps do the correct thing for the common.puml
 " file.
 "
-let s:puml_make_cmd =  g:project_path . '/scripts/gendiag %'
 augroup filetype_plantuml
     autocmd!
-    autocmd FileType plantuml execute 'setlocal makeprg=' . s:puml_make_cmd
+    " use let with the local option so that we can get consistent
+    " handling of spaces.
+    autocmd FileType plantuml let &l:makeprg = s:puml_make_cmd
 augroup END
 
 
 "
-" pvim uses seesion support (-S) to load this file. But seesion
+" pvim uses session support (-S) to load this file. But seesion
 " files are loaded very late. So there may already be buffers
 " loaded that need have the makeprg set.
 "

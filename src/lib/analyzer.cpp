@@ -156,7 +156,7 @@ struct phase_i_visitor {
         auto [ inserted, new_sym ] = out.symbols.add(r.name.text, rs);
 
         if (! inserted ) {
-            out.record_error(r.name, "'", r.name.text, 
+            out.record_error(r.name, "'", r.name.text,
                     "' has already been defined as a ",
                     new_sym.type_name());
 
@@ -164,7 +164,7 @@ struct phase_i_visitor {
 
         if (r.isgoal) {
             if (goal_rule) {
-                out.record_error(r.name, 
+                out.record_error(r.name,
                         "'" , r.name.text ,
                         "' is marked as a goal rule, but '",
                         goal_rule->name.text , "' is already marked");
@@ -184,7 +184,7 @@ struct phase_i_visitor {
     // Handle Terminals.
     // Add the name and the pattern(if string and not regex) to
     // the symbol table. Check that an action has been given if the
-    // term has a non-void type. Check for dups. Fill out the assoc 
+    // term has a non-void type. Check for dups. Fill out the assoc
     // and precedence.
     //
     void operator()(const terminal_stmt &t) {
@@ -425,7 +425,7 @@ struct phase_i_visitor {
                     auto data = sym->get_data<symbol_type::terminal>();
                     if (has_assoc) {
                         if (data->associativity != assoc_type::undef) {
-                            out.record_error(i, 
+                            out.record_error(i,
                                     "terminal already has associativity set");
                         } else {
                             data->associativity = assoc;
@@ -433,7 +433,7 @@ struct phase_i_visitor {
                     }
                     if (has_prec) {
                         if (data->precedence) {
-                            out.record_error(i, 
+                            out.record_error(i,
                                     "terminal already has precedence set");
                         } else {
                             data->precedence = prec;
@@ -510,22 +510,22 @@ struct phase_ii_visitor {
                     implied_precedence = new_sym.get_data<symbol_type::terminal>()->precedence;
 
                 } else {
-                    out.record_error(p.symbol_ref, 
+                    out.record_error(p.symbol_ref,
                         "alternative requires grammar symbol that does not exist");
                 }
             }
 
 
             auto &iter = out.productions.emplace_back(
-                    production_identifier_t::get_next_id(), 
-                    *rsym, (alt.action ? (*alt.action).text : ""sv), 
+                    production_identifier_t::get_next_id(),
+                    *rsym, (alt.action ? (*alt.action).text : ""sv),
                     std::move(s));
             if (alt.precedence) {
                 iter.precedence = parse_precedence(out, *alt.precedence);
             } else {
                 iter.precedence = implied_precedence;
             }
-                
+
         }
     }
 
@@ -612,7 +612,7 @@ std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree) {
     ts.emplace_back(*(retval->symbols.find(sv.goal_rule->name.text)), "");
 
     retval->productions.emplace_back(
-            production_identifier_t::get_next_id(), 
+            production_identifier_t::get_next_id(),
             new_sym, ""sv, std::move(ts));
 
     retval->target_prod = retval->productions.back().prod_id;
@@ -634,7 +634,7 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
 
     strm << "----- BEGIN SYMBOLS -----\n";
     for (const auto &[key, value] : tree.symbols) {
-        strm << "  " << key << ": " << value.type_name() << 
+        strm << "  " << key << ": " << value.type_name() <<
             ' ' << value.name() << "\n";
         switch (value.type()) {
             case symbol_type::skip :
@@ -701,7 +701,7 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
     strm << "Target Production = " << int(tree.target_prod) << "\n";
     for (auto const& p : tree.productions) {
         strm << "[" << int(p.prod_id) << "] "
-            << p.rule.name() 
+            << p.rule.name()
             << " prec=";
         if (p.precedence)
             strm << *p.precedence;
@@ -719,5 +719,5 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
     strm << "----- END PRODUCTIONS --------\n";
 }
 
-}
-} // namespace yalr::analyzer
+} // namespace analyzer
+} // namespace yalr

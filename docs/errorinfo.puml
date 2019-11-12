@@ -1,0 +1,31 @@
+@startuml
+
+set namespaceSeparator ::
+
+class constants::message_type <<enum>> {
+    info
+    warning
+    error
+}
+
+class error_info {
+    message: std::string
+    msg_type: message_type
+    fragment: text_fragment
+    aux_info: error_list
+    +add_info(msg: std::string, tf: text_fragment)
+    output(strm: stream)->stream
+}
+
+class error_list {
+    errors : error_info[0..*]
+
+    +add(msg: std::string, tf: text_Fragment, mt: message_type)->error_info
+    +output(strm: stream)->stream
+    +size()->int {query}
+}
+
+error_info "*" *-- "1" error_list
+error_list "1" *-- "1" error_info
+
+@enduml

@@ -12,6 +12,8 @@ namespace yalr::util {
 
     template<typename Derived>
     std::ostream& operator<<(std::ostream& strm, const identifier_t<Derived>& o);
+
+
     //
     // identifier_t
     //

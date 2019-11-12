@@ -1,0 +1,37 @@
+@startuml
+
+class constants::case_type <<enum>>
+
+class option < Storage,Derived > {
+    +defaulting() -> bool {query}
+    +get() -> Storage {query}
+    +set(val: Storage) -> bool
+}
+
+class sv_once_option
+
+option <|-- sv_once_option : "<<bind>>\nstd::string_view"
+
+class bool_option
+
+option <|-- bool_option : "<<bind>>\nbool"
+
+class lexer_case_option
+
+option <|-- lexer_case_option : "<<bind>>\ncase_type"
+
+class option_table {
+    +lexer_class : sv_once_option
+    +parser_class : sv_once_option
+    +code_namespace : sv_once_option
+    +lexer_case: lexer_case_option
+    +code_main: bool_option
+
+    +validate(opt: std::string_view, val: std::string_view) -> bool
+    +contains(opt: std::string_view) -> bool {query}
+}
+
+sv_once_option *-- option_table
+lexer_case_option *-- option_table
+bool_option  *-- option_table
+@enduml
