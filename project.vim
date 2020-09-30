@@ -33,9 +33,9 @@ augroup END
 " files are loaded very late. So there may already be buffers
 " loaded that need have the makeprg set.
 "
-for buf in getbufinfo()
-    if getbufvar(buf.bufnr, '&filetype') == "plantuml"
-        call setbufvar(buf.bufnr, '&makeprg', s:puml_make_cmd)
-    endif
-endfor
+"for buf in getbufinfo()
+"    if getbufvar(buf.bufnr, '&filetype') == "plantuml"
+"        call setbufvar(buf.bufnr, '&makeprg', s:puml_make_cmd)
+"    endif
+"endfor
 
