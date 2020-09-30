@@ -1,4 +1,4 @@
-
+option code.main true;
 skip WS      r:\s+     ;
 skip LINECOM r://.*\n  ; // dot doesn't match EOL
 
@@ -23,6 +23,19 @@ term<std::string> REGEX  r:r:[^\s]*  // Note that this does not capture the clos
 term<std::string> TYPE r:<(?!%).*?> <%{ return lexeme.substr(1, lexeme.size()-2); }%>
 term<std::string> ACTION r:<%\{(?:.|\n)*?}%> <%{ return lexeme.substr(3, lexeme.size()-4); }%>
 
+
+rule DottedID {
+    => ID '.' ID ;
+}
+
+rule DottedIDFull {
+    => DottedID ;
+    => DottedID '.' ID ;
+}
+
+rule OptionStmt {
+    => OPTION DottedID ID ';' ;
+}
 
 rule ParserClass {
     => PARSER CLASS ID ';' ;
@@ -92,6 +105,7 @@ rule Statement {
     => Skip ;
     => Term ;
     => Rule ;
+    => OptionStmt ;
 }
 
 rule StatementList {
