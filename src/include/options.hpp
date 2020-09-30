@@ -16,6 +16,12 @@ using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
 
+//
+// Base class for the option_table
+//
+// This only exist in order to allow us to "two phase" construct the option
+// table without much pain.
+//
 struct _option_table_base {
     std::unordered_map<std::string_view, std::function<bool(std::string_view)>> valid_funcs;
 
@@ -33,16 +39,35 @@ struct _option_table_base {
 
 };
 
+//
+// Base class for options
+//
+// Handles much of the iteraction with _base_option_table
+// Derived must define a method:
+//      bool validate(std::string_view val)
+// This method must both validate and set the value (by calling set())
+// validate() must return true only if both of the following conditions are true.
+//      1) The value is "valid" (whatever that means to this particular option
+//      2) set() returns true
+// 
 template <class T, class Derived>
 class option  {
+    // Default value
     T default_val_;
+    // "real" value
     T value_;
+    // hould we return the default or the real value?
     bool is_set_ = false;
+
+    // can our value change? Or once set always set?
     bool resettable_ = true;
+
     std::string_view name_;
+
   public:
 
     option() = default;
+
     option(std::string_view n, Derived& opt, _option_table_base& parent, 
             bool can_set_multiple, T def) :
         default_val_{def}, resettable_(can_set_multiple), name_{n}
@@ -100,17 +125,18 @@ struct bool_option : public option<bool, bool_option> {
     };
 };
 
+/*********************************************************
+ * Option class for case_type. This can be set multiple times
+ *********************************************************/
 struct lexer_case_option : public option<case_type, lexer_case_option> {
     lexer_case_option(std::string_view v, _option_table_base& parent, case_type def) : 
         option{v, *this, parent, true, def} {}
 
     bool validate(std::string_view val) {
         if (val == "cmatch") {
-            set(case_type::match);
-            return true;
+            return set(case_type::match);
         } else if (val == "cfold") {
-            set(case_type::fold);
-            return true;
+            return set(case_type::fold);
         }
 
         return false;
@@ -123,7 +149,7 @@ struct lexer_case_option : public option<case_type, lexer_case_option> {
  *****************************************************************************/
 struct option_table : public _option_table_base {
 
-    //                             name                      default
+    //                              name                     default
     sv_once_option      lexer_class{"lexer.class",    *this, "Lexer"};
     sv_once_option     parser_class{"parser.class",   *this, "Parser"};
     sv_once_option   code_namespace{"code.namespace", *this, "YalrParser"};

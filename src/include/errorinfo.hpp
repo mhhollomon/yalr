@@ -15,6 +15,15 @@ namespace yalr {
     struct error_list {
         std::list<error_info> errors;
 
+        //
+        // Add an error to the list
+        //
+        // returns the newly added error_info
+        // Since this is returned by reference, it is liable to dangle
+        // if the the error_lsit gets destroyed. It is returned with
+        // the idea that the caller will use it to add aux info to it
+        // and then discard the reference.
+        //
         error_info &add(const std::string& msg, text_fragment tf, message_type mt=message_type::error) {
             errors.emplace_back(msg, tf, mt); 
 

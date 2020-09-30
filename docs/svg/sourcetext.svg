@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="425px" preserveAspectRatio="none" style="width:548px;height:425px;" version="1.1" viewBox="0 0 548 425" width="548px" zoomAndPan="magnify"><defs><filter height="300%" id="f1bn1ccrc0ehbu" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><!--MD5=[04f5b5e05823d232392e138209be9f7e]
+class text_offset_t--><rect fill="#FEFECE" filter="url(#f1bn1ccrc0ehbu)" height="38.8002" id="text_offset_t" style="stroke: #A80036; stroke-width: 1.5;" width="71" x="6" y="31"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="65" x="9" y="47.1481">«dataType»</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="65" x="9" y="61.5482">text_offset_t</text><!--MD5=[2c3c48acc665aa02fef5534dcf857d3c]
+class line_info--><rect fill="#FEFECE" filter="url(#f1bn1ccrc0ehbu)" height="85.1997" id="line_info" style="stroke: #A80036; stroke-width: 1.5;" width="136" x="112.5" y="8"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="47" x="157" y="24.1481">line_info</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="113.5" x2="247.5" y1="32.4001" y2="32.4001"/><ellipse cx="123.5" cy="43.4001" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="60" x="132.5" y="46.619">line_num: int</text><ellipse cx="123.5" cy="56.6" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="58" x="132.5" y="59.8189">col_num: int</text><ellipse cx="123.5" cy="69.7999" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="110" x="132.5" y="73.0188">line_start: text_offset_t</text><ellipse cx="123.5" cy="82.9998" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="106" x="132.5" y="86.2187">line_end: text_offset_t</text><!--MD5=[12c525df558dba6e873d2d7f45a10641]
+class text_source--><rect fill="#FEFECE" filter="url(#f1bn1ccrc0ehbu)" height="79.9998" id="text_source" style="stroke: #A80036; stroke-width: 1.5;" width="253" x="284" y="10.5"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="63" x="379" y="26.6481">text_source</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="285" x2="536" y1="34.9001" y2="34.9001"/><ellipse cx="295" cy="45.9001" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="81" x="304" y="49.119">name: std::string</text><ellipse cx="295" cy="59.1" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="118" x="304" y="62.3189">context: std::string_view</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="285" x2="536" y1="69.2999" y2="69.2999"/><ellipse cx="295" cy="80.2999" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="227" x="304" y="83.5188">offset_line_info(offset:text_offset_t) =&gt; line_info</text><!--MD5=[5d760c68943f0763ecee3ef58ecc71a4]
+class text_location--><rect fill="#FEFECE" filter="url(#f1bn1ccrc0ehbu)" height="94.3999" id="text_location" style="stroke: #A80036; stroke-width: 1.5;" width="165" x="328" y="170"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="65" x="378" y="186.1481">«dataType»</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="69" x="376" y="200.5482">text_location</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="329" x2="492" y1="208.8002" y2="208.8002"/><ellipse cx="339" cy="219.8002" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="93" x="348" y="223.0191">offset: text_offset_t</text><ellipse cx="339" cy="233.0001" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="102" x="348" y="236.219">source: text_source*</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="329" x2="492" y1="243.2" y2="243.2"/><ellipse cx="339" cy="254.2" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="139" x="348" y="257.4189">location_line_info() -&gt; lineinfo</text><!--MD5=[c1509b2b37891daf9172ea928a518f0e]
+class text_fragment--><rect fill="#FEFECE" filter="url(#f1bn1ccrc0ehbu)" height="73.2" id="text_fragment" style="stroke: #A80036; stroke-width: 1.5;" width="130" x="345.5" y="341"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="65" x="378" y="357.1481">«dataType»</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="74" x="373.5" y="371.5482">text_fragment</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="346.5" x2="474.5" y1="379.8002" y2="379.8002"/><ellipse cx="356.5" cy="390.8002" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="100" x="365.5" y="394.0191">text: std::string_view</text><ellipse cx="356.5" cy="404.0001" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="104" x="365.5" y="407.219">location: text_location</text><!--MD5=[ae1d413c93bbcd5e2fde62ae4127cc9b]
+reverse link text_source to text_location--><path d="M410.5,96.01 C410.5,118.91 410.5,146.8 410.5,169.92 " fill="none" id="text_source&lt;-text_location" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="410.5,90.9,406.5,99.9,410.5,95.9,414.5,99.9,410.5,90.9" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#000000" points="448,134,451,128,454,134,448,134" style="stroke: #000000; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="82" x="411.5" y="149.077">Sourced From</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="7" x="402.9422" y="110.6589">1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="22" x="386.7469" y="158.3143">0..n</text><!--MD5=[364067207a494bd46b1e672ded82b777]
+link text_location to text_fragment--><path d="M410.5,264.27 C410.5,284.19 410.5,307.49 410.5,327.68 " fill="none" id="text_location-&gt;text_fragment" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="410.5,340.76,414.5,334.76,410.5,328.76,406.5,334.76,410.5,340.76" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#000000" points="430,305,433,299,436,305,430,305" style="stroke: #000000; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="46" x="411.5" y="320.077">Located</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="7" x="402.9859" y="284.406">1</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="7" x="402.8328" y="329.4419">1</text><!--MD5=[beb86f6bdd5e8117399c4a9ec9a8e72d]
+@startuml
+hide empty members
+hide circle
+
+hide circle
+hide empty members
+
+class text_offset_t <<dataType>>
+hide text_offset_t members 
+
+class line_info {
+    +line_num: int
+    +col_num: int
+    +line_start: text_offset_t
+    +line_end: text_offset_t
+}
+
+class text_source {
+    +name: std::string
+    +context: std::string_view
+    +offset_line_info(offset:text_offset_t) => line_info
+}
+
+class text_location <<dataType>> {
+    +offset: text_offset_t
+    +source: text_source*
+    +location_line_info() -> lineinfo
+}
+
+class text_fragment <<dataType>> {
+    +text: std::string_view
+    +location: text_location
+}
+
+text_source "1" <- - "0..n" text_location : Sourced From <
+text_location "1" - -* "1" text_fragment : Located <
+
+@enduml
+
+PlantUML version 1.2019.11(Sun Sep 22 06:02:15 EDT 2019)
+(MIT source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 13.0.1+9
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

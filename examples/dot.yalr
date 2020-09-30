@@ -1,0 +1,170 @@
+/******************
+ * DOT language.
+ *
+ * Graph specification laguange used as part of the Graphviz
+ * system.
+ *
+ * reference: https://graphviz.gitlab.io/_pages/doc/info/lang.html
+ *
+ **********************/
+
+skip WS r:\s+ ;
+skip HASHCOMMENT r:#.*\n|$ ;
+skip SLASHCOMMENT r://.*\n|$ ;
+//
+// Keywords
+// Identifiers in DOT are very permissive, so
+// we need to predefine our keywords so we can recognize
+// them.
+//
+ 
+option lexer.case cfold ;
+
+term STRICT   'strict' ;
+term GRAPH    'graph' ;
+term DIGRAPH  'digraph' ;
+term NODE     'node' ;
+term EDGE     'edge' ;
+term SUBGRAPH 'subgraph' ;
+
+option lexer.case cmatch;
+
+term<@lexeme> BARE_ID  r:[_a-zA-Z\200-\377][_a-zA-Z0-9\200-\377]* ;
+term<@lexeme> NUM_ID   r:-?(?:(?:\.[0-9]+)|(?:[0-9]+(?:\.[0-9]*)?)  ;
+term<@lexeme> QUOTE_ID r:"(?:[^"\\]*(?:\\\\|\\"|\\)*)*" ;
+
+// DOT also accepts HTML as an ID, but writing an html parser here
+// would make this huge. So accept html-ish.
+//
+term <@lexeme> HTML_ID r:<[^>]+> ;
+
+//
+// Need to give this a precedence to force the shift when
+// we have an attr_list following an edge_stmt
+precedence 200 '[' ;
+
+
+
+//graph	:	[ strict ] (graph | digraph) [ ID ] '{' stmt_list '}'
+goal rule graph {
+    => 'strict' graph_type id '{' stmt_list '}' ;
+    =>          graph_type id '{' stmt_list '}' ;
+    => 'strict' graph_type    '{' stmt_list '}' ;
+    =>          graph_type    '{' stmt_list '}' ;
+}
+
+rule graph_type { => 'graph'; => 'digraph' ; }
+
+rule id { => BARE_ID ; => NUM_ID ; => QUOTE_ID; => HTML_ID ; }
+
+//stmt_list	:	[ stmt [ ';' ] stmt_list ]
+rule stmt_list {
+    => stmt_list ';' stmt ;
+    => stmt ;
+}
+
+//stmt	:	node_stmt
+//|	edge_stmt
+//|	attr_stmt
+//|	ID '=' ID
+//|	subgraph
+//
+// The precedence is break the tie with reducing
+// a subgraph_stmt to a stmt or a vertex.
+//
+rule stmt { 
+    => edge_stmt ; 
+    => attr_stmt ;
+    => id '=' id ;
+    => subgraph_stmt  @prec=200;
+}
+
+//attr_stmt	:	(graph | node | edge) attr_list
+rule attr_stmt {
+    => attr_scope attr_list ;
+}
+
+rule attr_scope { => 'graph'; => 'node'; => 'edge'; }
+
+//attr_list	:	'[' [ a_list ] ']' [ attr_list ]
+rule attr_list {
+    => attr_list_item ;
+    => attr_list attr_list_item ;
+}
+
+rule attr_list_item {
+    => '[' ']' ;
+    => '[' a_list ']' ;
+}
+
+//a_list	:	ID '=' ID [ (';' | ',') ] [ a_list ]
+rule a_list {
+    => a_list_item ;
+    => a_list a_list_delim a_list_item ;
+}
+
+rule a_list_delim { => ';' ; => ',' ; => ; }
+
+rule a_list_item {
+    => id '=' id ;
+}
+
+//edge_stmt	:	(node_id | subgraph) edgeRHS [ attr_list ]
+//edgeRHS	:	edgeop (node_id | subgraph) [ edgeRHS ]
+
+rule vertex { 
+    => node_id; 
+    => subgraph_stmt @prec=100;
+}
+
+rule edge_stmt {
+    => vertex edgeop vertex ;
+    => vertex edgeop edge_stmt ;
+    => vertex edgeop vertex attr_list;
+    => vertex edgeop edge_stmt attr_list;
+}
+
+//node_stmt	:	node_id [ attr_list ]
+rule node_stmt {
+    => node_id ;
+    => node_id attr_list;
+}
+
+//node_id	:	ID [ port ]
+rule node_id {
+    => id ;
+    => id port;
+}
+
+//port	:	':' ID [ ':' compass_pt ]
+//|	':' compass_pt
+rule port {
+    => ':' id compass_pt ;
+    => ':' id ;
+    => compass_pt;
+}
+
+//subgraph	:	[ subgraph [ ID ] ] '{' stmt_list '}'
+rule subgraph_stmt {
+    => SUBGRAPH id '{' stmt_list '}' ;
+    => SUBGRAPH '{' stmt_list '}' ;
+    => '{' stmt_list '}' ;
+}
+
+//
+//
+// adsorb the leading ':' into the lexeme so that
+// we don't get a conflict with BARE_ID
+//
+//compass_pt	:	(n | ne | e | se | s | sw | w | nw | c | _)
+rule compass_pt { => ':n'; => ':ne';
+    => ':e'; => ':se' ;
+    => ':s'; => ':sw' ;
+    => ':w'; => ':nw' ;
+    => ':c'; => ':_';
+}
+
+//
+// Not in the formal grammar but defined in the text.
+//
+rule edgeop { => '->'; => '--'; }

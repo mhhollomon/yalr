@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="436px" preserveAspectRatio="none" style="width:398px;height:436px;" version="1.1" viewBox="0 0 398 436" width="398px" zoomAndPan="magnify"><defs><filter height="300%" id="fjhg6jd10wswd" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><!--MD5=[092f0aec5c224e6a9436ff9de38591f6]
+cluster constants--><polygon fill="#FFFFFF" filter="url(#fjhg6jd10wswd)" points="282.5,24.5,357.5,24.5,364.5,47.2999,376.5,47.2999,376.5,114.5,282.5,114.5,282.5,24.5" style="stroke: #000000; stroke-width: 1.5;"/><line style="stroke: #000000; stroke-width: 1.5;" x1="282.5" x2="364.5" y1="47.2999" y2="47.2999"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="69" x="286.5" y="39.5059">constants</text><!--MD5=[8cd58c3a385377f6faae6cd8f588923f]
+class constants::case_type--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="38.8002" id="constants::case_type" style="stroke: #A80036; stroke-width: 1.5;" width="62" x="298.5" y="59.5"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="45" x="307" y="75.6481">«enum»</text><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="56" x="301.5" y="90.0482">case_type</text><!--MD5=[1663d1737ab6965b6018dd11c3833e62]
+class option--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="71.9998" id="option" style="stroke: #A80036; stroke-width: 1.5;" width="155" x="108" y="43"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="34" x="119" y="59.1481">option</text><rect fill="#FFFFFF" height="16.4001" style="stroke: #000000; stroke-width: 1.0; stroke-dasharray: 2.0,2.0;" width="97" x="169" y="40"/><text fill="#000000" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="89" x="173" y="52.1481">Storage,Derived</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="109" x2="262" y1="67.4001" y2="67.4001"/><ellipse cx="119" cy="78.4001" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="129" x="128" y="81.619">defaulting() -&gt; bool {query}</text><ellipse cx="119" cy="91.6" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="116" x="128" y="94.8189">get() -&gt; Storage {query}</text><ellipse cx="119" cy="104.7999" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="117" x="128" y="108.0188">set(val: Storage) -&gt; bool</text><!--MD5=[fe8e95a58e1cba61613506cacdb7b17b]
+class sv_once_option--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="24.4001" id="sv_once_option" style="stroke: #A80036; stroke-width: 1.5;" width="93" x="6" y="208"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="87" x="9" y="224.1481">sv_once_option</text><!--MD5=[556fdcb959cb7f7d326be0cfb1b3e66b]
+class bool_option--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="24.4001" id="bool_option" style="stroke: #A80036; stroke-width: 1.5;" width="71" x="134" y="208"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="65" x="137" y="224.1481">bool_option</text><!--MD5=[e2b19f5ed03153c6a916dd5be75306f6]
+class lexer_case_option--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="24.4001" id="lexer_case_option" style="stroke: #A80036; stroke-width: 1.5;" width="107" x="240" y="208"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="101" x="243" y="224.1481">lexer_case_option</text><!--MD5=[cd0f716569e833fef9626112d4a6e69c]
+class option_table--><rect fill="#FEFECE" filter="url(#fjhg6jd10wswd)" height="132.7994" id="option_table" style="stroke: #A80036; stroke-width: 1.5;" width="306" x="16.5" y="293"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="68" x="135.5" y="309.1481">option_table</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="17.5" x2="321.5" y1="317.4001" y2="317.4001"/><ellipse cx="27.5" cy="328.4001" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="142" x="36.5" y="331.619">lexer_class : sv_once_option</text><ellipse cx="27.5" cy="341.6" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="150" x="36.5" y="344.8189">parser_class : sv_once_option</text><ellipse cx="27.5" cy="354.7999" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="173" x="36.5" y="358.0188">code_namespace : sv_once_option</text><ellipse cx="27.5" cy="367.9998" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="149" x="36.5" y="371.2187">lexer_case: lexer_case_option</text><ellipse cx="27.5" cy="381.1997" fill="none" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="114" x="36.5" y="384.4186">code_main: bool_option</text><line style="stroke: #A80036; stroke-width: 1.5;" x1="17.5" x2="321.5" y1="391.3996" y2="391.3996"/><ellipse cx="27.5" cy="402.3996" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="280" x="36.5" y="405.6185">validate(opt: std::string_view, val: std::string_view) -&gt; bool</text><ellipse cx="27.5" cy="415.5995" fill="#84BE84" rx="3" ry="3" style="stroke: #038048; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacingAndGlyphs" textLength="221" x="36.5" y="418.8184">contains(opt: std::string_view) -&gt; bool {query}</text><!--MD5=[60e4ef731af3f39e89df753a7f049f8d]
+reverse link option to sv_once_option--><path d="M91.56,126.47 C84.89,132.09 78.74,138.26 73.5,145 C58.91,163.77 54.46,192.21 53.1,207.8 " fill="none" id="option&lt;-sv_once_option" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="87.67,120.64,107.9,114.34,96.01,131.88,87.67,120.64" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="38" x="101" y="158.077">«bind»</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="91" x="74.5" y="173.677">std::string_view</text><!--MD5=[5063267e716c31b0077f2098533202e2]
+reverse link option to bool_option--><path d="M179.14,135.28 C176.03,162.24 172.59,192.19 170.77,207.93 " fill="none" id="option&lt;-bool_option" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="172.22,134.14,181.46,115.08,186.13,135.74,172.22,134.14" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="38" x="179.5" y="158.077">«bind»</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="24" x="186.5" y="173.677">bool</text><!--MD5=[6bdee3dfc4bcefc8ebe78d7df77d55c4]
+reverse link option to lexer_case_option--><path d="M225.07,130.92 C246.85,158.96 272.01,191.34 284.9,207.93 " fill="none" id="option&lt;-lexer_case_option" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="219.5,135.16,212.75,115.08,230.55,126.57,219.5,135.16" style="stroke: #A80036; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="38" x="274.5" y="158.077">«bind»</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="60" x="263.5" y="173.677">case_type</text><!--MD5=[fbe429fc0835600caddb01edfd30e291]
+reverse link sv_once_option to option_table--><path d="M70.79,242.5 C82.44,256.18 98.2,274.71 113.71,292.94 " fill="none" id="sv_once_option&lt;-option_table" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="62.07,232.25,62.9138,239.4116,69.8491,241.3871,69.0052,234.2255,62.07,232.25" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[13ccc26b43f6b781f5b1d9951aa2b45c]
+reverse link lexer_case_option to option_table--><path d="M274.48,242.09 C262.11,255.81 245.23,274.53 228.63,292.94 " fill="none" id="lexer_case_option&lt;-option_table" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="283.35,232.25,276.3622,234.0305,275.3181,241.1656,282.3059,239.3851,283.35,232.25" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[1c952167abc00a0c4b3499d1de7a5ca9]
+reverse link bool_option to option_table--><path d="M169.5,245.44 C169.5,258.78 169.5,275.98 169.5,292.94 " fill="none" id="bool_option&lt;-option_table" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="169.5,232.25,165.5,238.25,169.5,244.25,173.5,238.25,169.5,232.25" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[0668549ad4dbff5df202827d1972055b]
+@startuml
+hide empty members
+hide circle
+set namespaceSeparator ::
+
+class constants::case_type <<enum>>
+
+class option < Storage,Derived > {
+    +defaulting() -> bool {query}
+    +get() -> Storage {query}
+    +set(val: Storage) -> bool
+}
+
+class sv_once_option
+
+option <|- - sv_once_option : "<<bind>>\nstd::string_view"
+
+class bool_option
+
+option <|- - bool_option : "<<bind>>\nbool"
+
+class lexer_case_option
+
+option <|- - lexer_case_option : "<<bind>>\ncase_type"
+
+class option_table {
+    +lexer_class : sv_once_option
+    +parser_class : sv_once_option
+    +code_namespace : sv_once_option
+    +lexer_case: lexer_case_option
+    +code_main: bool_option
+
+    +validate(opt: std::string_view, val: std::string_view) -> bool
+    +contains(opt: std::string_view) -> bool {query}
+}
+
+sv_once_option *- - option_table
+lexer_case_option *- - option_table
+bool_option  *- - option_table
+@enduml
+
+PlantUML version 1.2019.11(Sun Sep 22 06:02:15 EDT 2019)
+(MIT source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 13.0.1+9
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

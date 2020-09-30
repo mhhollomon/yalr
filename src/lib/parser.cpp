@@ -16,6 +16,11 @@ struct parse_loc {
 };
 
 
+//
+// The set of strings that are the reserved keywords.
+// The parser must be sure that these do not get returned
+// as general identifiers.
+//
 std::set<std::string, std::less<>> keywords = {
     "parser", "class", "rule", "term", "skip", "global",
     "namespace", "lexer", "option", "verbatim", "precedence",
@@ -64,6 +69,10 @@ struct parser_guts {
         errors.add(msg, text_fragment{std::string_view(), pl_to_tl(loc)});
     }
 
+    //
+    // Add an error at the location that is implied by the 
+    // location inside the text_fragment.
+    //
     void record_error(const std::string& msg, text_fragment tf) {
         errors.add(msg, tf); 
     }
@@ -91,20 +100,26 @@ struct parser_guts {
     inline char peek(int pos) { return current_loc.sv[pos]; }
 
     //
-    // Check if there is at lepgt pos characters left in the input.
+    // Check if there is at least pos characters left in the input.
     //
     inline bool valid_pos(int pos) { 
         return (pos >= 0 and (unsigned)pos < current_loc.sv.size()); }
 
     //
     // Check if the current input starts with the given character sequence.
-    // When C++20 comes out this devolves to a call to string_view::starts_with.
+    //
     // Does not consume.
     //
     inline bool check_string(std::string_view o) {
         return current_loc.sv.compare(0, o.size(), o) == 0;
     }
 
+
+    //
+    // Check if the current input starts with the given character sequence.
+    //
+    // Consumes the given prefix if it is there.
+    //
     inline bool match_string(std::string_view o) {
         bool matched = check_string(o);
         if (matched) {
@@ -645,7 +660,6 @@ struct parser_guts {
         return true;
 
     }
-
 
     //
     // Generic option parser
