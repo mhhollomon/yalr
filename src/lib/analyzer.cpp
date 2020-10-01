@@ -61,7 +61,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
         x.pattern = x.pattern.substr(3, full_pattern.size()-2);
         x.pat_type = pattern_type::regex;
         if (ct == case_type::undef) {
-            x.case_match = out.options.lexer_case.get();
+            x.case_match = case_type::match;
         } else {
             out.record_error(*case_text, "multiple case specifiers");
         }
@@ -71,7 +71,7 @@ void fix_up_pattern(T& x, optional_text_fragment case_text, analyzer_tree& out) 
         // This will have to reference the option once
         // that is in place
         if (ct == case_type::undef) {
-            x.case_match = case_type::match;
+            x.case_match = out.options.lexer_case.get();
         } else {
             x.case_match = ct;
         }
@@ -488,31 +488,51 @@ struct phase_ii_visitor {
                 if (sym) {
                     if (sym->isskip()) {
                         out.record_error(p.symbol_ref, "alternative is using a skip terminal");
-                    } else if ((not alt.precedence) and sym->isterm()) {
-                        //
-                        // keep track of the precedence of the right-most terminal
-                        // we'll using at the rules precedence if the user hasn't
-                        // explicitly set it for the production.
-                        //
-                        auto term_ptr = sym->get_data<symbol_type::terminal>();
-                        implied_precedence = term_ptr->precedence;
+                        // bail on this iteration of the loop. Code below relies on the symbol
+                        // not being a skip.
+                        continue;
                     }
-
-                    std::optional<std::string_view> alias = std::nullopt;
-                    if (p.alias) {
-                        alias = p.alias->text;
-                    }
-                    s.emplace_back(*sym, alias);
                 } else if (p.symbol_ref.text[0] == '\'') {
                     // add an inline terminal
-                    auto new_sym = register_pattern_terminal(out, p.symbol_ref);
-                    s.emplace_back(new_sym, std::nullopt);
-                    implied_precedence = new_sym.get_data<symbol_type::terminal>()->precedence;
+                    sym = register_pattern_terminal(out, p.symbol_ref);
 
                 } else {
                     out.record_error(p.symbol_ref,
                         "alternative requires grammar symbol that does not exist");
+                    // bail on this iteration of the loop. Not much else we can check
+                    // if the symbol doesn't exist.
+                    continue;
                 }
+                    
+                if ((not alt.precedence) and sym->isterm()) {
+                    //
+                    // keep track of the precedence of the right-most terminal
+                    // we'll be using that as the rules precedence if the
+                    // user hasn't explicitly set it for the production.
+                    //
+                    auto term_ptr = sym->get_data<symbol_type::terminal>();
+                    implied_precedence = term_ptr->precedence;
+                }
+
+                std::optional<std::string_view> alias = std::nullopt;
+                if (p.alias) {
+                    bool void_type = false;
+                    // we can only be a rule or terminal.
+                    // skip was specifically checked above.
+                    if (sym->isrule()) {
+                        auto type_string = sym->get_data<symbol_type::rule>()->type_str;
+                        void_type = (type_string == "void");
+                    } else {
+                        auto type_string = sym->get_data<symbol_type::terminal>()->type_str;
+                        void_type = (type_string == "void");
+                    }
+                    if (void_type) {
+                        out.record_error(p.symbol_ref, "symbol with type 'void' assigned an alias");
+                    } else {
+                        alias = p.alias->text;
+                    }
+                }
+                s.emplace_back(*sym, alias);
             }
 
 
@@ -550,7 +570,7 @@ symbol register_pattern_terminal(yalr::analyzer_tree& out, text_fragment pattern
     sv(t);
 
     auto sym = out.symbols.find(pattern.text);
-    yassert(sym, "Could not find symbol just register for inline terminal");
+    yassert(sym, "Could not find symbol just registered for inline terminal");
 
     return *sym;
 

@@ -155,3 +155,26 @@ goal rule R { => 'a' ; }
         REQUIRE(c_data_ptr);
         CHECK(c_data_ptr->case_match == yalr::case_type::match);
 }
+
+TEST_CASE("[analyzer] Can't give void an alias") {
+    SUBCASE("[analyzer] implied by inline") {
+        auto tree = parse_string("goal rule A { => al:'z' ; }");
+        CHECK_FALSE(bool(*tree));
+    }
+
+    SUBCASE("[analyzer] explicit terminal") {
+        auto tree = parse_string("term foo 'x'; goal rule A { => al:foo ; }");
+        CHECK_FALSE(bool(*tree));
+    }
+    SUBCASE("[analyzer] explicit terminal by pattern") {
+        auto tree = parse_string("term foo 'x'; goal rule A { => al:'x' ; }");
+        CHECK_FALSE(bool(*tree));
+    }
+    SUBCASE("[analyzer] explicit term with type should work for term name and pattern"){
+        auto tree = parse_string("term <int> foo 'x' <%{ return 1; }%> goal rule A { => al:'x' alb:foo ; }");
+        REQUIRE(*tree);
+        CHECK(bool(tree));
+        // might be good idea to actaully test the alias is assigned.
+        // Need more tests for alias in general.
+    }
+}
