@@ -7,7 +7,9 @@ auto parse_string(std::string s) {
 
     auto ts = std::make_shared<yalr::text_source>("t10-grammar", std::move(s));
     auto p = yalr::yalr_parser(ts);
-    return p.parse(); 
+    // break this out to make it easier to debug
+    auto tree = p.parse();
+    return tree;
 }
 
 void output_errors(yalr::parse_tree const &t) {
@@ -39,6 +41,11 @@ TEST_CASE("grammar - [parser]") {
         
     }
 
+    SUBCASE("Type name comes before term name - [parser]") {
+        auto tree = parse_string("term A <int> 'x' ;");
+        CHECK_FALSE(tree.success);
+    }
+
     SUBCASE("action block in terms - [parser]") {
         auto tree = parse_string(
 R"DELIM(term<int> FOO 'foo' <%{ // here is my action block
@@ -67,6 +74,11 @@ term <std::string> BAR rf:bar ;
         CHECK(tree.success);
         rule = std::get<yalr::rule_stmt>(tree.statements[0]);
         CHECK(rule.type_str->text == "my_thing::your_thing<funky::int>");
+    }
+
+    SUBCASE("Type name comes before rule name - [parser]") {
+        auto tree = parse_string("rule A <int> { => A A ; => ; }");
+        CHECK_FALSE(tree.success);
     }
 
     SUBCASE("aliases for terms - [parser]") {

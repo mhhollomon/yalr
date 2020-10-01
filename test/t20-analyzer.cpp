@@ -9,6 +9,7 @@ using parser = yalr::yalr_parser;
 auto parse_string(const std::string &s) {
     auto p = parser(std::make_shared<yalr::text_source>("test", std::string{s}));
     auto tree = p.parse();
+    REQUIRE(tree.success);
     auto retval = yalr::analyzer::analyze(tree);
     retval->errors.output(std::cout);
 
