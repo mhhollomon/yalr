@@ -1,3 +1,14 @@
+## Release v0.2.1
+
+### Functional Changes
+
+- bug #14 - make sure to fail if a void terminal is given an alias.
+
+### Non-functional Changes
+
+- doc clean up
+- testing improvements
+
 ## Release v0.2.0
 
 ### Functional Changes
