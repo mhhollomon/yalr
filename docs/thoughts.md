@@ -1,4 +1,4 @@
- list of random thoughts for imporvements or changes - in no particular order -
+ list of random thoughts for improvements or changes - in no particular order -
 with no idea if or when they get implemented.
 
 ### Type of untyped terminals
@@ -115,18 +115,6 @@ Should these return `std::unique_ptr` or `std::shared_ptr` instead?
 
 Have a way for the user to decide?
 
-
-### @lexeme type for terminals
-
-```
-term <@lexeme> IDENT r:[a-z]+ ;
-```
-
-Should expand to:
-
-```
-term <std::string> IDENT r:[a-z]+ <%{ return std::move(lexeme); }%>
-```
 
 ### termset
 
