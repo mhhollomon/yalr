@@ -80,7 +80,9 @@ namespace yalr {
             rule_stmt, verbatim_stmt,
             associativity_stmt, precedence_stmt, termset_stmt>;
 
-    using statement_list = std::vector<statement>;
+    // Needs to be a list so we can (at least) add to the end
+    // while iterating.
+    using statement_list = std::list<statement>;
     //
     // The top level structure
     //

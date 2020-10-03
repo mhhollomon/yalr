@@ -123,12 +123,20 @@ code.main | When set to true, will cause the generator to include a simple main(
 
 There are two types of terminals - "parser" terminals and "lexer" terminals.
 
-#### Parser Terminals
-
 Parser Terminals are those terminals that are used to create the rules in
 the grammar. These are the terminals that are return by the lexer.
 
+Lexer terminals are recognized by the the lexer but are not returned. They are
+a means to skip over input that you do not want the grammar to consider.
+
+In general, terminals must be defined before they are referenced.
+
+#### Parser Terminals
+
 Parser Terminals are defined by the `term` keyword.
+
+Simple terminals can also be defined using the `associativity`, `precedence`
+and `termset` statements or defined directly in-line in a rule.
 
 ```
 // term <ID> <pattern> ;
@@ -262,9 +270,6 @@ term Div  '/' @assoc=left @prec='*' ;
 Higher precedence values "bind tighter".
 
 #### Lexer Terminals
-
-Lexer terminals are recognized by the the lexer but are not returned. They are
-a means to skip over input that you do not want the grammar to consider.
 
 Lexer terminals may not appear in rules.
 

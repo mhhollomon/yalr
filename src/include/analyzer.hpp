@@ -6,7 +6,7 @@
 
 namespace yalr::analyzer {
 
-    std::unique_ptr<yalr::analyzer_tree> analyze(const yalr::parse_tree &tree);
+    std::unique_ptr<yalr::analyzer_tree> analyze(yalr::parse_tree &tree);
 
     void pretty_print(const yalr::analyzer_tree &tree, std::ostream& strm);
 

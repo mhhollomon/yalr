@@ -61,6 +61,18 @@ target_link_libraries(t10-grammar
 
 add_test(NAME t10-grammar COMMAND "t10-grammar")
 
+add_executable(t11-termset)
+target_sources(t11-termset PRIVATE "t11-termset.cpp")
+target_link_libraries(t11-termset
+    PRIVATE doctest lib-include
+        parser_objlib
+        errorinfo_objlib
+        sourcetext_objlib)
+
+add_test(NAME t11-termset COMMAND "t11-termset")
+
+
+## analyzer #############################
 add_executable(t20-analyzer)
 target_sources(t20-analyzer PRIVATE "t20-analyzer.cpp")
 target_link_libraries(t20-analyzer
@@ -71,6 +83,17 @@ target_link_libraries(t20-analyzer
         errorinfo_objlib
     )
 add_test(NAME t20-analyzer COMMAND "t20-analyzer")
+
+add_executable(t21-termset-analyze)
+target_sources(t21-termset-analyze PRIVATE "t21-termset-analyze.cpp")
+target_link_libraries(t21-termset-analyze
+    PRIVATE doctest lib-include
+        parser_objlib
+        analyzer_objlib
+        sourcetext_objlib
+        errorinfo_objlib
+    )
+add_test(NAME t21-termset-analyze COMMAND "t21-termset-analyze")
 
 add_test(NAME t30-yalr-1 COMMAND "test_runner"
     "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.1.cfgfile"

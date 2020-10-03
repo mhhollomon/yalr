@@ -93,32 +93,17 @@ target_link_libraries(parser_objlib
 
 
 ##
-## symboltable_objlib
-##
-#add_library(symboltable_objlib OBJECT)
-#
-#target_sources(symboltable_objlib
-#    PRIVATE
-#    "lib/SymbolTable.cpp"
-#    PUBLIC
-#    "${CMAKE_CURRENT_SOURCE_DIR}/include/SymbolTable.hpp"
-#    )
-#
-#target_link_libraries(symboltable_objlib 
-#    PUBLIC
-#        lib-include
-#    )
-
-##
 ## analyzer_objlib
 ##
 add_library(analyzer_objlib OBJECT)
 
 target_sources(analyzer_objlib
     PRIVATE
-    "lib/analyzer.cpp"
+        "lib/analyzer.cpp"
+        "include/analyzer_pass_1.hpp"
+        "include/analyzer_pass_2.hpp"
     PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/analyzer.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/analyzer.hpp"
     )
 
 target_link_libraries(analyzer_objlib 
