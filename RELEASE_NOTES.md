@@ -1,3 +1,12 @@
+## Release v0.3.0
+
+### Functional Changes
+
+- enhancement #32  - termset statement.
+    The `termset` statmenet allows a compact way to a set of terminals and
+    associated rule to perform vlidation of something like enum. See
+    [README](README.md) for more details.
+
 ## Release v0.2.1
 
 ### Functional Changes

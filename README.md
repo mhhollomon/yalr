@@ -417,6 +417,40 @@ rule S {
 }
 ```
 
+## termset Statement
+
+The `termset` statement allows a compact way to create terminals and an
+associated rule all in a single statement.
+
+```
+termset $type $id $term ... ;
+
+termset <@lexeme> MYENUM 'foo' 'bar' 'baz' ;
+```
+
+Currently, the only types for the termset are void (this is, missing) and
+`@lexeme`.
+
+The above `termset` will have the effect something like :
+
+```
+term <@lexeme> __1 'foo' ;
+term <@lexeme> __2 'bar' ;
+term <@lexeme> __3 'baz' ;
+
+rule MYENUM {
+    => 'foo' { return _v1; } ;
+    => 'bar' { return _v1; } ;
+    => 'baz' { return _v1; } ;
+}
+```
+
+If a pre-existing terminal is given in the list, it must have the same type as
+the termset - if the termset has a type.
+
+If the termset is of type void, then the rule will also be of type void and
+will have no semantic value. In this case, the terminals may have any type.
+
 ## Verbatim Code Injection
 
 Sections of code may be injected into the generated code via the `verbatim`
