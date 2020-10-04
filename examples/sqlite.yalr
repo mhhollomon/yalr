@@ -739,12 +739,12 @@ rule ModuleArgList {
 
 /*** DELETE **********************************/
 
+term QualifiedTableName r:[a-z]* ; // WRONG, but makes this compile.
+
 rule DeleteStmt {
     => WithClause DELETE FROM QualifiedTableName WhereClause
         DeleteLimiter ;
 }
-
-term QualifiedTableName r:[a-z]* ; // WRONG, but makes this compile.
 
 rule WithClause {
     => ;
@@ -756,11 +756,11 @@ rule CTETableList {
     => CTETableList ',' CTETableEntry ;
 }
 
+term CTETableName r:[a-z]* ; // WRONG, but makes this compile.
+
 rule CTETableEntry {
     => CTETableName AS '(' SelectStmt ')' ;
 }
-
-term CTETableName r:[a-z]* ; // WRONG, but makes this compile.
 
 rule WhereClause {
     => WHERE Expr ;

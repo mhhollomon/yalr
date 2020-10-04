@@ -1,19 +1,28 @@
+// auto generate a main() for us.
 option code.main    true;
+
 // This will be inserted close to the top of the file
 verbatim file.top <%{
 #include <map>
 }%>
 
+// This will be inserted close to the top of the namespace.
 verbatim namespace.top <%{
 std::map<std::string, float> variables;
 }%>
 
+//
+// "ignore" whitespace. Since it gets seen by the lexer, 
+// whitespace spearates other tokens, but isn't returned as a token.
+//
+// Note the need for the space after the '+' to proerly terminate a regex.
 skip WS   r:\s+ ;
 
 // basically here so that it is prefered to VARIABLE
 // But, it also gives a chance to show case folding. 
 // This will accept print or PRINT or PrInT, etc.
 //
+// Note that this is a ""void" terminal, it has no semantic value.
 term PRINT 'print' @cfold ;
 
 //

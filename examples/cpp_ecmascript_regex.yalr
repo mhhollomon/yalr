@@ -5,40 +5,31 @@
  *
  * Lots of unresolved shift/reduce errors.
  *
- * 186 states. heh.
+ * 196 states. heh.
  *
  * Completely untested. Use at your own risk.
  */
 
  
-rule Lower {
-    => 'a' ; => 'b' ; => 'c' ; => 'd' ; => 'e' ;
-    => 'f' ; => 'g' ; => 'h' ; => 'i' ; => 'j' ;
-    => 'k' ; => 'l' ; => 'm' ; => 'n' ; => 'o' ;
-    => 'p' ; => 'q' ; => 'r' ; => 's' ; => 't' ;
-    => 'u' ; => 'v' ; => 'w' ; => 'x' ; => 'y' ;
-    => 'z' ;
-}
+termset Lower 'a' 'b' 'c' 'd' 'e' 'f' 'g' 'h'
+              'i' 'j' 'k' 'l' 'm' 'n' 'o' 'p'
+              'q' 'r' 's' 't' 'u' 'v' 'w' 'x'
+              'y' 'z'
+              ;
 
-rule LHEX {
-    => 'a' ; => 'b' ; => 'c' ; => 'd' ; => 'e' ; => 'f' ;
-}
+termset LHEX 'a' 'b' 'c' 'd' 'e' 'f' ;
 
-rule Upper {
-    => 'A' ; => 'B' ; => 'C' ; => 'D' ; => 'E' ;
-    => 'F' ; => 'G' ; => 'H' ; => 'I' ; => 'J' ;
-    => 'K' ; => 'L' ; => 'M' ; => 'N' ; => 'O' ;
-    => 'P' ; => 'Q' ; => 'R' ; => 'S' ; => 'T' ;
-    => 'U' ; => 'V' ; => 'W' ; => 'X' ; => 'Y' ;
-    => 'Z' ;
-}
+termset Upper 'A' 'B' 'C' 'D' 'E' 'F' 'G' 'H'
+              'I' 'J' 'K' 'L' 'M' 'N' 'O' 'P'
+              'Q' 'R' 'S' 'T' 'U' 'V' 'W' 'X'
+              'Y' 'Z'
+              ;
 
-rule UHEX {
-    => 'A' ; => 'B' ; => 'C' ; => 'D' ; => 'E' ; => 'F' ;
-}
+termset UHEX 'A' 'B' 'C' 'D' 'E' 'F' ;
 
 term ZERO '0' ;
-term NDDIGIT r:[1-9] ;
+
+termset NDDIGIT '1' '2' '3' '4' '5' '6' '7' '8' '9' ;
 
 rule DecDigit {
     => ZERO ; => NDDIGIT ;
@@ -49,6 +40,28 @@ rule HexDigit {
     => LHEX ;
     => UHEX ;
 }
+
+term CARET    '^'     ;
+term DOLR     '$'     ;
+term ESC_L_B  '\\b'   ; // literal backslash followed by "b"
+term ESC_U_B  '\\B'   ; // literal backslash followed by "B"
+term EQUAL    '='     ;
+term NOT      '!'     ;
+term LP       '('     ;
+term RP       ')'     ;
+term DOT      '.'     ;
+term COLON    ':'     ;
+term DASH     '-'     ;
+
+termset AtomPunct '.' ':' ';' '[' ',' '?' '('  ')'
+                  '@' '#' '$' '^' '&' '*' '\'' '"'
+                  '|' '!' '~' '`' '\n' '<' '>' '\\'
+                  ;
+    
+
+// This needs to be close to the bottom so that it is not
+// a "first" match.
+term PCHAR    r:[^$^\\\\.*+?()\\][}{|] ;
 
 /*************** START **********************/
 
@@ -93,15 +106,6 @@ rule DecimalDigits {
     => DecimalDigits DecDigit ;
 }
 
-term CARET    '^'    ;
-term DOLR     '$'    ;
-term ESC_L_B  '\\b'   ; // literal backslash followed by "b"
-term ESC_U_B  '\\B'   ; // literal backslash followed by "B"
-term EQUAL    '='     ;
-term NOT      '!'     ;
-term LP       '('     ;
-term RP       ')'     ;
-
 rule Assertion {
     => CARET ;
     => DOLR ;
@@ -111,9 +115,6 @@ rule Assertion {
     => LP '?' NOT   Disjunction RP ;
 }
 
-term DOT      '.'    ;
-term COLON    ':'     ;
-term DASH     '-' ;
 //term BKSL     '\\\\'    ;
 term NULESC   '\\\\0' ;
 term ESCCHAR  r:\\\\[^[:alnum:]] ;
@@ -182,12 +183,7 @@ rule ClassAtom {
 
 rule AtomNoDash_Source {
     => Upper; => Lower; => DecDigit;
-    => '.'; => ':'; => ';' ; => '[';
-    => ','; => '?'; => '(' ; => ')';
-    => '@'; => '#'; => '$' ; => '^';
-    => '&'; => '*'; => '\''; => '"';
-    => '|'; => '!' ; => '~'; => '`';
-    => '\n'; => '<'; => '>'; => '\\';
+    => AtomPunct;
 }
 
 rule ClassAtomNoDash {
@@ -216,7 +212,4 @@ rule ClassName {
 }
 
 
-// This needs to be close to the bottom so that it is not
-// a "first" match.
-term PCHAR    r:[^$^\\\\.*+?()\\][}{|] ;
 
