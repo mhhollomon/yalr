@@ -448,7 +448,7 @@ struct pass_ii_visitor {
     }
 
 
-  //
+    //
     //// Handle termset
     //
     void operator()(const termset_stmt &t) {
@@ -478,12 +478,23 @@ struct pass_ii_visitor {
         // The type string on the synthetic rule was handled in pass 1.
         // But we still need to check if we need to add the action to each alternative.
         bool do_action = false;
+        std::string_view term_action;
         std::string_view termset_type_str = "void"sv;
         if (t.type_str) {
+            do_action = true;
             if (t.type_str->text == "@lexeme"sv) {
-                do_action = true;
                 termset_type_str = "std::string"sv;
+                term_action = "return std::move(lexeme);"sv;
             }
+            if (t.action) {
+                term_action = t.action->text;
+            } else if (t.type_str->text != "@lexeme") {
+                term_action = "return 1;" ;
+                out.record_error(t.name, "typed termsets must have an action");
+            }
+
+        } else if (t.action) {
+            out.record_error(t.name, "void termsets cannot have an action");
         }
 
         for (auto const& i : t.symbol_refs) {
@@ -539,7 +550,7 @@ struct pass_ii_visitor {
                 }
                 data->type_str = termset_type_str;
                 if (do_action) {
-                    data->action = "return std::move(lexeme);";
+                    data->action = term_action;
                 }
             } else {
                 out.record_error(i, "Unknown symbol used in statement");

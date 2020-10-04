@@ -65,11 +65,10 @@ struct pass_i_visitor {
         auto rs = rule_symbol{};
         rs.name = t.name.text;
         if (t.type_str) {
-            if (t.type_str->text != "@lexeme") {
-                out.record_error(*t.type_str, "Invalid type for termset (must be 'void' or '@lexeme')");
-                rs.type_str = "void"sv;
-            } else {
+            if (t.type_str->text == "@lexeme") {
                 rs.type_str = "std::string"sv;
+            } else {
+                rs.type_str = t.type_str->text;
             }
         } else {
             rs.type_str = "void"sv;

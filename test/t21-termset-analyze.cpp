@@ -69,6 +69,7 @@ TEST_CASE("termset name clashes - [analyzer]") {
 }
 
 TEST_CASE("Termset typing - [analyzer]") {
+
     SUBCASE("[analyzer] - @lexeme is okay") {
         auto tree = parse_string("termset <@lexeme> TS 'x' 'y' ; goal rule A { => TS ; }");
         REQUIRE(bool(*tree));
@@ -79,10 +80,11 @@ TEST_CASE("Termset typing - [analyzer]") {
         CHECK(rule_data->type_str == "std::string");
         CHECK(tree->productions.front().action.find("_v1") != std::string_view::npos);
     }
-    SUBCASE("[analyzer] - other stuff is not") {
-        auto tree = parse_string("termset <int> TS 'x' 'y' ; goal rule A { => TS ; }");
-        CHECK_FALSE(bool(*tree));
-        CHECK(tree->errors.errors.front().message.find("Invalid type") != std::string_view::npos);
+
+    SUBCASE("[analyzer] - typed termsets need an action") {
+        auto tree = parse_string("termset <int> TS 'x' ; goal rule A { => TS ; }");
+        REQUIRE_FALSE(bool(*tree));
+        CHECK(tree->errors.errors.front().message.find("must have an action") != std::string_view::npos);
     }
 
     SUBCASE("[analyzer] - predefined terms must match type") {
@@ -94,6 +96,24 @@ TEST_CASE("Termset typing - [analyzer]") {
     SUBCASE("[analyzer] - void termset allow any type terminal") {
         auto tree = parse_string("term <int> A 'a' <%{ return 1; }%> termset TS A ; goal rule B { => 'b' ; }");
         REQUIRE(bool(*tree));
+    }
+
+    SUBCASE("[analyzer] - action gets copied to terminals") {
+        auto tree = parse_string("term <int> a 'a' <%{ return snarfle(); }%> termset <int> TS a 'b' <%{ return fleegle(); }%> goal rule B { => 'b' ; }");
+
+        REQUIRE(bool(*tree));
+        auto term = tree->symbols.find("'b'");
+        REQUIRE(term);
+        auto term_data = term->get_data<yalr::symbol_type::terminal>();
+        REQUIRE(term_data);
+        CHECK(term_data->action.find("fleegle") != std::string_view::npos);
+        // make sure we didn't mess up the pre-defined term
+        term = tree->symbols.find("'a'");
+        REQUIRE(term);
+        term_data = term->get_data<yalr::symbol_type::terminal>();
+        REQUIRE(term_data);
+        CHECK(term_data->action.find("fleegle") == std::string_view::npos);
+        CHECK(term_data->action.find("snarfle") != std::string_view::npos);
     }
 
 }

@@ -476,7 +476,7 @@ struct parser_guts {
         nt.action = match_actionblock();
         if (not nt.action) {
             // if we don't see an action block, we better see the closing semi-colon.
-            // Record the error, but don't quit. Assume we got and keep going.
+            // Record the error, but don't quit. Assume we got it and keep going.
             expect_char(';');
         }
 
@@ -611,7 +611,7 @@ struct parser_guts {
         return true;
     }
 
-    /* termset <typestr>INDENT @proc=? @assoc=? items+ */
+    /* termset <typestr> IDENT @proc=? @assoc=? items+ action? */
     bool parse_termset(statement_list& stmts) {
         termset_stmt new_termset;
         optional_text_fragment otf;
@@ -651,8 +651,11 @@ struct parser_guts {
         }
 
         skip();
-        if (not match_char(';')) {
-            record_error("expecting closing semicolon");
+        new_termset.action = match_actionblock();
+        if (not new_termset.action) {
+            // if we don't see an action block, we better see the closing semi-colon.
+            // Record the error, but don't quit. Assume we got it and keep going.
+            expect_char(';');
         }
 
         stmts.emplace_back(std::move(new_termset));

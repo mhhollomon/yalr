@@ -73,6 +73,7 @@ namespace yalr {
         optional_text_fragment associativity;
         optional_text_fragment precedence;
         std::vector<text_fragment> symbol_refs;
+        optional_text_fragment action;
     };
 
     using statement = std::variant<
