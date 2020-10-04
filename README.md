@@ -756,6 +756,9 @@ development.
     Parsers](https://link.springer.com/content/pdf/10.1007/3-540-53669-8_70.pdf)
   - [Recursive ascent-descent
     parsing](https://webhome.cs.uvic.ca/~nigelh/Publications/rad.pdf)
+- [PEG and packrat parsers](https://bford.info/packrat/)
+- [Pika](https://arxiv.org/pdf/2005.06444.pdf) - PEG parsing "backwards" using
+    Dynamic programming concepts.
 
 ## Technologies
 - [Cmake](https://cmake.org/) for build configuration.
