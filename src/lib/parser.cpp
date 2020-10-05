@@ -484,12 +484,28 @@ struct parser_guts {
 
         return true;
     }
-    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
-    /* term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
+    /* global? term '<' type '>'  Z pattern @assoc=x @prec=(n|x) ; */
+    /* global? term '<' type '>'  Z pattern @assoc=x @prec=(n|x) <%{ action }%> */
     bool parse_term(statement_list& stmts) {
         terminal_stmt new_term;
 
-        return parse_term_thing(new_term, "term", stmts);
+        auto start_loc = current_loc;
+        if (match_keyword("global")) {
+            new_term.is_global = true;
+        }
+
+        auto retval = parse_term_thing(new_term, "term", stmts);
+
+        if (new_term.is_global and not retval) {
+            record_error("expecting 'term' after global", start_loc);
+            // lie to the upper reaches so they don't try some other
+            // leg.
+            //
+            return true;
+        }
+
+        return retval;
+                
     }
 
 

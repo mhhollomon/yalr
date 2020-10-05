@@ -30,6 +30,7 @@ The main template resides in src/include/template.hpp.
     - **matcher** : (scalar) The type of matcher - string or regex.
     - **pattern** : (scalar) The actual thing to match.
     - **token**   : (scalar) The token that owns the match.
+    - **is_global** : (scalar) True iff the terminal was marked as 'global'.
 
 ### Parser related data
 

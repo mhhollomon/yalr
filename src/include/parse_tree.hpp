@@ -17,6 +17,7 @@ namespace yalr {
         optional_text_fragment associativity;
         optional_text_fragment precedence;
         optional_text_fragment case_match;
+        bool                   is_global = false;
         // not used by the parser. Used by the analyzer
         // when it is talking to itself. This will be
         // false for anything coming from the parser.

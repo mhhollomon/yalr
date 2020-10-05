@@ -22,6 +22,7 @@ struct symbol_identifier_t : public util::identifier_t<symbol_identifier_t> {
 struct terminal_symbol {
     symbol_identifier_t id;
     bool                is_inline = false;
+    bool                is_global = false;
     std::string_view    name;
     std::string_view    type_str;
     std::string_view    pattern;
@@ -34,7 +35,7 @@ struct terminal_symbol {
     pattern_type        pat_type = pattern_type::undef;
 
     terminal_symbol(const terminal_stmt& t) :
-        name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
+        is_global(t.is_global), name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
         pattern(t.pattern.text), action(t.action ? t.action->text : ""sv)
         {}
     terminal_symbol() = default;

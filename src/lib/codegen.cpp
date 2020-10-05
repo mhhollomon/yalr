@@ -255,6 +255,7 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
         std::string pattern;
         case_type ct;
         pattern_type pt;
+        bool glbl;
         const auto* info_ptr = sym.get_data<symbol_type::terminal>();
 
         if (info_ptr == nullptr) {
@@ -262,10 +263,13 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
             pattern = std::string(skip_ptr->pattern);
             pt = skip_ptr->pat_type;
             ct = skip_ptr->case_match;
+            // skips are always global
+            glbl = true;
         } else {
             pattern =  std::string(info_ptr->pattern);
             pt = info_ptr->pat_type;
             ct = info_ptr->case_match;
+            glbl = info_ptr->is_global;
         }
 
         tdata["flags"] = " ";
@@ -289,6 +293,8 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
         } else {
             tdata["token"] = "skip" ;
         }
+
+        tdata["is_global"] = glbl;
 
         patterns.push_back(tdata);
 
