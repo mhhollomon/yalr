@@ -9,11 +9,10 @@ auto parse_string(std::string s) {
     auto p = yalr::yalr_parser(ts);
     // break this out to make it easier to debug
     auto tree = p.parse();
+    if (not tree.success) {
+        tree.errors.output(std::cout);
+    }
     return tree;
-}
-
-void output_errors(yalr::parse_tree const &t) {
-    t.errors.output(std::cout);
 }
 
 TEST_CASE("grammar - [parser]") {
@@ -28,6 +27,7 @@ TEST_CASE("grammar - [parser]") {
         CHECK(tree.success);
         auto term = std::get<yalr::terminal_stmt>(tree.statements.front());
         CHECK(term.type_str->text == "int");
+        CHECK(term.is_global == false);
 
         tree = parse_string("term<std::string> FOO 'foo' ; rule A { => FOO ; => 'foo' ; }");
         CHECK(tree.success);
@@ -156,13 +156,11 @@ TEST_CASE("prec in rules - [parser]") {
     SUBCASE("multiple") {
         auto tree = parse_string("rule A { => 'x' @prec=2 @prec=foo; }");
         CHECK(not tree);
-        tree.errors.output(std::cout);
         CHECK(tree.errors.size() == 1);
     }
     SUBCASE("trailing item") {
         auto tree = parse_string("rule A { => 'x' @prec=2 'y'; }");
         CHECK(not tree);
-        tree.errors.output(std::cout);
         CHECK(tree.errors.size() == 1);
     }
 }
@@ -170,7 +168,6 @@ TEST_CASE("prec in rules - [parser]") {
 TEST_CASE("verbatim - [parser]") {
     SUBCASE("positive 1") {
         auto tree = parse_string("verbatim X <%{ ... }%>");
-        tree.errors.output(std::cout);
 
         REQUIRE(tree.success);
         auto verb = std::get<yalr::verbatim_stmt>(tree.statements.front());
@@ -219,7 +216,6 @@ TEST_CASE("precedence statement - [grammar]") {
     }
     SUBCASE("positive single quote") {
         auto tree = parse_string("precedence 'x' 'a' X;");
-        output_errors(tree);
         REQUIRE(tree.success);
         auto prec = std::get<yalr::precedence_stmt>(tree.statements.front());
         CHECK(prec.prec_ref.text == "'x'");
@@ -249,5 +245,19 @@ TEST_CASE("option - [parser]") {
         auto opt = std::get<yalr::option_stmt>(tree.statements.front());
         CHECK(opt.name.text == "boogy.woogy");
         CHECK(opt.setting.text == "zed");
+    }
+}
+
+TEST_CASE("global - [parser]") {
+    SUBCASE("positive") {
+        auto tree = parse_string("global term <int> FOO 'foo' ;");
+        REQUIRE(tree.success);
+        auto term = std::get<yalr::terminal_stmt>(tree.statements.front());
+        CHECK(term.is_global);
+    }
+
+    SUBCASE("not on skip") {
+        auto tree = parse_string("global skip FOO 'foo' ;");
+        REQUIRE_FALSE(tree.success);
     }
 }

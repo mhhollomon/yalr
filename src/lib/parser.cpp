@@ -492,6 +492,7 @@ struct parser_guts {
         auto start_loc = current_loc;
         if (match_keyword("global")) {
             new_term.is_global = true;
+            skip();
         }
 
         auto retval = parse_term_thing(new_term, "term", stmts);
