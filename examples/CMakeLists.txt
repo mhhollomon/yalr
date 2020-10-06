@@ -18,6 +18,3 @@ target_sources(calculator
     )
 
 add_dependencies(calculator gen_calc)
-#target_include_directories(calculator
-#    PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
-#    )
