@@ -100,37 +100,42 @@ json generate_reduce_functions(const lrtable& lt) {
     auto funcs = json::array();
 
     for (const auto & [_, prod]  : lt.productions ) {
-        if (prod.action != "") {
-            auto rdata = json::object();
-            rdata["prodid"] = int(prod.prod_id);
-            auto item_types = json::array();
-            int index = prod.items.size()+1;
-            for (const auto &i : util::reverse(prod.items)) {
-                auto type_data = json::object();
-                auto type_sv = i.sym.do_visit( overloaded{
-                    [](const terminal_symbol& t) { return t.type_str; },
-                    [](const rule_symbol& r) { return r.type_str; },
-                    [](const skip_symbol& s) { return ""sv; },
-                });
-                type_data["type"] = type_sv;
-                type_data["index"] = --index;
-                type_data["alias"] = (i.alias ? *i.alias : ""sv);
+        auto rdata = json::object();
+        rdata["prodid"] = int(prod.prod_id);
+        std::stringstream ss;
+        production_printer(ss, prod);
 
-                item_types.push_back(type_data);
-            }
-            rdata["itemtypes"] = item_types;
-            rdata["block"] = prod.action;
+        rdata["production"] = ss.str();
+        auto rule_data = prod.rule.get_data<symbol_type::rule>();
+        yassert(rule_data, "Could not get the data pointer for a rule.");
+        rdata["rule_type"] = rule_data->type_str;
+        rdata["symbol"] = "TOK_" + std::string(prod.rule.token_name()) ;
 
-            std::stringstream ss;
-            production_printer(ss, prod);
+        auto item_types = json::array();
+        // +1 is to account for the use of prefix decrent below.
+        int index = prod.items.size()+1;
+        for (const auto &i : util::reverse(prod.items)) {
+            auto type_data = json::object();
+            auto type_sv = i.sym.do_visit( overloaded{
+                [](const terminal_symbol& t) { return t.type_str; },
+                [](const rule_symbol& r) { return r.type_str; },
+                [](const skip_symbol& s) { return ""sv; },
+            });
+            type_data["type"] = type_sv;
+            type_data["index"] = --index;
+            type_data["alias"] = (i.alias ? *i.alias : ""sv);
 
-            rdata["production"] = ss.str();
-            auto rule_data = prod.rule.get_data<symbol_type::rule>();
-            yassert(rule_data, "Could not get the data pointer for a rule.");
-            rdata["rule_type"] = rule_data->type_str;
-
-            funcs.push_back(rdata);
+            item_types.push_back(type_data);
         }
+        rdata["itemtypes"] = item_types;
+        rdata["block"] = prod.action;
+
+        if (prod.action != "") {
+            rdata["hassemaction"] =  "Y";
+        } else {
+            rdata["hassemaction"] = "N";
+        }
+        funcs.push_back(rdata);
     }
     return funcs;
 }

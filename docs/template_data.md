@@ -37,6 +37,7 @@ The main template resides in src/include/template.hpp.
 - **states** : (array) The data for each state
   - **id** : (scalar) The numeric id of the state.
   - **actions** : (array) the actions for the state.
+      - **token**        : (scalar) input token that triggers the action
       - **type**         : (scalar) type of action, reduce, shift, accept
       - **prodid**       : (r, scalar) Numeric id of the production.
       - **production**   : (r, scalar) string describing the prod for a reduce
@@ -52,7 +53,12 @@ The main template resides in src/include/template.hpp.
       - **stateid** : (scalar) The numeric id of the new state.
 - **reducefuncs** : (array) The data for each reduce function
     - **prodid**     : (scalar) Numeric id of the production.
+    - **hassemaction** : (scalar) Boolean - prod has a semantic action.
     - **itemtypes**  : (array) List of item types for this production.
+        - **type**  : (scalar) string for the type of the semantic value for
+            this item
+        - **alias** : (scalar) string for the alias for this item.
+        - **index** : (scalar) number of this item in production.
     - **block**      : (scalar) actual code for the action.
     - **production** : (scalar) string describing the prod for this reduce
     - **rule_type**  : (scalar) type (eg. int, void) of the rule for this production.
