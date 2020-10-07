@@ -52,6 +52,13 @@ enum token_type {
 ## endfor
 };
 
+#if defined(YALR_DEBUG)
+char const * const token_name[] = {
+{% for entry in enums -%} {%- if entry.value >= 0 %}
+    "<%entry.debugname%>",{%-endif%} {%- endfor %}
+};
+#endif
+
 enum state_action { undefined, shift, reduce, accept, error };
 
 using iter_type = std::string::const_iterator;
@@ -88,7 +95,11 @@ struct token {
 };
 
 std::ostream& operator<<(std::ostream& strm, token t) {
+#if defined(YALR_DEBUG) 
+    strm << "{t=(" << t.t << "," << (t.t > -1 ? token_name[t.t] : "undef") << ") v=";
+#else
     strm << "{t=" << t.t <<" v=";
+#endif
     value_printer vp{strm};
     std::visit(vp, t.v);
     strm << "}";
@@ -194,7 +205,17 @@ public:
 
         token_type ret_type = undef;
         std::size_t max_len = 0;
-        YALR_LDEBUG("current character = '" << *current << "'\n");
+#if defined(YALR_DEBUG)
+        if (debug) {
+            std::cerr << "Next few characters: " ;
+            auto ptr = current;
+            for (int i =0 ; i < 10 ; ++i) {
+                std::cerr << *ptr;
+                ++ptr;
+            }
+            std::cerr << "\n";
+        }
+#endif
 
         for (const auto &[m, tt, glbl] : patterns) {
             if (not (glbl or !allowed_tokens or (allowed_tokens and allowed_tokens->count(tt) > 0))) {
@@ -221,7 +242,6 @@ public:
             return next_token(allowed_tokens);
         }
         std::string lx{current, current+max_len};
-        current += max_len;
         semantic_value ret_sval;
         switch (ret_type) {
 ## for sa in semantic_actions 
@@ -237,7 +257,15 @@ public:
                 break;
         }
 
-        YALR_LDEBUG( "Returning token = " << ret_type << "\n");
+        if (debug) {
+            std::string lx{current, current+max_len};
+            YALR_LDEBUG( "Returning token = " << ret_type);
+            if (ret_type >= 0) {
+                YALR_LDEBUG(" (" << token_name[ret_type] << ")")
+            }
+            YALR_LDEBUG (" lex={" << lx << "}\n");
+        }
+        current += max_len;
         return token{ret_type, ret_sval};
     }
 

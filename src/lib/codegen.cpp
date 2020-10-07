@@ -198,10 +198,10 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
             // type names go in the set
             if (sym.name() == "$") {
                 enum_entries.push_back(json::object({ 
-                        { "name" , "eoi"}, {"value", int(sym.id()) } }));
+                        { "name" , "eoi"}, {"value", int(sym.id()) }, {"debugname", "eoi"} }));
             } else {
                 enum_entries.push_back(json::object({ 
-                        { "name" , tok_name }, {"value", int(sym.id()) } }));
+                        { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
                 terms.push_back(sym);
                 const auto* info_ptr = sym.get_data<symbol_type::terminal>();
                 yassert(info_ptr, "could not get data pointer for terminal");
@@ -220,10 +220,14 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
         } else if (sym.isrule()) {
             // rules only go in the enum
             enum_entries.push_back(json::object({ 
-                    { "name" , tok_name }, {"value", int(sym.id()) } }));
+                    { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
         } else if (sym.isskip()) {
             // Skips only go in the term list
             terms.push_back(sym);
+            // put a dummy entry in so names align
+            enum_entries.push_back(json::object({
+                        { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
+
         } else {
             yfail("Unknown symobl type");
         }
