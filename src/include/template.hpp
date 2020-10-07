@@ -331,6 +331,7 @@ class <%parserclass%> {
         tokstack.pop_back();
 
 ## endfor
+        {% if length(func.itemtypes) == 0 -%} retval.state = current_state; {%- endif %}
 ## if func.hassemaction == "Y"
         auto block = [&]() {
             <%func.block%>
