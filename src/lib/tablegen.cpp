@@ -470,13 +470,13 @@ void pretty_print(const item_set& is,
 
 void pretty_print( const production_map& productions, std::ostream& strm) {
     std::streamsize max_name_len = 5;
-    for (const auto [_, p] : productions) {
+    for (const auto &[_, p] : productions) {
         max_name_len = std::max(max_name_len, std::streamsize(p.rule.name().size()));
     }
 
     if (max_name_len > 15) max_name_len = 15;
 
-    for (const auto [_, p] : productions) {
+    for (const auto &[_, p] : productions) {
         strm << "   [";
         strm.width(3);
         strm << p.prod_id << "] ";

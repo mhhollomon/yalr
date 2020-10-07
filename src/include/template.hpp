@@ -291,27 +291,27 @@ class <%parserclass%> {
 ## for func in reducefuncs
     parse_stack_entry reduce_by_prod<%func.prodid%>() {
         YALR_PDEBUG( "Reducing by : <%func.production%>\n");
+        parse_stack_entry retval;
+        semantic_value sv;
+
 ## for type in func.itemtypes
-## if type.type != "void"
-        auto _v<%type.index%> = std::get<<%type.type%>>(tokstack.back().tv.v);
-## endif
-## if type.alias != ""
-        auto &<%type.alias%> = _v<%type.index%>;
-## endif
-        {% if loop.is_last -%}
-        auto retval = tokstack.back();
-        {%- endif %}
+        {% if type.type != "void" -%} auto _v<%type.index%> = std::get<<%type.type%>>(tokstack.back().tv.v); {%- endif -%}
+        {%- if type.alias != "" %}
+        auto &<%type.alias%> = _v<%type.index%>; {%- endif -%}
+        {%- if loop.is_last %}
+        retval = tokstack.back(); {%- endif %}
         tokstack.pop_back();
+
 ## endfor
 ## if func.hassemaction == "Y"
         auto block = [&]() {
             <%func.block%>
         };
-        block();
-##  endif
-        semantic_value sv;
-## if func.rule_type != "void"
+##   if func.rule_type != "void"
         sv = block();
+##   else
+        block();
+##   endif
 ## endif
 
         retval.tv = { <%func.symbol%>, sv};
