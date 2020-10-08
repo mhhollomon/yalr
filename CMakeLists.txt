@@ -1,7 +1,7 @@
 # yalr
 cmake_minimum_required(VERSION 3.13)
 
-project(Yalr VERSION 0.2.0
+project(Yalr VERSION 0.3.0
              DESCRIPTION "Yet another LR Parser Generator"
              LANGUAGES CXX)
 
@@ -43,6 +43,7 @@ add_subdirectory(extern)
 
 add_subdirectory(src)
 
+configure_file(yalr_version.hpp.in yalr_version.hpp)
 ##
 ## yalr application
 ##
@@ -51,6 +52,11 @@ add_executable(yalr)
 target_sources(yalr
     PRIVATE
         "src/main.cpp"
+    )
+
+target_include_directories(yalr
+    PRIVATE
+        "${PROJECT_BINARY_DIR}"
     )
 
 target_link_libraries(yalr

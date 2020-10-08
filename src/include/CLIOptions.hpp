@@ -10,6 +10,7 @@ struct CLIOptions {
     std::string input_file;
     bool debug = false;
     bool help = false;
+    bool do_version = false;
 };
 
 #endif

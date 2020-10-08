@@ -114,6 +114,7 @@ namespace yalr {
 
     using production_map = std::map<production_identifier_t, production>;
     struct lrtable {
+        std::string version_string;
         std::vector<lrstate> states;
         symbol_table symbols;
         production_map productions;

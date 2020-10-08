@@ -1,0 +1,6 @@
+namespace yalr {
+    using namespace std::string_literals;
+
+    constexpr char const * const yalr_VERSION = "@Yalr_VERSION@";
+    constexpr char const * const yalr_version_string = "yalr version @Yalr_VERSION@";
+}

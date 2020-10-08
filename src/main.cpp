@@ -10,6 +10,8 @@
 #include <iostream>
 #include <fstream>
 #include <ios>
+#include <string>
+#include "yalr_version.hpp"
 
 // I'm not in love with the fact that
 // you have to wrap the entire function body into a try {}.
@@ -23,12 +25,16 @@
 
 
 
+void print_version(std::ostream &strm) {
+    strm << yalr::yalr_version_string << "\n";
+}
+
 CLIOptions parse_commandline(int argc, char**argv) {
   
     CLIOptions clopts;
 
     try {
-        cxxopts::Options options("yalr", "Parser Generator");
+        cxxopts::Options options("yalr", yalr::yalr_version_string);
 
         options.positional_help("<input-file>");
 
@@ -39,6 +45,7 @@ CLIOptions parse_commandline(int argc, char**argv) {
                 cxxopts::value(clopts.state_file)->implicit_value("-NONE :^-") )
             ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
             ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
+            ("v,version", "Print version information", cxxopts::value(clopts.do_version))
             ;
         options.add_options("positionals")
             ("input-file", "grammar file to process",  cxxopts::value(clopts.input_file))
@@ -52,6 +59,11 @@ CLIOptions parse_commandline(int argc, char**argv) {
         // Grrr. have to handle help here because we need the options object.
         if (clopts.help) {
             std::cout << options.help() << "\n";
+            exit(1);
+        }
+
+        if (clopts.do_version) {
+            print_version(std::cout);
             exit(1);
         }
 
@@ -150,6 +162,8 @@ int main(int argc, char* argv[]) {
     // That will have the info needed to allow the user to fix the problems.
     //
     if (not lrtbl->success) exit(1);
+
+    lrtbl->version_string = yalr::yalr_version_string;
 
 
     std::cout << "--- Generating code into " << outfilename << "\n";

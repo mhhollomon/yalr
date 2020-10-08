@@ -6,6 +6,8 @@
 
 #include "yassert.hpp"
 
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -167,9 +169,19 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     env.set_expression("<%", "%>");
 
     json data;
+    data["header"] = lt.version_string;
     data["namespace"] = std::string(lt.options.code_namespace.get());
     data["parserclass"] = std::string(lt.options.parser_class.get());
     data["lexerclass"] = std::string(lt.options.lexer_class.get());
+    {
+
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+
+        std::ostringstream oss;
+        oss << lt.version_string << " at " << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+        data["header"] = oss.str();
+    }
 
 
     // dump the tokens
