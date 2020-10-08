@@ -2,10 +2,27 @@
 
 ### Functional Changes
 
-- enhancement #32  - termset statement.
-    The `termset` statmenet allows a compact way to a set of terminals and
-    associated rule to perform vlidation of something like enum. See
+- enhancement #33  - termset statement.
+    The `termset` statement allows a compact way to define a set of terminals
+    and associated rule to perform validation of something like enum. See
     [README](README.md) for more details.
+
+- enhancement #34 - context sensitive lexical analysis. See
+    [context-aware-lexing.md](docs/context-aware-lexing.md)
+
+- enhancement #36 - New version option for the CLI
+
+- enhancement #37 - Version string (and time and date) are now in the rgenerate
+    code.
+
+- lots of enhancements to the debug output of the generated code.
+
+### Non-functional Changes
+
+- switch to table driven parser. The original design for `yalr` was to use
+    nested functions. This works fine. But it became obvious that there was no
+    real benefit and it was standing in the way of designing robust error
+    recovery.
 
 ## Release v0.2.1
 

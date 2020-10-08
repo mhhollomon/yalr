@@ -1,5 +1,5 @@
 # Yet Another LR Parser Generator
-## Yalr Release 0.2.1
+## Yalr Release 0.3
 [![Github Releases](https://img.shields.io/github/release/mhhollomon/yalr.svg)](https://github.com/mhhollomon/yalr/releases)
 [![Build Status](https://api.cirrus-ci.com/github/mhhollomon/yalr.svg)](https://cirrus-ci.com/github/mhhollomon/yalr)
 [![Github Issues](https://img.shields.io/github/issues/mhhollomon/yalr.svg)](http://github.com/mhhollomon/yalr)
@@ -7,7 +7,12 @@
 
 ## Release Highlights
 
-- Small bug fixes and documentation clean ups.
+**WARNING** This release is mildly incompatible with previous version.
+
+- Addition of a new `termset` statement for easy addition of enum style
+    identifiers.
+
+- Switch to Context Sensitive Lexical Analysis.
 
 For more details, see below and the [Release Notes](RELEASE_NOTES.md)
 
