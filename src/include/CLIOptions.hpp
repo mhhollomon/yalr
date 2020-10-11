@@ -8,6 +8,7 @@ struct CLIOptions {
     std::string translate;
     std::string state_file;
     std::string input_file;
+    std::string algorithm;
     bool debug = false;
     bool help = false;
     bool do_version = false;

@@ -13,17 +13,6 @@
 #include <string>
 #include "yalr_version.hpp"
 
-// I'm not in love with the fact that
-// you have to wrap the entire function body into a try {}.
-// And that you have no choice but to do everything up here.
-// The reason is that cxxopts::ParseResult doesn't have a default
-// constructor, so that you cannot do:
-// cxxopts::ParseResult foo;
-// try {
-//    foo = options.parse(...);
-// } catch ...
-
-
 
 void print_version(std::ostream &strm) {
     strm << yalr::yalr_version_string << "\n";
@@ -33,27 +22,28 @@ CLIOptions parse_commandline(int argc, char**argv) {
   
     CLIOptions clopts;
 
+    cxxopts::Options options("yalr", yalr::yalr_version_string);
+
+    options.positional_help("<input-file>");
+
+    options.add_options()
+        ("h,help", "Print help message", cxxopts::value(clopts.help))
+        ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
+        ("S,state-table", "File in which to put the state table", 
+            cxxopts::value(clopts.state_file)->implicit_value("-NONE :^-") )
+        ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
+        ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
+        ("v,version", "Print version information", cxxopts::value(clopts.do_version))
+        ("algorithm", "Select parser algorithm", cxxopts::value(clopts.algorithm)->default_value("slr"))
+        ;
+    options.add_options("positionals")
+        ("input-file", "grammar file to process",  cxxopts::value(clopts.input_file))
+        ;
+
+
+    options.parse_positional({"input-file"});
+
     try {
-        cxxopts::Options options("yalr", yalr::yalr_version_string);
-
-        options.positional_help("<input-file>");
-
-        options.add_options()
-            ("h,help", "Print help message", cxxopts::value(clopts.help))
-            ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
-            ("S,state-table", "File in which to put the state table", 
-                cxxopts::value(clopts.state_file)->implicit_value("-NONE :^-") )
-            ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
-            ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
-            ("v,version", "Print version information", cxxopts::value(clopts.do_version))
-            ;
-        options.add_options("positionals")
-            ("input-file", "grammar file to process",  cxxopts::value(clopts.input_file))
-            ;
-
-
-        options.parse_positional({"input-file"});
-
         auto results = options.parse(argc, argv);
 
         // Grrr. have to handle help here because we need the options object.
@@ -62,13 +52,9 @@ CLIOptions parse_commandline(int argc, char**argv) {
             exit(1);
         }
 
-        if (clopts.do_version) {
-            print_version(std::cout);
-            exit(1);
-        }
-
     } catch (const cxxopts::OptionException& e) {
-        std::cerr << "Well, that didn't work: " << e.what() << "\n";
+        std::cerr << "Command line error: " << e.what() << "\n\n";
+        std::cerr << options.help() << "\n";
         exit(1);
     }
 
@@ -82,6 +68,12 @@ CLIOptions parse_commandline(int argc, char**argv) {
 int main(int argc, char* argv[]) {
 
     auto clopts = parse_commandline(argc, argv);
+
+    if (clopts.do_version) {
+        print_version(std::cout);
+        return 0;
+    }
+
 
     if (clopts.input_file.empty()) {
         std::cerr << "Need something to parse\n";
