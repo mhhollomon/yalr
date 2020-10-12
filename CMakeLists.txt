@@ -66,8 +66,7 @@ target_link_libraries(yalr
         analyzer_objlib
         parsetree_objlib
         parser_objlib
-        tablegen_objlib
-        codegen_objlib
+        slr_objlib
         errorinfo_objlib
         sourcetext_objlib
     )

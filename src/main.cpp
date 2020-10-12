@@ -1,9 +1,9 @@
 #include "CLIOptions.hpp"
 #include "parser.hpp"
 #include "analyzer.hpp"
-#include "tablegen.hpp"
-#include "codegen.hpp"
 #include "translate.hpp"
+#include "algo/slr.hpp"
+#include "parser_generator.hpp"
 
 #include "cxxopts.hpp"
 
@@ -62,6 +62,11 @@ CLIOptions parse_commandline(int argc, char**argv) {
 
 }
 
+
+const std::map<std::string, std::shared_ptr<yalr::algo::parser_generator>>
+    algorithms = {
+        { "slr", std::make_shared<yalr::algo::slr_generator>() },
+    };
 //****************************
 // Main
 //****************************
@@ -79,6 +84,12 @@ int main(int argc, char* argv[]) {
         std::cerr << "Need something to parse\n";
         return 1;
     }
+
+    if (algorithms.count(clopts.algorithm) == 0) {
+        std::cerr << "Unknown parsing alogrithm '" << clopts.algorithm << "'\n";
+    }
+
+    auto generator = algorithms.at(clopts.algorithm);
 
     std::ifstream in(clopts.input_file, std::ios_base::in);
     in.unsetf(std::ios_base::skipws);
@@ -135,7 +146,8 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
-    auto lrtbl = yalr::generate_table(*anatree);
+    anatree->version_string = yalr::yalr_version_string;
+    auto gen_res = generator->generate_table(*anatree);
 
     std::string state_file_name;
     if (not clopts.state_file.empty()) {
@@ -146,21 +158,20 @@ int main(int argc, char* argv[]) {
         }
         std::cout << "--- Generating state table into " << state_file_name << "\n";
         std::ofstream state_out(state_file_name, std::ios_base::out);
-        yalr::pretty_print(*lrtbl, state_out);
+        generator->output_parse_table(state_out);
+
     }
 
     //
     // exit after having a chance to dump the state table.
     // That will have the info needed to allow the user to fix the problems.
     //
-    if (not lrtbl->success) exit(1);
-
-    lrtbl->version_string = yalr::yalr_version_string;
+    if (not gen_res->success) exit(1);
 
 
     std::cout << "--- Generating code into " << outfilename << "\n";
     std::ofstream code_out(outfilename, std::ios_base::out);
-    yalr::generate_code(*lrtbl, code_out);
+    generator->generate_code(code_out);
 
     return 0;
 }

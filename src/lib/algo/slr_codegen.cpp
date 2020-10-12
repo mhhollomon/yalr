@@ -1,4 +1,3 @@
-#include "codegen.hpp"
 #include "template.hpp"
 #include "utils.hpp"
 #include "template_genmain.hpp"
@@ -6,12 +5,15 @@
 
 #include "yassert.hpp"
 
+#include "algo/slr_parse_table.hpp"
+#include "algo/slr.hpp"
+
 #include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
-namespace yalr {
+namespace yalr::algo {
 
 using json = nlohmann::json;
 
@@ -25,7 +27,7 @@ std::ostream& production_printer(std::ostream& strm, const production& p) {
     return strm;
 }
 
-auto generate_state_data(const lrstate& state,const lrtable& lt) {
+auto generate_state_data(const lrstate& state,const slr_parse_table& lt) {
     auto sdata = json::object();
     sdata["id"] = int(state.id);
 
@@ -97,7 +99,7 @@ auto generate_state_data(const lrstate& state,const lrtable& lt) {
     return sdata;
 }
 
-json generate_reduce_functions(const lrtable& lt) {
+json generate_reduce_functions(const slr_parse_table& lt) {
 
     auto funcs = json::array();
 
@@ -143,7 +145,7 @@ json generate_reduce_functions(const lrtable& lt) {
 }
 
 /****************************************************************************/
-json generate_verbatim(const lrtable& lt) {
+json generate_verbatim(const slr_parse_table& lt) {
 
     json retval = json::object();
 
@@ -163,7 +165,9 @@ json generate_verbatim(const lrtable& lt) {
 }
 
 /****************************************************************************/
-void generate_code(const lrtable& lt, std::ostream& outstrm) {
+std::unique_ptr<gen_results> slr_generator::generate_code(std::ostream &strm) {
+
+    const slr_parse_table &lt = *lrtable;
 
     inja::Environment env;
     env.set_expression("<%", "%>");
@@ -341,13 +345,18 @@ void generate_code(const lrtable& lt, std::ostream& outstrm) {
     std::cout << "----------------------------\n";
 */
     // write the template
-    auto main_templ = env.parse(yalr::codegen::main_template);
-    env.render_to(outstrm, main_templ, data);
+    auto main_templ = env.parse(yalr::algo::slr::main_template);
+    env.render_to(strm, main_templ, data);
 
     if (lt.options.code_main.get() == true) {
-        outstrm << yalr::codegen::gen_main_code;
+        strm << yalr::codegen::gen_main_code;
     }
+
+    auto retval = std::make_unique<gen_results>();
+    retval->success = true;
+
+    return retval;
 
 }
 
-} //namespace yalr
+} //namespace yalr::algo

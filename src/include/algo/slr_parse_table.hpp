@@ -1,6 +1,6 @@
-#if not defined(YALR_LRTABLE_HPP)
-#define YALR_LRTABLE_HPP
+#pragma once
 
+#include "parser_generator.hpp"
 #include "production.hpp"
 #include "symbols.hpp"
 #include "utils.hpp"
@@ -12,7 +12,7 @@
 #include <vector>
 #include <map>
 
-namespace yalr {
+namespace yalr::algo {
 
     struct state_identifier_t : public util::identifier_t<state_identifier_t> {
         using util::identifier_t<state_identifier_t>::identifier_t;
@@ -113,21 +113,18 @@ namespace yalr {
     };
 
     using production_map = std::map<production_identifier_t, production>;
-    struct lrtable {
-        std::string version_string;
+
+    struct slr_parse_table : base_parse_table {
         std::vector<lrstate> states;
-        symbol_table symbols;
         production_map productions;
         std::map<symbol, symbol_set> first_set;
         std::map<symbol, symbol_set> follow_set;
-        std::multimap<std::string, std::string_view> verbatim_map;
         symbol_set epsilon;
         production_identifier_t target_prod;
-        option_table options;
+        error_list errors;
         bool success;
     };
 
 
 
-} // namespace yalr
-#endif
+} // namespace yalr::algo

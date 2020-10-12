@@ -1,4 +1,5 @@
-#include "tablegen.hpp"
+#include "algo/slr_parse_table.hpp"
+#include "algo/slr.hpp"
 
 #include "yassert.hpp"
 
@@ -18,7 +19,7 @@
  * Aho, Sethi, Ullman
  * Copyright 1986
  */
-namespace yalr {
+namespace yalr::algo {
 
 using state_set = std::set<item_set>;
 
@@ -113,7 +114,7 @@ item_set goto_set(const production_map& pm, const item_set& I, const symbol& X) 
 }
 
 // Cribbed from : https://medium.com/100-days-of-algorithms/day-93-first-follow-cfe283998e3e
-void compute_first_and_follow(lrtable& lt) {
+void compute_first_and_follow(slr_parse_table& lt) {
 
     /* Initialize the sets.
      * For first :
@@ -242,18 +243,20 @@ void compute_first_and_follow(lrtable& lt) {
 /*
  * Main computation
  */
- std::unique_ptr<lrtable> generate_table(const analyzer_tree& g) {
+ std::unique_ptr<gen_results> 
+ slr_generator::generate_table(const analyzer_tree& g) {
 
     int error_count = 0;
-    auto retval = std::make_unique<lrtable>();
+    this->lrtable = std::make_unique<slr_parse_table>();
 
-    retval->symbols = g.symbols;
-    retval->target_prod = g.target_prod;
-    retval->options = g.options;
-    retval->verbatim_map = g.verbatim_map;
+    lrtable->symbols = g.symbols;
+    lrtable->target_prod = g.target_prod;
+    lrtable->options = g.options;
+    lrtable->verbatim_map = g.verbatim_map;
+    lrtable->version_string = g.version_string;
     
     for (auto &p : g.productions) {
-        retval->productions.try_emplace(p.prod_id, p);
+        lrtable->productions.try_emplace(p.prod_id, p);
     }
 
     // new lrstates to process
@@ -266,7 +269,7 @@ void compute_first_and_follow(lrtable& lt) {
     auto prod_id = g.target_prod;
     item_set I{{lr_item(prod_id, 0)}};
 
-    item_set close = closure(retval->productions, I);
+    item_set close = closure(lrtable->productions, I);
 
     auto [lr, placed] = state_map.emplace(std::make_pair(
                 close, lrstate{close, true}));
@@ -282,7 +285,7 @@ void compute_first_and_follow(lrtable& lt) {
             if (X.isskip()) {
                 continue;
             }
-            auto is = goto_set(retval->productions, curr_state->items, X);
+            auto is = goto_set(lrtable->productions, curr_state->items, X);
 
             if (is.empty()) {
                 continue;
@@ -307,7 +310,7 @@ void compute_first_and_follow(lrtable& lt) {
      * compute first and follow sets
      */
 
-    compute_first_and_follow(*retval);
+    compute_first_and_follow(*lrtable);
 
     /* Compute Actions 
      *
@@ -338,7 +341,7 @@ void compute_first_and_follow(lrtable& lt) {
          * TODO - pull this out into a function to help with the nesting.
          */
         for (const auto& item : state.items) {
-            const auto& prod = retval->productions[item.prod_id];
+            const auto& prod = lrtable->productions[item.prod_id];
             if ( size_t(item.position) >= prod.items.size()) {
                 if (item.prod_id == g.target_prod) {
                     auto  eoi = g.symbols.find("$");
@@ -346,7 +349,7 @@ void compute_first_and_follow(lrtable& lt) {
                             action(action_type::accept));
                 } else {
                     /* add reduce */
-                    for (const auto& sym : retval->follow_set[prod.rule]) {
+                    for (const auto& sym : lrtable->follow_set[prod.rule]) {
                         if (sym.type() == symbol_type::terminal) {
                             auto [ new_iter, placed ] = state.actions.try_emplace(sym,
                                     action(action_type::reduce, item.prod_id));
@@ -398,7 +401,7 @@ void compute_first_and_follow(lrtable& lt) {
                                     //
                                     // Reduce/Reduce conflict
                                     //
-                                    auto const &old_prod = retval->productions.find(new_iter->second.production_id)->second;
+                                    auto const &old_prod = lrtable->productions.find(new_iter->second.production_id)->second;
                                     auto orig_precedence = old_prod.precedence ? *old_prod.precedence : -99;
                                     auto new_precedence = prod.precedence ? *prod.precedence : -99;
 
@@ -419,15 +422,18 @@ void compute_first_and_follow(lrtable& lt) {
     }
 
 
-    retval->states.reserve(state_map.size());
+    lrtable->states.reserve(state_map.size());
     for (const auto& iter : state_map) {
-        retval->states.push_back(iter.second);
+        lrtable->states.push_back(iter.second);
     }
 
-    std::sort(retval->states.begin(), retval->states.end(), 
+    std::sort(lrtable->states.begin(), lrtable->states.end(), 
             [](const lrstate& a, const lrstate& b) { return (a.id < b.id); }
             );
 
+    auto retval = std::make_unique<gen_results>();
+
+    retval->errors = std::move(this->lrtable->errors);
     retval->success = (error_count == 0);
 
 
@@ -629,7 +635,8 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
     strm << "\n";
 }
 
-void pretty_print(const lrtable& lt, std::ostream& strm) {
+void slr_generator::output_parse_table(std::ostream& strm) {
+    const slr_parse_table & lt = *lrtable;
     /*
     pretty_print("First Set", lt.first_set, strm);
     strm << "\n";
@@ -668,4 +675,4 @@ void pretty_print(const lrtable& lt, std::ostream& strm) {
     }
 }
 
-} // namespace yalr
+} // namespace yalr::algo

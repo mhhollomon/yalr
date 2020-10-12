@@ -25,6 +25,7 @@ extern std::unordered_set<std::string_view> verbatim_locations;
         std::vector<production>  productions;
         production_identifier_t  target_prod;
         std::list<std::string>   atoms;
+        std::string              version_string;
 
         template <class ...Args>
         error_info & record_error(const text_fragment tf, Args&&... args) {

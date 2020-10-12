@@ -113,36 +113,20 @@ target_link_libraries(analyzer_objlib
     )
 
 ##
-## tablegen_objlib
+## slr_objlib
 ##
-add_library(tablegen_objlib OBJECT)
+add_library(slr_objlib OBJECT)
 
-target_sources(tablegen_objlib
+target_sources(slr_objlib
     PRIVATE
-    "lib/tablegen.cpp"
-    PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/tablegen.hpp"
-    )
-
-target_link_libraries(tablegen_objlib 
-    PUBLIC
-        lib-include
-    )
-
-##
-## codegen_objlib
-##
-add_library(codegen_objlib OBJECT)
-
-target_sources(codegen_objlib
-    PRIVATE
-    "lib/codegen.cpp"
-    PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/codegen.hpp"
+    "lib/algo/slr_tablegen.cpp"
+    "lib/algo/slr_codegen.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/template.hpp"
+    PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/algo/slr.hpp"
     )
 
-target_link_libraries(codegen_objlib 
+target_link_libraries(slr_objlib 
     PUBLIC
         lib-include
         inja
