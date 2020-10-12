@@ -1,3 +1,5 @@
+FOr an overview see [overview.md](overview.md).
+
 The \*.puml files are diagrams to be rendered by
 [plantuml](http://plantuml.com/index). Rendered version are available in the
 svg subdirectory.
