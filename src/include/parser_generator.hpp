@@ -5,6 +5,7 @@
 #include "options.hpp"
 #include "symbols.hpp"
 #include "errorinfo.hpp"
+#include "code_renderer.hpp"
 
 #include <string>
 
@@ -35,7 +36,7 @@ struct parser_generator {
     // this isn't quite right. There could be errors in code generation.
     // but it will work as a first pass.
     virtual
-        std::unique_ptr<gen_results> generate_code(std::ostream &strm) = 0;
+        std::unique_ptr<gen_results> generate_code(yalr::code_renderer &cr) = 0;
 
     virtual
         void output_parse_table(std::ostream & strm) =0;

@@ -15,7 +15,7 @@ struct slr_generator :parser_generator {
     // this isn't quite right. There could be errors in code generation.
     // but it will work as a first pass.
     virtual
-        std::unique_ptr<gen_results> generate_code(std::ostream &strm) override;
+        std::unique_ptr<gen_results> generate_code(yalr::code_renderer &cr) override;
 
     virtual
         void output_parse_table(std::ostream & strm) override;

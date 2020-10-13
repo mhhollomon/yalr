@@ -1,6 +1,5 @@
-#include "template.hpp"
+#include "templates/slr_parser_template.hpp"
 #include "utils.hpp"
-#include "template_genmain.hpp"
 #include "analyzer_tree.hpp"
 
 #include "yassert.hpp"
@@ -168,12 +167,9 @@ json generate_verbatim(const slr_parse_table& lt) {
 }
 
 /****************************************************************************/
-std::unique_ptr<gen_results> slr_generator::generate_code(std::ostream &strm) {
+std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &cr) {
 
     const slr_parse_table &lt = *lrtable;
-
-    inja::Environment env;
-    env.set_expression("<%", "%>");
 
     json data;
     data["header"] = lt.version_string;
@@ -348,12 +344,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(std::ostream &strm) {
     std::cout << "----------------------------\n";
 */
     // write the template
-    auto main_templ = env.parse(yalr::algo::slr::main_template);
-    env.render_to(strm, main_templ, data);
-
-    if (lt.options.code_main.get()) {
-        strm << yalr::codegen::gen_main_code;
-    }
+    cr.render(yalr::algo::slr::main_template, data);
 
     auto retval = std::make_unique<gen_results>();
     retval->success = true;

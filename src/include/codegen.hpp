@@ -1,13 +1,15 @@
-#if ! defined(YALR_CODEGEN_HPP)
-#define YALR_CODEGEN_HPP
+#pragma once
 
-#include "tablegen.hpp"
+#include "parser_generator.hpp"
+#include "analyzer_tree.hpp"
+
+#include <memory>
 
 namespace yalr {
 
-
-    void generate_code(const lrtable& lt, std::ostream& outstrm);
+    std::unique_ptr<algo::gen_results> 
+        generate_code(
+            std::shared_ptr<yalr::algo::parser_generator> gen, const analyzer_tree &tree, std::ostream &strm);
 
 } // namespace yalr
 
-#endif

@@ -3,6 +3,7 @@
 #include "analyzer.hpp"
 #include "translate.hpp"
 #include "algo/slr.hpp"
+#include "codegen.hpp"
 #include "parser_generator.hpp"
 
 #include "cxxopts.hpp"
@@ -126,13 +127,6 @@ int main(int argc, char* argv[]) {
     }
 
 
-    std::string outfilename;
-    if (not clopts.output_file.empty()) {
-        outfilename = clopts.output_file;
-    } else {
-        outfilename = clopts.input_file + ".hpp";
-    }
-
     if (not clopts.translate.empty()) {
         const auto format = clopts.translate;
 
@@ -140,14 +134,21 @@ int main(int argc, char* argv[]) {
             yalr::translate::grammophone().output(*anatree, clopts);
         } else {
             std::cerr << "Unknown format '" << format << "'\n";
-            exit(1);
+            return 1;
         }
 
-        exit(0);
+        return 0;
     }
 
     anatree->version_string = yalr::yalr_version_string;
     auto gen_res = generator->generate_table(*anatree);
+
+    std::string outfilename;
+    if (not clopts.output_file.empty()) {
+        outfilename = clopts.output_file;
+    } else {
+        outfilename = clopts.input_file + ".hpp";
+    }
 
     std::string state_file_name;
     if (not clopts.state_file.empty()) {
@@ -166,12 +167,15 @@ int main(int argc, char* argv[]) {
     // exit after having a chance to dump the state table.
     // That will have the info needed to allow the user to fix the problems.
     //
-    if (not gen_res->success) exit(1);
+    if (not gen_res->success) {
+        // output errors ?
+        return 1;
+    }
 
 
     std::cout << "--- Generating code into " << outfilename << "\n";
     std::ofstream code_out(outfilename, std::ios_base::out);
-    generator->generate_code(code_out);
+    auto results = yalr::generate_code(generator, *anatree, code_out);
 
-    return 0;
+    return (results->success? 0 : 1);
 }
