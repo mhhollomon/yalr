@@ -14,6 +14,8 @@ void output_prod(const yalr::production& p, std::ostream& strm) {
     strm << " .\n";
 
 }
+
+//NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 void grammophone::output(const yalr::analyzer_tree& gr, CLIOptions &clopts) const {
 
     std::string outfilename;

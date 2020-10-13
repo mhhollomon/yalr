@@ -17,6 +17,9 @@ namespace yalr::algo {
 
 using json = nlohmann::json;
 
+
+constexpr int SKIP_TOKEN_VALUE = -10;
+
 std::ostream& production_printer(std::ostream& strm, const production& p) {
     strm << "[" << p.prod_id << "] " << 
         p.rule.name() << "(" << p.rule.id() << ") =>";
@@ -110,20 +113,20 @@ json generate_reduce_functions(const slr_parse_table& lt) {
         production_printer(ss, prod);
 
         rdata["production"] = ss.str();
-        auto rule_data = prod.rule.get_data<symbol_type::rule>();
+        auto *rule_data = prod.rule.get_data<symbol_type::rule>();
         yassert(rule_data, "Could not get the data pointer for a rule.");
         rdata["rule_type"] = rule_data->type_str;
         rdata["symbol"] = "TOK_" + std::string(prod.rule.token_name()) ;
 
         auto item_types = json::array();
         // +1 is to account for the use of prefix decrent below.
-        int index = prod.items.size()+1;
+        auto index = prod.items.size()+1;
         for (const auto &i : util::reverse(prod.items)) {
             auto type_data = json::object();
             auto type_sv = i.sym.do_visit( overloaded{
                 [](const terminal_symbol& t) { return t.type_str; },
                 [](const rule_symbol& r) { return r.type_str; },
-                [](const skip_symbol& s) { return ""sv; },
+                [](const skip_symbol& /* unused */) { return ""sv; },
             });
             type_data["type"] = type_sv;
             type_data["index"] = --index;
@@ -254,7 +257,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(std::ostream &strm) {
     enum_entries.push_back(json::object({ 
             { "name" , "undef"}, {"value", -1 } }));
     enum_entries.push_back(json::object({ 
-            { "name" , "skip"}, {"value", -10 } }));
+            { "name" , "skip"}, {"value", SKIP_TOKEN_VALUE } }));
 
     data["enums"] = enum_entries;
 
@@ -348,7 +351,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(std::ostream &strm) {
     auto main_templ = env.parse(yalr::algo::slr::main_template);
     env.render_to(strm, main_templ, data);
 
-    if (lt.options.code_main.get() == true) {
+    if (lt.options.code_main.get()) {
         strm << yalr::codegen::gen_main_code;
     }
 

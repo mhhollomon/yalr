@@ -6,9 +6,7 @@
 #include "yassert.hpp"
 
 
-namespace yalr {
-
-namespace analyzer {
+namespace yalr::analyzer {
 
 
 std::unique_ptr<yalr::analyzer_tree> analyze(yalr::parse_tree &tree) {
@@ -98,14 +96,14 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
         switch (value.type()) {
             case symbol_type::skip :
                 {
-                    auto info = value.get_data<symbol_type::skip>();
+                    auto *info = value.get_data<symbol_type::skip>();
                     strm << "      pattern = " << info->pattern << "\n";
                 }
                 break;
 
             case symbol_type::terminal :
                 {
-                    auto info = value.get_data<symbol_type::terminal>();
+                    auto *info = value.get_data<symbol_type::terminal>();
                     if (info->is_inline) {
                         strm << "      defined inline" << "\n";
                     }
@@ -137,7 +135,7 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
 
             case symbol_type::rule :
                 {
-                    auto info = value.get_data<symbol_type::rule>();
+                    auto *info = value.get_data<symbol_type::rule>();
                     if (info->isgoal) {
                         strm << "      goal" << "\n";
                     }
@@ -162,10 +160,11 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
         strm << "[" << int(p.prod_id) << "] "
             << p.rule.name()
             << " prec=";
-        if (p.precedence)
+        if (p.precedence) {
             strm << *p.precedence;
-        else
+        } else {
             strm << "(none)";
+        }
         strm << " =>";
 
         for (auto const& i : p.items) {
@@ -178,5 +177,4 @@ void pretty_print(const analyzer_tree &tree, std::ostream& strm) {
     strm << "----- END PRODUCTIONS --------\n";
 }
 
-} // namespace analyzer
-} // namespace yalr
+} // namespace yalr::analyzer

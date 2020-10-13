@@ -25,7 +25,7 @@ namespace yalr {
                 // we passed it. So everything north is also out of scope.
                 // reduce our range to the items before this.
                 if (index == end) {
-                    // Make sure we shrink our range by at lepgt one each time.
+                    // Make sure we shrink our range by at least one each time.
                     end -= 1;
                 } else {
                     end = index;
@@ -41,7 +41,7 @@ namespace yalr {
                 // is if our range is only 1 item long (start = 4, end = 5).
                 // The index math will return start in that case.
                 //
-                if (index == start) break;
+                if (index == start) { break; }
 
                 start = index;
             }
@@ -53,7 +53,7 @@ namespace yalr {
 
     void text_source::analyze_lines() {
 
-        if (analyzed) return;
+        if (analyzed) { return; }
 
         int offset = 0;
 
@@ -86,7 +86,9 @@ namespace yalr {
         // If the last character of the file was not a newline,
         // then we need to update the last line with the ending offset.
         //
-        if (not saw_line_end) lines[last_line_num-1].line_end = offset;
+        if (not saw_line_end) {
+            lines[last_line_num-1].line_end = offset;
+        }
 
         analyzed = true;
 
@@ -102,4 +104,4 @@ namespace yalr {
         return s;
     }
 
-} // namespace
+} // namespace yalr

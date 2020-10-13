@@ -23,6 +23,19 @@ namespace yalr::algo {
 
 using state_set = std::set<item_set>;
 
+// Lowest precedence
+// The user can't give us a negative precedence
+constexpr int low_prec = -99;
+
+//
+constexpr std::streamsize min_max_name_len = 5;
+constexpr std::streamsize max_max_name_len = 15;
+
+//
+constexpr int prec_print_width = 5;
+constexpr int assoc_print_width = 5;
+constexpr int sym_id_width = 3;
+
 /* Compute the closure of the set of items
  *
  * For each item in `items`, add to the return value.
@@ -31,7 +44,7 @@ using state_set = std::set<item_set>;
  * But these may also need to introduce other productions as well.
  */
 item_set closure(
-        const production_map pm,
+        const production_map &pm,
         const item_set& items) {
     item_set retval;
     
@@ -244,18 +257,18 @@ void compute_first_and_follow(slr_parse_table& lt) {
  * Main computation
  */
  std::unique_ptr<gen_results> 
- slr_generator::generate_table(const analyzer_tree& g) {
+ slr_generator::generate_table(const analyzer_tree& t) {
 
     int error_count = 0;
     this->lrtable = std::make_unique<slr_parse_table>();
 
-    lrtable->symbols = g.symbols;
-    lrtable->target_prod = g.target_prod;
-    lrtable->options = g.options;
-    lrtable->verbatim_map = g.verbatim_map;
-    lrtable->version_string = g.version_string;
+    lrtable->symbols = t.symbols;
+    lrtable->target_prod = t.target_prod;
+    lrtable->options = t.options;
+    lrtable->verbatim_map = t.verbatim_map;
+    lrtable->version_string = t.version_string;
     
-    for (auto &p : g.productions) {
+    for (const auto &p : t.productions) {
         lrtable->productions.try_emplace(p.prod_id, p);
     }
 
@@ -266,7 +279,7 @@ void compute_first_and_follow(slr_parse_table& lt) {
     std::map<item_set, lrstate> state_map;
 
     // the initial lrstate comes from the target production
-    auto prod_id = g.target_prod;
+    auto prod_id = t.target_prod;
     item_set I{{lr_item(prod_id, 0)}};
 
     item_set close = closure(lrtable->productions, I);
@@ -277,11 +290,11 @@ void compute_first_and_follow(slr_parse_table& lt) {
     q.push(&(lr->second));
 
     while (! q.empty()) {
-        auto curr_state = q.front();
+        auto *curr_state = q.front();
         q.pop();
 
         /* run through all the grammar symbols (terms and rules) */
-        for (const auto& [_, X] : g.symbols ) {
+        for (const auto& [_, X] : t.symbols ) {
             if (X.isskip()) {
                 continue;
             }
@@ -343,8 +356,8 @@ void compute_first_and_follow(slr_parse_table& lt) {
         for (const auto& item : state.items) {
             const auto& prod = lrtable->productions[item.prod_id];
             if ( size_t(item.position) >= prod.items.size()) {
-                if (item.prod_id == g.target_prod) {
-                    auto  eoi = g.symbols.find("$");
+                if (item.prod_id == t.target_prod) {
+                    auto  eoi = t.symbols.find("$");
                     state.actions.emplace(*eoi,
                             action(action_type::accept));
                 } else {
@@ -362,9 +375,9 @@ void compute_first_and_follow(slr_parse_table& lt) {
                                     auto &shift_action = new_iter->second;
 
 
-                                    auto term_ptr = shift_sym.get_data<symbol_type::terminal>();
-                                    auto term_precedence = term_ptr->precedence ? *(term_ptr->precedence) : -99;
-                                    auto prod_precedence = prod.precedence ? *prod.precedence : -99;
+                                    auto *term_ptr = shift_sym.get_data<symbol_type::terminal>();
+                                    auto term_precedence = term_ptr->precedence ? *(term_ptr->precedence) : low_prec;
+                                    auto prod_precedence = prod.precedence ? *prod.precedence : low_prec;
 
                                     bool will_shift = (term_precedence > prod_precedence) || 
                                         ((term_precedence == prod_precedence) &&
@@ -402,8 +415,8 @@ void compute_first_and_follow(slr_parse_table& lt) {
                                     // Reduce/Reduce conflict
                                     //
                                     auto const &old_prod = lrtable->productions.find(new_iter->second.production_id)->second;
-                                    auto orig_precedence = old_prod.precedence ? *old_prod.precedence : -99;
-                                    auto new_precedence = prod.precedence ? *prod.precedence : -99;
+                                    auto orig_precedence = old_prod.precedence ? *old_prod.precedence : low_prec;
+                                    auto new_precedence = prod.precedence ? *prod.precedence : low_prec;
 
                                     if (new_precedence > orig_precedence) {
                                         action new_act{action_type::reduce, item.prod_id};
@@ -449,7 +462,7 @@ void compute_first_and_follow(slr_parse_table& lt) {
 void pretty_print(const item_set& is,
        const production_map& productions, std::ostream& strm) {
     for (const auto &i : is) {
-        const auto prod = productions.at(i.prod_id);
+        const auto &prod = productions.at(i.prod_id);
         //NOLINTNEXTLINE
         yassert(i.prod_id == prod.prod_id, "Did not find correct production");
 
@@ -475,12 +488,14 @@ void pretty_print(const item_set& is,
 }
 
 void pretty_print( const production_map& productions, std::ostream& strm) {
-    std::streamsize max_name_len = 5;
+    std::streamsize max_name_len = min_max_name_len;
     for (const auto &[_, p] : productions) {
         max_name_len = std::max(max_name_len, std::streamsize(p.rule.name().size()));
     }
 
-    if (max_name_len > 15) max_name_len = 15;
+    if (max_name_len > max_max_name_len) { 
+        max_name_len = max_max_name_len;
+    }
 
     for (const auto &[_, p] : productions) {
         strm << "   [";
@@ -578,9 +593,9 @@ void pretty_print(const std::string& desc, const std::map<symbol, symbol_set>& s
     }
 }
 
-void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) {
+void pretty_print(const symbol &sym, std::ostream& strm, std::streamsize name_width=0) {
     strm << "[";
-    strm.width(3);
+    strm.width(sym_id_width);
     strm << sym.id() << "] ";
     if (name_width != 0) {
         strm.width(name_width);
@@ -589,10 +604,10 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
     switch(sym.type()) {
         case symbol_type::terminal :
             {
-                auto data = sym.get_data<symbol_type::terminal>();
+                auto *data = sym.get_data<symbol_type::terminal>();
                 if (data->precedence) {
                     strm << " p=";
-                    strm.width(5);
+                    strm.width(prec_print_width);
 
                     strm << std::left;
                     strm << *(data->precedence);
@@ -608,7 +623,7 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
                     strm << "        ";
                 } else {
                     strm << " a=";
-                    strm.width(5);
+                    strm.width(assoc_print_width);
                     strm << std::left;
                     strm << assoc_str[int(data->associativity)];
                     strm << std::right;
@@ -621,7 +636,7 @@ void pretty_print(symbol sym, std::ostream& strm, std::streamsize name_width=0) 
             break;
         case symbol_type::rule :
             {
-                auto data = sym.get_data<symbol_type::rule>();
+                auto *data = sym.get_data<symbol_type::rule>();
                 if (data->type_str != "void") {
                     strm << "                 " << data->type_str;
                 }
@@ -649,14 +664,16 @@ void slr_generator::output_parse_table(std::ostream& strm) {
     strm << "\n";
     */
     strm << "============= TOKENS ========================\n\n";
-    std::streamsize max_name_len = 5;
+    std::streamsize max_name_len = min_max_name_len;
     for (auto const &[id, sym] : lt.symbols) {
         if (sym.isterm() or sym.isrule()) {
             max_name_len = std::max(max_name_len, std::streamsize(sym.name().size()));
         }
     }
 
-    if (max_name_len > 15) max_name_len = 15;
+    if (max_name_len > max_max_name_len) {
+        max_name_len = max_max_name_len;
+    }
 
     for (auto const &[id, sym] : lt.symbols) {
         if (sym.isterm() or sym.isrule()) {

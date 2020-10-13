@@ -1,8 +1,10 @@
 #include "errorinfo.hpp"
 
+#include <array>
+
 namespace yalr {
 
-    const std::string level[] = {
+    const std::array<std::string, 3> level = {
         "info", "warning", "error"
     };
 
@@ -22,15 +24,16 @@ namespace yalr {
         //
         strm << fragment.location.source->name << ":" << 
             li.line_num << ':' <<
-            li.col_num << ": " << level[int(msg_type)] << ": " <<
+            li.col_num << ": " << level.at(int(msg_type)) << ": " <<
             message << "\n";
         //
         // put out the source line
         //
         strm << fragment.location.source->content.substr(
                 li.line_start, li.line_end-li.line_start+1);
-        if (fragment.location.source->content[li.line_end] != '\n')
+        if (fragment.location.source->content[li.line_end] != '\n') {
             strm << "\n";
+        }
 
 
         //
@@ -56,4 +59,4 @@ namespace yalr {
         return strm;
 
     }
-} // namepsace yalr
+} // namespace yalr
