@@ -7,8 +7,6 @@
 #include "algo/slr_parse_table.hpp"
 #include "algo/slr.hpp"
 
-#include <ctime>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -172,20 +170,9 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
     const slr_parse_table &lt = *lrtable;
 
     json data;
-    data["header"] = lt.version_string;
     data["namespace"] = std::string(lt.options.code_namespace.get());
     data["parserclass"] = std::string(lt.options.parser_class.get());
     data["lexerclass"] = std::string(lt.options.lexer_class.get());
-    {
-
-        auto t = std::time(nullptr);
-        auto tm = *std::localtime(&t);
-
-        std::ostringstream oss;
-        oss << lt.version_string << " at " << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-        data["header"] = oss.str();
-    }
-
 
     // dump the tokens
     // We need two separate lists of tokens.
@@ -344,7 +331,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
     std::cout << "----------------------------\n";
 */
     // write the template
-    cr.render(yalr::algo::slr::main_template, data);
+    cr.render(yalr::algo::slr::slr_parser_template, data);
 
     auto retval = std::make_unique<gen_results>();
     retval->success = true;
