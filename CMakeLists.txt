@@ -54,6 +54,8 @@ target_sources(yalr
         "src/main.cpp"
         "src/codegen.cpp"
         "src/include/codegen.hpp"
+        "src/include/templates/preamble.hpp"
+        "src/include/templates/main_func_template.hpp"
     )
 
 target_include_directories(yalr

@@ -121,7 +121,7 @@ target_sources(slr_objlib
     PRIVATE
     "lib/algo/slr_tablegen.cpp"
     "lib/algo/slr_codegen.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include/template.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/slr_parser_template.hpp"
     PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include/algo/slr.hpp"
     )
