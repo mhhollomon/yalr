@@ -16,6 +16,8 @@
 - The grammar parser is now more strict about requiring that terminals are
     defined before use. Rules may still be referenced before they are defined.
 
+- the `rf:` and `rm:` regex prefixes have been removed.
+
 - Addition of a new `termset` statement for easy addition of enum style
     identifiers.
 
@@ -219,15 +221,6 @@ The regex patterns are interpreted according to the rules of [modified
 ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript). It is
 currently not possible for yalr to find errors in the regex expression. So,
 pattern compilation may occur when running the generated lexer.
-
-There are three different regex prefixes `r:`, `rm:`, `rf:`.  The difference is
-how they treat case.
-
-prefix | behavior
--------|---------
-`r:`   | Global "default" case behavior as potentially set using `option lexer.case` statement.
-`rm:`  | Match case - ie case sensitive.
-`rf:`  | Fold case - i.e. case insensitive.
 
 ##### @lexeme special type
 
