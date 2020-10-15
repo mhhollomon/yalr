@@ -1051,6 +1051,7 @@ struct parser_guts {
             count = 1;
         } else if (check_string("rm:") or check_string("rf:")){
             count = 2;
+            record_error("the rm: and rf: regex prefixes have been removed. please use r: with @cfold or @cmatch");
         } else {
             return std::nullopt;
         }
