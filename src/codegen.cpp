@@ -1,8 +1,10 @@
 #include "codegen.hpp"
 
 #include "code_renderer.hpp"
-#include "templates/main_func_template.hpp"
+#include "templates/main_func.hpp"
 #include "templates/preamble.hpp"
+#include "templates/lexer.hpp"
+#include "templates/postlude.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -216,7 +218,11 @@ generate_code(
 
     cr.render(yalr::codegen::codegen_preamble, data);
 
+    cr.render(yalr::codegen::lexer_template, data);
+
     auto retval = gen->generate_code(cr);
+
+    cr.render(yalr::codegen::postlude_template, data);
     
     if (tree.options.code_main.get()) {
         cr.stream() << yalr::codegen::gen_main_code;
