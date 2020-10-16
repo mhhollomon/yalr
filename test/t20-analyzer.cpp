@@ -11,7 +11,11 @@ auto parse_string(const std::string &s) {
     auto tree = p.parse();
     REQUIRE(tree.success);
     auto retval = yalr::analyzer::analyze(tree);
-    retval->errors.output(std::cout);
+    if (not *retval) {
+        std::cout<< "-------\n";
+        retval->errors.output(std::cout);
+        std::cout <<"-------\n";
+    }
 
     return retval;
 }
@@ -173,9 +177,14 @@ TEST_CASE("[analyzer] Can't give void an alias") {
     }
     SUBCASE("[analyzer] explicit term with type should work for term name and pattern"){
         auto tree = parse_string("term <int> foo 'x' <%{ return 1; }%> goal rule A { => al:'x' alb:foo ; }");
-        REQUIRE(*tree);
-        CHECK(bool(tree));
+        REQUIRE(tree);
+        CHECK(bool(*tree));
         // might be good idea to actaully test the alias is assigned.
         // Need more tests for alias in general.
     }
+}
+
+TEST_CASE("[analyzer] - blame the second item for the dup") {
+    auto tree = parse_string("term X 'x' ; goal rule X { => 'a'; }");
+    REQUIRE_FALSE(bool(*tree));
 }
