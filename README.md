@@ -9,10 +9,17 @@
 
 **WARNING** This release is mildly incompatible with previous version.
 
+- Switch to Context Sensitive Lexical Analysis. This will potentailly change
+    the actual language that is recognized for a given grammar. See
+    [context-aware-lexing](docs/context-aware-lexing.md)
+
+- The grammar parser is now more strict about requiring that terminals are
+    defined before use. Rules may still be referenced before they are defined.
+
+- the `rf:` and `rm:` regex prefixes have been removed.
+
 - Addition of a new `termset` statement for easy addition of enum style
     identifiers.
-
-- Switch to Context Sensitive Lexical Analysis.
 
 For more details, see below and the [Release Notes](RELEASE_NOTES.md)
 
@@ -20,8 +27,9 @@ For more details, see below and the [Release Notes](RELEASE_NOTES.md)
 
 Yalr is yet another LR (actually SLR) compiler generator.
 
-The design goal was to create an generator that created a single file, making
-it easy to integrate into a build system. The code generated is C++17.
+The design goal was to build a parser generator that created a single file -
+for both the lexer and parser, making it easy to integrate into a build system.
+The code generated requires a C++17 compliant compiler to build.
 
 ## Building
 
@@ -213,15 +221,6 @@ The regex patterns are interpreted according to the rules of [modified
 ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript). It is
 currently not possible for yalr to find errors in the regex expression. So,
 pattern compilation may occur when running the generated lexer.
-
-There are three different regex prefixes `r:`, `rm:`, `rf:`.  The difference is
-how they treat case.
-
-prefix | behavior
--------|---------
-`r:`   | Global "default" case behavior as potentially set using `option lexer.case` statement.
-`rm:`  | Match case - ie case sensitive.
-`rf:`  | Fold case - i.e. case insensitive.
 
 ##### @lexeme special type
 

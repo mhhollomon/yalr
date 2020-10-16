@@ -42,43 +42,19 @@ struct pass_ii_visitor {
             }
         }
         auto full_pattern = x.pattern;
+        // If the case behavior was not specified, then default
+        // to the current option setting.
+        if (ct == case_type::undef) {
+            x.case_match = out.options.lexer_case.get();
+        } else {
+            x.case_match = ct;
+        }
         if (x.pattern[0] == '\'') {
             x.pattern = x.pattern.substr(1, full_pattern.size()-2);
             x.pat_type = pattern_type::string;
-            // If the case behavior was not specified, then default
-            // to the current option setting.
-            if (ct == case_type::undef) {
-                x.case_match = out.options.lexer_case.get();
-            } else {
-                x.case_match = ct;
-            }
-
-        } else if (!x.pattern.compare(0, 3, "rf:")) {
-            x.pattern = x.pattern.substr(3, full_pattern.size()-2);
-            x.pat_type = pattern_type::regex;
-            if (ct == case_type::undef) {
-                x.case_match = case_type::fold;
-            } else {
-                out.record_error(*case_text, "multiple case specifiers");
-            }
-        } else if (!x.pattern.compare(0, 3, "rm:")) {
-            x.pattern = x.pattern.substr(3, full_pattern.size()-2);
-            x.pat_type = pattern_type::regex;
-            if (ct == case_type::undef) {
-                x.case_match = case_type::match;
-            } else {
-                out.record_error(*case_text, "multiple case specifiers");
-            }
         } else if (!x.pattern.compare(0, 2, "r:")) {
             x.pattern = x.pattern.substr(2, full_pattern.size()-1);
             x.pat_type = pattern_type::regex;
-            // If the case behavior was not specified, then default
-            // to the current option setting.
-            if (ct == case_type::undef) {
-                x.case_match = out.options.lexer_case.get();
-            } else {
-                x.case_match = ct;
-            }
         } else {
             yfail("Could not deduce pattern type from string start");
         }

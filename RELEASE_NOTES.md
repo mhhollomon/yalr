@@ -12,7 +12,7 @@
 
 - enhancement #36 - New version option for the CLI
 
-- enhancement #37 - Version string (and time and date) are now in the rgenerate
+- enhancement #37 - Version string (and time and date) are now in the generated
     code.
 
 - lots of enhancements to the debug output of the generated code.
@@ -23,6 +23,9 @@
     nested functions. This works fine. But it became obvious that there was no
     real benefit and it was standing in the way of designing robust error
     recovery.
+
+- code refactoring to get ready for multiple parser types and to make the
+    generated code skeleton easier to maintain.
 
 ## Release v0.2.1
 
