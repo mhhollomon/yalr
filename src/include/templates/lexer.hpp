@@ -10,83 +10,89 @@ const std::string lexer_template =
 R"DELIM(
 
 namespace <%namespace%> {  // for the lexer
-struct matcher {
-    virtual std::pair<bool, int>
-    try_match(iter_type first, const iter_type last) = 0;
 
-    virtual ~matcher() {}
-};
-
-struct string_matcher : matcher {
-    std::string pattern;
-    string_matcher(std::string p) : pattern{p} {};
-    virtual std::pair<bool, int>
-    try_match(iter_type first, const iter_type last) override {
-        if (std::size_t(last - first) < pattern.size()) {
-            return std::make_pair(false, 0);
-        } else if (std::equal(pattern.begin(), pattern.end(), first)) {
-            return std::make_pair(true, pattern.size());
-        } else {
-            return std::make_pair(false, 0);
-        }
-    }
-};
-
-struct fold_string_matcher : matcher {
-    std::string pattern;
-    fold_string_matcher(std::string p) : pattern{p} {};
-    virtual std::pair<bool, int>
-    try_match(iter_type first, const iter_type last) override {
-        if (std::size_t(last - first) < pattern.size()) {
-            return std::make_pair(false, 0);
-        } else if (std::equal(pattern.begin(), pattern.end(), first, 
-                [](char cA, char cB) {
-                        return toupper(cA) == toupper(cB);
-                   })) {
-            return std::make_pair(true, pattern.size());
-        } else {
-            return std::make_pair(false, 0);
-        }
-    }
-};
-
-struct regex_matcher : matcher {
-    std::regex pattern;
-    regex_matcher(std::string p, const std::regex_constants::syntax_option_type& opt) try : pattern{p, opt} {
-         {}
-    } catch (std::regex_error &e) {
-        std::cerr << "Error when compiling pattern '" << p << "'\n";
-        throw e;
-    }
-    regex_matcher(std::string p) try : pattern{p} {
-         {}
-    } catch (std::regex_error &e) {
-        std::cerr << "Error when compiling pattern '" << p << "'\n";
-        throw e;
-    }
-    virtual std::pair<bool, int>
-    try_match(iter_type first, const iter_type last) override {
-        std::match_results<iter_type> mr;
-        if (std::regex_search(first, last, mr, pattern, 
-                std::regex_constants::match_continuous)) {
-            auto len = mr.length(0);
-            return std::make_pair(true, len);
-        } else {
-            return std::make_pair(false, 0);
-        }
-    }
-};
-
-using match_ptr = std::shared_ptr<matcher>;
-
-std::vector<std::tuple<match_ptr, token_type, bool>> patterns = {
-## for pat in patterns
-    { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%>, <%pat.is_global%> },
-##endfor
-};
-
-
+template<typename IterType>
 class <%lexerclass%> {
+
+public:
+    using iter_type = IterType;
+
+private:
+    struct matcher {
+        virtual std::pair<bool, int>
+        try_match(iter_type first, const iter_type last) const = 0;
+
+        virtual ~matcher() {}
+    };
+
+    struct string_matcher : matcher {
+        std::string pattern;
+        string_matcher(std::string p) : pattern{p} {};
+        virtual std::pair<bool, int>
+        try_match(iter_type first, const iter_type last) const override {
+            if (std::size_t(last - first) < pattern.size()) {
+                return std::make_pair(false, 0);
+            } else if (std::equal(pattern.begin(), pattern.end(), first)) {
+                return std::make_pair(true, pattern.size());
+            } else {
+                return std::make_pair(false, 0);
+            }
+        }
+    };
+
+    struct fold_string_matcher : matcher {
+        std::string pattern;
+        fold_string_matcher(std::string p) : pattern{p} {};
+        virtual std::pair<bool, int>
+        try_match(iter_type first, const iter_type last) const override {
+            if (std::size_t(last - first) < pattern.size()) {
+                return std::make_pair(false, 0);
+            } else if (std::equal(pattern.begin(), pattern.end(), first, 
+                    [](char cA, char cB) {
+                            return toupper(cA) == toupper(cB);
+                    })) {
+                return std::make_pair(true, pattern.size());
+            } else {
+                return std::make_pair(false, 0);
+            }
+        }
+    };
+
+    struct regex_matcher : matcher {
+        std::regex pattern;
+        regex_matcher(std::string p, const std::regex_constants::syntax_option_type& opt) try : pattern{p, opt} {
+            {}
+        } catch (std::regex_error &e) {
+            std::cerr << "Error when compiling pattern '" << p << "'\n";
+            throw e;
+        }
+        regex_matcher(std::string p) try : pattern{p} {
+            {}
+        } catch (std::regex_error &e) {
+            std::cerr << "Error when compiling pattern '" << p << "'\n";
+            throw e;
+        }
+        virtual std::pair<bool, int>
+        try_match(iter_type first, const iter_type last) const override {
+            std::match_results<iter_type> mr;
+            if (std::regex_search(first, last, mr, pattern, 
+                    std::regex_constants::match_continuous)) {
+                auto len = mr.length(0);
+                return std::make_pair(true, len);
+            } else {
+                return std::make_pair(false, 0);
+            }
+        }
+    };
+
+    using match_ptr = const std::shared_ptr<const matcher>;
+
+    static inline const std::vector<std::tuple<match_ptr, token_type, bool>> patterns = {
+## for pat in patterns
+        { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%>, <%pat.is_global%> },
+##endfor
+    };
+
 /***** verbatim lexer.top ********/
 ## for v in verbatim.lexer_top
 <% v %>
@@ -185,7 +191,8 @@ private:
 /***** verbatim lexer.bottom ********/
 };
 
-} // namespace <%{namespace%>
+} // namespace <%namespace%>
+
 
 )DELIM"s;
 

@@ -11,8 +11,13 @@ R"DELIM(
 
 namespace <%namespace%> {  // for the parser
 
+template<typename LexerClass>
 class <%parserclass%> {
-    Lexer& lexer;
+public:
+    using lexer_class = LexerClass;
+
+private:
+    lexer_class& lexer;
     token la;
     int current_state;
 
@@ -217,7 +222,7 @@ public:
 #if defined(YALR_DEBUG)
     bool debug = false;
 #endif
-    <%parserclass%>(<%lexerclass%>& l) : lexer(l){};
+    <%parserclass%>(lexer_class& l) : lexer(l){};
 
     bool doparse() {
         current_state = 0;

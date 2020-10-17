@@ -17,6 +17,13 @@
 
 - lots of enhancements to the debug output of the generated code.
 
+- The generated lexer is now a template so that different types of iterators
+    could be use. This is an experiment. It may change.
+
+- The generated parser is also a template based on the exact type of the lexer.
+    This is needed to track the fact the lexer changes types if the iterator
+    type changes. This is experimental. It may change.
+
 ### Non-functional Changes
 
 - switch to table driven parser. The original design for `yalr` was to use

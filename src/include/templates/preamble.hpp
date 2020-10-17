@@ -64,7 +64,6 @@ char const * const token_name[] = {
 
 enum state_action { undefined, shift, reduce, accept, error };
 
-using iter_type = std::string::const_iterator;
 
 using semantic_value = std::variant<
     std::monostate
