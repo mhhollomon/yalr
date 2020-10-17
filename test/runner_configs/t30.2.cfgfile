@@ -10,4 +10,4 @@ term a 'a';
 goal rule foo { => a ; }
 .blockend
 
-.e regex class my_cool_class \{\n    Lexer\&
+.e regex class my_cool_class \{\npublic:

@@ -81,6 +81,8 @@ namespace codegen {
         // set of type names
         std::set<std::string>type_names;
 
+        int enum_value = -1;
+
         for (const auto &[_, sym] : tree.symbols) {
             std::string tok_name = "TOK_" + std::string(sym.token_name());
             if (sym.isterm()) {
@@ -88,10 +90,10 @@ namespace codegen {
                 // type names go in the set
                 if (sym.name() == "$") {
                     enum_entries.push_back(json::object({ 
-                            { "name" , "eoi"}, {"value", int(sym.id()) }, {"debugname", "eoi"} }));
+                            { "name" , "eoi"}, {"value", ++enum_value }, {"debugname", "eoi"} }));
                 } else {
                     enum_entries.push_back(json::object({ 
-                            { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
+                            { "name" , tok_name }, {"value", ++enum_value }, {"debugname", sym.name() } }));
                     terms.push_back(sym);
                     const auto* info_ptr = sym.get_data<symbol_type::terminal>();
                     yassert(info_ptr, "could not get data pointer for terminal");
@@ -110,13 +112,13 @@ namespace codegen {
             } else if (sym.isrule()) {
                 // rules only go in the enum
                 enum_entries.push_back(json::object({ 
-                        { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
+                        { "name" , tok_name }, {"value", ++enum_value }, {"debugname", sym.name() } }));
             } else if (sym.isskip()) {
                 // Skips only go in the term list
                 terms.push_back(sym);
                 // put a dummy entry in so names align
                 enum_entries.push_back(json::object({
-                            { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
+                            { "name" , tok_name }, {"value", ++enum_value }, {"debugname", sym.name() } }));
 
             } else {
                 yfail("Unknown symobl type");
@@ -144,7 +146,8 @@ namespace codegen {
         // Sort by id - which should be the same as 
         // the order they were defined in the grammar
         // spec.
-        std::sort(terms.begin(), terms.end());
+        //std::sort(terms.begin(), terms.end());
+
 
         auto patterns = json::array();
 

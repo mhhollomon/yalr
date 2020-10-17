@@ -118,7 +118,7 @@ public:
         if (debug) {
             std::cerr << "Next few characters: " ;
             auto ptr = current;
-            for (int i =0 ; i < 10 ; ++i) {
+            for (int i =0 ; i < 10 && ptr != last; ++i) {
                 std::cerr << *ptr;
                 ++ptr;
             }

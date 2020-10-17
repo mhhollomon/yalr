@@ -97,7 +97,7 @@ endif()
 #
 if(CMAKE_BUILD_TYPE STREQUAL "Developer")
     add_custom_target(ctags
-        COMMAND ctags --options=${CMAKE_HOME_DIRECTORY}/.ctags -f ${CMAKE_BINARY_DIR}/tags .
+        COMMAND ctags --options=${CMAKE_HOME_DIRECTORY}/.ctags -f ${CMAKE_HOME_DIRECTORY}/tags .
         WORKING_DIRECTORY "${CMAKE_HOME_DIRECTORY}"
         BYPRODUCTS tags
         VERBATIM

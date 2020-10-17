@@ -480,6 +480,8 @@ int run_command_line(ConfigFile test_config, ConfigFile sys_config) {
     if (not std::regex_search(output_file_content.str(), pattern)) {
         std::cerr << "Expected content message not found\n";
         return 1;
+    } else {
+        std::cerr << "Passed\n";
     }
 
     //
