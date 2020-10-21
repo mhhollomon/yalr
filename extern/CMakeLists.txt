@@ -12,4 +12,4 @@ add_library(nlohmann-json INTERFACE)
 target_include_directories(nlohmann-json INTERFACE nlohmann/)
 
 add_library(cxxopts INTERFACE)
-target_include_directories(inja INTERFACE cxxopts/)
+target_include_directories(cxxopts INTERFACE cxxopts/)

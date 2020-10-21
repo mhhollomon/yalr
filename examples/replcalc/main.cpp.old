@@ -1,0 +1,255 @@
+#include "parser.hpp"
+#include "cxxopts.hpp"
+#include <string>
+#include <fstream>
+#include <deque>
+
+struct cli_options {
+    std::string file;
+    bool parser_debug;
+    bool lexer_debug;
+};
+
+cli_options parse_commandline(int argc, char**argv) {
+    cli_options clopts;
+    bool do_help;
+    bool both_debug;
+
+    auto options = cxxopts::Options{"replcalc", "calclator with a REPL loop"};
+
+    options.add_options()
+            ("h,help", "Get help message", cxxopts::value(do_help))
+            ("f,file", "input from file", cxxopts::value(clopts.file))
+            ("l,lexer-debug", "", cxxopts::value(clopts.lexer_debug))
+            ("p,parser-debug", "", cxxopts::value(clopts.parser_debug))
+            ("b,both-debug", "debug both parser and lexer", cxxopts::value(both_debug))
+            ("t,test", "just testing", cxxopts::value<bool>())
+            ;
+
+    try {
+        auto results = options.parse(argc, argv);
+
+        if (do_help) {
+            std::cout << options.help() << "\n";
+            exit (0);
+        }
+
+        if (both_debug) {
+            clopts.lexer_debug = true;
+            clopts.parser_debug = true;
+        }
+
+    } catch(const cxxopts::OptionException& e) {
+        std::cerr << "Command line error: " << e.what() << "\n\n";
+        std::cerr << options.help() << "\n";
+        exit(1);
+    }
+
+    return clopts;
+
+}
+
+struct interactive_source {
+
+    using buffer_type = std::deque<std::string>;
+
+    buffer_type line_buffers;
+
+    interactive_source() = default;
+
+    struct iter {
+        buffer_type *buffers_;
+        buffer_type::const_iterator buffer_iter;
+        std::string::const_iterator string_iter;
+        bool is_end = false;
+
+        using difference_type = std::size_t;
+        using value_type = char;
+        using pointer = const char*;
+        using reference = const char&;
+        using iterator_category = std::forward_iterator_tag;
+
+        iter(buffer_type &b, buffer_type::const_iterator bi) : buffers_(&b), buffer_iter(bi) {
+            string_iter = buffer_iter->begin();
+            std::cerr << "buffer == " << *buffer_iter << "\n";
+        };
+        iter() = default;
+        iter(const iter &o) = default;
+        iter &operator=(const iter&o) = default;
+
+
+        const char operator*() const {
+            return *string_iter;
+        }
+
+        iter &operator++() {
+            std::cerr << "++ " << this << ": start = '" << *string_iter << "'\n";
+            ++string_iter;
+            if (string_iter == buffer_iter->end()) {
+                std::cerr << "++ " << this << ": At the end of this buffer\n";
+                if ((buffer_iter+1) == buffers_->end()) {
+                    std::cerr<< "++ " << this << ": trying to get a new line of text\n";
+                    get_next_line(*buffers_);
+                } else {
+                    std::cerr << "More buffers to try\n";
+                }
+                ++buffer_iter;
+                string_iter = buffer_iter->begin();
+            } else {
+                std::cerr << "Not at the end of this buffer\n";
+            }
+
+            if (buffer_iter == buffers_->end()) {
+                std::cerr << "At the end of input\n";
+            } else {
+                std::cerr << "++ end  = '" << *string_iter << "'\n";
+            }
+
+            return *this;
+        }
+
+        iter &operator--() {
+            if (string_iter == buffer_iter->begin()) {
+                --buffer_iter;
+                string_iter = buffer_iter->begin() + buffer_iter->length() - 1;
+            } else {
+                --string_iter;
+            }
+            return *this;
+        }
+
+        bool operator ==(const iter &o) const {
+            if (is_end and o.is_end) return true;
+
+            if (is_end and o.buffer_iter == buffers_->end()) return true;
+
+            if (o.is_end and buffer_iter == buffers_->end()) return true;
+            
+            return (buffer_iter == o.buffer_iter && string_iter == o.string_iter);
+        }
+
+        bool operator !=(const iter&o) const {
+            return (not(*this == o));
+        }
+
+        iter& operator +=(int l) {
+            while (l > 0) {
+                --l;
+                ++(*this);
+            }
+            return *this;
+        }
+
+        iter operator+(long l) const {
+            auto retval = *this;
+            retval += l;
+            return retval;
+        }
+
+        difference_type operator-(const iter&o) const {
+            if (*this == o) return 0;
+
+            difference_type retval = 0;
+            for (auto c = buffer_iter; c != o.buffer_iter; ++c) {
+                retval += buffer_iter->length();
+            }
+
+            retval -= (string_iter - buffer_iter->begin());
+            retval -= (o.buffer_iter->length() - (o.string_iter - o.buffer_iter->begin()));
+
+
+            return retval;
+        }
+
+    };
+
+    iter begin() {
+        if (line_buffers.empty()) {
+            get_next_line(line_buffers);
+        }
+
+        return iter{line_buffers, line_buffers.begin()};
+    }
+
+    iter end() {
+        iter retval{line_buffers, line_buffers.end()};
+        retval.is_end = true;
+        return retval;
+    }
+
+    void static get_next_line( buffer_type &b) {
+        // need to handle eoi
+        //
+        std::string data;
+        std::cout << "calc: ";
+        std::flush(std::cout);
+        std::getline(std::cin, data);
+        if (std::cin.eof()) std::cerr << "saw eof on cin\n";
+        if (not std::cin.eof() ) {
+            std::cerr << "NO EOF\n";
+            data.push_back('\n');
+            std::cerr << "adding buffer : " << data << "length = " << data.length() <<"\n";
+            b.push_back(data);
+        } else if (not data.empty()) {
+            std::cerr << "SAW EOF but data\n";
+            std::cerr << "adding buffer : " << data << "length = " << data.length() <<"\n";
+            b.push_back(data);
+        } else {
+            std::cerr << "SAW EOF NO data\n";
+        }
+    }
+
+
+
+};
+
+
+int main(int argc, char*argv[]) {
+
+    std::string input;
+    auto clopts = parse_commandline(argc, argv);
+
+    if (not clopts.file.empty()) {
+        // slurp the entire file contents and parse as a "batch".
+        //
+        std::ifstream fstrm{clopts.file};
+        if (fstrm) {
+            std::ostringstream os;
+            os << fstrm.rdbuf();
+            input = os.str();
+        } else {
+            std::cerr << "Failed to open file '" << input << "'\n";
+            exit(1);
+        }
+
+        YalrParser::Lexer lexer(input.cbegin(), input.cend());
+        lexer.debug = clopts.lexer_debug;
+
+        auto parser = YalrParser::Parser(lexer);
+        parser.debug = clopts.parser_debug;
+
+        if (parser.doparse()) {
+            //std::cout << "Input matches grammar!\n";
+            return 0;
+        } else {
+            std::cout << "Input does NOT match grammar\n";
+            return 1;
+        }
+    } else {
+        interactive_source is;
+
+        YalrParser::Lexer lexer(is.begin(), is.end());
+        lexer.debug = true;
+
+        auto parser = YalrParser::Parser(lexer);
+        parser.debug = clopts.parser_debug;
+
+        if (parser.doparse()) {
+            //std::cout << "Input matches grammar!\n";
+            return 0;
+        } else {
+            std::cout << "Input does NOT match grammar\n";
+            return 1;
+        }
+    }
+}

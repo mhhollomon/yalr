@@ -51,8 +51,10 @@ rule rule_def {
 
 The value from `'rule'` would be mapped to `_v2` in both cases.  `_v1` would be
 a `std::optional` of whatever type the `'goal'` returns. Not sure how that
-would work if the type was `void`. In the second alternative, the
-`std::optional` would be set to `std::nullopt`.
+would work if the type was `void`. 
+~~A void symbol doesn't have a value, so you can't reference it~~
+
+In the second alternative, the `std::optional` would be set to `std::nullopt`.
 
 #### Extra rule
 The example would expand to:
@@ -68,10 +70,22 @@ This may be easier to pull off as it doesn't ply dirty tricks with the semantic
 value numbering. And since the users action block is not duplicated, it may
 make the compilation messages a bit easier to under stand.
 
-This would aslo set up the machinery to do things like `+()` and `*()` and
-maybe ture "inline rules" using `|`.
+This would also set up the machinery to do things like `+()` and `*()` and
+maybe true "inline rules" using `|`.
 
 This version ALSO has issues if the symbol is of type `void`.
+~~No, it wouldn't, a void symbol doesn't have value, so you can't reference
+it~~
+
+SLR(1) may have trouble with reduce/reduce conflicts if there are a bunch of
+these in the grammar. consider:
+
+```
+rule A { => maybe_B C D ; => maybe_E F G ; }
+```
+
+If the intersection of FIRST(C) and FIRST(F) is not empty, the grammar would
+have a reduce/reduce on those terminals.
 
 ### Simplify the spec.
 Get rid of the braces around rules.
@@ -95,10 +109,12 @@ which would get rewritten as :
 rule <foo> bar { => x:A c d y:e <%{ return foo(x=_v1, y=_v4); }%>
 ```
 
+**bleh** No named parameters to functions in c++20
+
 In other words, it would automatically call the constructor with named
 parameters. Only those items with alises would participate.
 
-Maybe one step further and ;
+Maybe one step further and :
 
 ```
 rule <@auto> bar { => x:A c d y:e ; }
@@ -108,60 +124,50 @@ would create an actual struct definition as well :
 ```
 preamble parser <%{ struct bar { typeA x; type_e y; }; }%>
 
-rule <bar> bar { => x:A c d y:e <%{ return bar{ _v1, v_2 }; %}> }
+rule <bar> bar { => x:A c d y:e <%{ return bar{ _v1, _v4 }; %}> }
 ```
 
 Should these return `std::unique_ptr` or `std::shared_ptr` instead?
 
 Have a way for the user to decide?
 
+## @tree
 
-### termset
-
-```
-termset <int> MYSTUFF @prec=200 'a' 'b' 'c' <%{ return int(lexeme[0]); }%>
-```
-
-should expand to:
+Another thought around the `@auto` thing. Maybe instead have:
 
 ```
-term <int> __1 'a' @prec=200 <%{ return int(lexeme[0]); }%>
-term <int> __2 'b' @prec=200 <%{ return int(lexeme[0]); }%>
-term <int> __3 'c' @prec=200 <%{ return int(lexeme[0]); }%>
+rule <some_class>Foo { => a:this b:that c:OTHER @tree(a,c,b) }
+```
 
-rule <int> MYSTUFF {
-    => 'a' <%{ return _v1; }%>
-    => 'b' <%{ return _v1; }%>
-    => 'c' <%{ return _v1; }%>
+Transform into something like:
+
+```
+rule <some_class>Foo {  
+    => a:this b:that c:OTHER 
+            <%{ return std::make_unique<some_class>(a, c, b); }%>
 }
 ```
 
-It is fine to use an already defined terminal. However, if the termset set
-precedence, then the used terminal cannot already have precedence set, or it
-will result in an analysis phase error.
-
-Also the type of the terminal must match the termset - unless the termset shows
-void.
+and for the entire rule :
 
 ```
-// termset is void
-term <int> A 'a' <%{ return 42; }%>
-termset FOO A 'b' 'c';
-
-// ERROR - term is void ut termset is int
-term A 'a' ;
-termset <int> A 'b' <%{ ... }%>
-
-// Okay - no precedence
-term A 'a' ;
-termset FOO @prec=200 A 'b' 'c' ;
-
-//Okay - no termset precedence
-term A 'a' @prec=200 ;
-termset FOO A 'b' ;
-
-// ERROR - precedence conflict - even though
-// they are the same number
-term A 'a' @prec=200 ;
-termset FOO @prec=200 A 'b' ;
+rule <some_class>Foo @tree(a,b,c) {
+    => a:this b:that c:OTHER ;
+    => b:that c:SOMETHING ;
+    }
 ```
+
+transforms to:
+
+```
+term <int> this 'this' ;
+
+rule <some_class> Foo {
+    => a:this b:that c:OTHER <%{ return std::make_unique<some_class>(a, b, c); }%>
+    => b:that c:SOMETHING <%{ return std::make_unique<some_class>(int{}, b, c); }%>
+```
+
+In other words, missing parameters get default initialized objects of the
+correct type.
+
+`@auto` might still be a better name.

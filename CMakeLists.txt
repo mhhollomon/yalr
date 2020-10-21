@@ -75,6 +75,7 @@ target_link_libraries(yalr
         slr_objlib
         errorinfo_objlib
         sourcetext_objlib
+        cxxopts
     )
 
 #

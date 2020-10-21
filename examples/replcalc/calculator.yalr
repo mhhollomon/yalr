@@ -1,0 +1,65 @@
+// This will be inserted close to the top of the file
+verbatim file.top <%{
+#include <map>
+}%>
+
+// This will be inserted close to the top of the namespace.
+verbatim namespace.top <%{
+std::map<std::string, float> variables;
+}%>
+
+//
+// "ignore" whitespace. Since it gets seen by the lexer, 
+// whitespace spearates other tokens, but isn't returned as a token.
+//
+// Note the need for the space after the '+' to proerly terminate a regex.
+skip WS   r:\s+ ;
+
+// basically here so that it is prefered to VARIABLE
+// But, it also gives a chance to show case folding. 
+// This will accept print or PRINT or PrInT, etc.
+//
+// Note that this is a ""void" terminal, it has no semantic value.
+term PRINT 'print' @cfold ;
+
+//
+// zero to many underbar followed by a letter followed by as many digits,
+// letters, underbars you want.
+// allowed __a___
+// not allowed __3
+//
+term <@lexeme> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* @cmatch;
+
+term <float>   NUMBER   r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
+
+//
+// associativity will define the terminals for us.
+//
+associativity left '+' '-' '*' '/';
+precedence 100 '+' '-';
+precedence 200 '*' '/';
+
+goal rule statement_list {
+    => statement;
+    => statement_list statement ;
+}
+
+rule statement { 
+    => expression         <%{ std::cout << "(e)answer = " << _v1 << "\n"; }%> 
+    => PRINT expression   <%{ std::cout << "(p)answer = " << _v2 << "\n"; }%> 
+    => var:VARIABLE ':=' expr:expression <%{
+        std::cout << "assigning " << expr << " to '" << var << "'\n"; 
+        variables[var] = expr;
+    }%>
+
+}
+
+rule <float> expression {
+    => l:expression '+' r:expression <%{ return l + r; }%>
+    => l:expression '-' r:expression <%{ return l - r; }%>
+    => l:expression '*' r:expression <%{ return l * r; }%>
+    => l:expression '/' r:expression <%{ return l / r; }%>
+    => NUMBER             <%{ return _v1; }%>
+    => VARIABLE           <%{ return variables[_v1]; }%>
+    => '(' expression ')' <%{ return _v2; }%>
+}

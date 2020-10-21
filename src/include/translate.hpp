@@ -2,13 +2,13 @@
 #define YALR_TRANSLATE_HPP
 
 #include "analyzer_tree.hpp"
-#include "CLIOptions.hpp"
+#include "cli_options.hpp"
 
 namespace yalr::translate {
 
     struct grammophone {
 
-        void output(const yalr::analyzer_tree& gr, CLIOptions &opts) const;
+        void output(const yalr::analyzer_tree& gr, cli_options &opts) const;
     };
 
 } // namespace yalr::translate

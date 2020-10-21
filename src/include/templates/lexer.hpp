@@ -181,8 +181,8 @@ public:
     // Just needed to make it virtual
     virtual ~Lexer() = default;
 private:
-    std::string::const_iterator current;
-    const std::string::const_iterator last;
+    iter_type current;
+    const iter_type last;
 
 /***** verbatim lexer.bottom ********/
 ## for v in verbatim.lexer_bottom

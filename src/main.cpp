@@ -1,4 +1,4 @@
-#include "CLIOptions.hpp"
+#include "cli_options.hpp"
 #include "parser.hpp"
 #include "analyzer.hpp"
 #include "translate.hpp"
@@ -19,22 +19,28 @@ void print_version(std::ostream &strm) {
     strm << yalr::yalr_version_string << "\n";
 }
 
-CLIOptions parse_commandline(int argc, char**argv) {
+const std::map<std::string, std::shared_ptr<yalr::algo::parser_generator>>
+    algorithms = {
+        { "slr", std::make_shared<yalr::algo::slr_generator>() },
+    };
+
+cli_options parse_commandline(int argc, char**argv) {
   
-    CLIOptions clopts;
+    cli_options clopts;
+    bool do_help = false;
+    bool do_version = false;
 
     cxxopts::Options options("yalr", yalr::yalr_version_string);
 
     options.positional_help("<input-file>");
 
     options.add_options()
-        ("h,help", "Print help message", cxxopts::value(clopts.help))
+        ("h,help", "Print help message", cxxopts::value(do_help))
         ("o,output-file", "File in which to put the main output", cxxopts::value(clopts.output_file))
-        ("S,state-table", "File in which to put the state table", 
-            cxxopts::value(clopts.state_file)->implicit_value("-NONE :^-") )
+        ("S,state-table", "File in which to put the state table", cxxopts::value(clopts.state_file) )
         ("t,translate", "Output the grammar in another format", cxxopts::value(clopts.translate))
         ("d,debug", "Print debug information", cxxopts::value(clopts.debug))
-        ("v,version", "Print version information", cxxopts::value(clopts.do_version))
+        ("v,version", "Print version information", cxxopts::value(do_version))
         ("algorithm", "Select parser algorithm", cxxopts::value(clopts.algorithm)->default_value("slr"))
         ;
     options.add_options("positionals")
@@ -47,10 +53,32 @@ CLIOptions parse_commandline(int argc, char**argv) {
     try {
         auto results = options.parse(argc, argv);
 
-        // Grrr. have to handle help here because we need the options object.
-        if (clopts.help) {
+
+        if (do_help) {
             std::cout << options.help() << "\n";
             exit(1);
+        }
+
+        if (do_version) {
+            print_version(std::cout);
+            exit(0);
+        }
+
+        if (clopts.input_file.empty()) {
+            std::cerr << "Need something to parse\n";
+            std::cerr << options.help() << "\n";
+            exit(1);
+        }
+
+        if (algorithms.count(clopts.algorithm) == 0) {
+            std::cerr << "Unknown parsing algorithm '" << clopts.algorithm << "'\n";
+            exit(1);
+        }
+
+        if (results.count("state-table") > 0) {
+            if (clopts.state_file.empty()) {
+                clopts.state_file = "-NONE :^-";
+            }
         }
 
     } catch (const cxxopts::OptionException& e) {
@@ -64,31 +92,12 @@ CLIOptions parse_commandline(int argc, char**argv) {
 }
 
 
-const std::map<std::string, std::shared_ptr<yalr::algo::parser_generator>>
-    algorithms = {
-        { "slr", std::make_shared<yalr::algo::slr_generator>() },
-    };
 //****************************
 // Main
 //****************************
 int main(int argc, char* argv[]) {
 
     auto clopts = parse_commandline(argc, argv);
-
-    if (clopts.do_version) {
-        print_version(std::cout);
-        return 0;
-    }
-
-
-    if (clopts.input_file.empty()) {
-        std::cerr << "Need something to parse\n";
-        return 1;
-    }
-
-    if (algorithms.count(clopts.algorithm) == 0) {
-        std::cerr << "Unknown parsing alogrithm '" << clopts.algorithm << "'\n";
-    }
 
     auto generator = algorithms.at(clopts.algorithm);
 
