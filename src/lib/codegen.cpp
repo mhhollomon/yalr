@@ -5,6 +5,7 @@
 #include "templates/preamble.hpp"
 #include "templates/lexer.hpp"
 #include "templates/postlude.hpp"
+#include "codegen/fsm_builders.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -214,6 +215,10 @@ generate_code(
     std::shared_ptr<yalr::algo::parser_generator> gen, const analyzer_tree &tree, std::ostream &strm) {
 
     auto data = codegen::generate_preamble_data(tree);
+
+    auto lexer_nfa = codegen::build_nfa(tree.symbols);
+
+    auto lexer_dfa = codegen::build_dfa(*lexer_nfa);
 
     codegen::generate_lexer_data(tree, data);
 

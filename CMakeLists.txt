@@ -52,12 +52,6 @@ add_executable(yalr)
 target_sources(yalr
     PRIVATE
         "src/main.cpp"
-        "src/codegen.cpp"
-        "src/include/codegen.hpp"
-        "src/include/templates/preamble.hpp"
-        "src/include/templates/main_func.hpp"
-        "src/include/templates/lexer.hpp"
-        "src/include/templates/postlude.hpp"
     )
 
 target_include_directories(yalr
@@ -75,6 +69,7 @@ target_link_libraries(yalr
         slr_objlib
         errorinfo_objlib
         sourcetext_objlib
+        codegen_objlib
         cxxopts
     )
 

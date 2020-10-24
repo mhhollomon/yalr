@@ -134,6 +134,32 @@ target_link_libraries(slr_objlib
 
     )
 ##
+## codegen_objlib
+##
+add_library(codegen_objlib OBJECT)
+
+target_sources(codegen_objlib
+    PRIVATE
+    "lib/codegen.cpp"
+    "lib/codegen/nfa_builder.cpp"
+    "lib/codegen/dfa_builder.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/preamble.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/main_func.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/lexer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/postlude.hpp"
+    PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/codegen.hpp"
+    )
+
+target_link_libraries(codegen_objlib 
+    PUBLIC
+        lib-include
+        inja
+        nlohmann-json
+    )
+
+##
 ## translate_objlib
 ##
 add_library(translate_objlib OBJECT)
@@ -148,4 +174,6 @@ target_sources(translate_objlib
 target_link_libraries(translate_objlib 
     PUBLIC
         lib-include
+        codegen_objlib
     )
+

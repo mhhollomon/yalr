@@ -1,5 +1,6 @@
 #include "translate.hpp"
 #include "options.hpp"
+#include "codegen/fsm_builders.hpp"
 
 #include <fstream>
 #include <ios>
@@ -37,6 +38,69 @@ void grammophone::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         }
     }
 
+}
+//
+//NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) const {
+
+    std::string outfilename_base;
+    if (not clopts.output_file.empty()) {
+        outfilename_base = clopts.output_file;
+    } else {
+        outfilename_base = std::string(gr.options.lexer_class.get());
+    }
+
+    auto nfa = codegen::build_nfa(gr.symbols);
+
+    {
+        std::ofstream code_out(outfilename_base + ".nfa.gv", std::ios_base::out);
+
+
+        code_out << "digraph lexer {\n";
+
+        for(auto const &[id, state] : nfa->states_) {
+            if (state.accepting) {
+                auto s = gr.symbols.find(state.accepted_symbol);
+                code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
+            }
+            for (auto const &[alpha, new_state_id] : state.transitions_) {
+                std::string edge_label;
+                if (alpha.index() == 0) {
+                    edge_label = "&epsilon;"sv;
+                } else {
+                    edge_label = std::string(1, std::get<1>(alpha));
+                }
+                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << edge_label << "\"];\n";
+            }
+        }
+        
+
+        code_out << "}";
+    }
+
+    auto dfa = codegen::build_dfa(*nfa);
+
+    {
+        std::ofstream code_out(outfilename_base + ".dfa.gv", std::ios_base::out);
+
+
+        code_out << "digraph lexer {\n";
+
+        for(auto const &[id, state] : dfa->states_) {
+            if (state.accepting) {
+                //auto s = gr.symbols.find(state.accepted_symbol);
+
+                //code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
+                code_out << "S" << id << "[shape=doublecircle];\n";
+            }
+            for (auto const &[alpha, new_state_id] : state.transitions_) {
+                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << alpha << "\"];\n";
+            }
+        }
+        
+
+        code_out << "}";
+    }
 }
 
 } // namespace yalr::translate

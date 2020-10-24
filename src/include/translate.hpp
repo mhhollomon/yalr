@@ -7,9 +7,13 @@
 namespace yalr::translate {
 
     struct grammophone {
-
         void output(const yalr::analyzer_tree& gr, cli_options &opts) const;
     };
+
+    struct lexer_graph {
+        void output(const yalr::analyzer_tree& gr, cli_options &opts) const;
+    };
+
 
 } // namespace yalr::translate
 
