@@ -11,6 +11,32 @@ R"DELIM(
 
 namespace <%namespace%> {  // for the lexer
 
+struct dfa_state_info_t {
+    int state_id;
+    token_type accepted;
+};
+
+constexpr int dfa_start_state = <%dfa.start_state%>;
+constexpr std::array<dfa_state_info_t const, <%dfa.state_count%>> dfa_state_info = {{
+## for state in dfa.state
+    { <%state.id%>, <%state.accepted%> },
+## endfor
+}};
+
+
+struct dfa_transition_info_t {
+    int state_id;
+    char input;
+    int next_state;
+};
+
+constexpr std::array<dfa_transition_info_t const, <%dfa.trans_count%>> dfa_transitions = {{
+## for trans in dfa.transitions
+    { <%trans.id%>, <%trans.input%>, <%trans.next_state%> },
+## endfor
+}};
+
+
 template<typename IterType>
 class <%lexerclass%> {
 
@@ -87,11 +113,82 @@ private:
 
     using match_ptr = const std::shared_ptr<const matcher>;
 
-    static inline const std::vector<std::tuple<match_ptr, token_type, bool>> patterns = {
+    static inline const std::array<std::tuple<match_ptr, token_type, bool>, <%pattern_count%>> patterns = {{
 ## for pat in patterns
         { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%>, <%pat.is_global%> },
 ##endfor
+    }};
+
+    //******************************************************************************************
+    // DFA Matching algorithm
+    //******************************************************************************************
+    //
+    struct dfa_match_results {
+        token_type tt = token_type::undef;
+        int length = 0;
     };
+
+    //**********************
+    // Find a transition for the given state and input.
+    // Return new state if found. Return -1 if not.
+    //**********************
+    int find_transition(int state_id, char input) {
+
+        auto res = std::lower_bound(dfa_transitions.begin(), dfa_transitions.end(), 
+                dfa_transition_info_t{ state_id, input, 0 }, 
+                [](const dfa_transition_info_t lhs, dfa_transition_info_t rhs)->bool {
+                    return ((lhs.state_id < rhs.state_id) || (lhs.state_id == rhs.state_id 
+                                and lhs.input < rhs.input));
+                    });
+
+        if (res != dfa_transitions.end() and (res->state_id == state_id and res->input == input)) {
+            return res->next_state;
+        } else {
+            return -1;
+        }
+    }
+
+    // ret_val.tt == undef if nothing was matched
+    // retval.length will be the number we looked at even for the no match state.
+    dfa_match_results dfa_match(iter_type first, const iter_type last) {
+        dfa_match_results last_match;
+        int current_state = dfa_start_state;
+
+        while(true) {
+            if (first == last) {
+                std::cerr << "dfa : at eoi - bailing out\n";
+                return last_match;
+            }
+
+            char current_input = *first;
+            ++first;
+
+            std::cerr << "dfa : current_state = " << current_state <<
+                " current_input = '" << current_input << "'\n";
+            int new_state = find_transition(current_state, current_input);
+            if (new_state == -1) {
+                std::cerr << "dfa : couldn't find a transition\n";
+                std::cerr << "dfa : returning {" << last_match.tt << ", " << last_match.length << "\n";
+                return last_match;
+            } else {
+                auto iter = std::lower_bound(dfa_state_info.begin(), dfa_state_info.end(),
+                        dfa_state_info_t{ new_state, token_type::undef },
+                        [](const dfa_state_info_t lhs, dfa_state_info_t rhs) -> bool {
+                            return (lhs.state_id < rhs.state_id);
+                        } );
+                if (iter != dfa_state_info.end() and iter->state_id == new_state
+                        and iter->state_id != token_type::undef) {
+                    std::cerr << "dfa: new state " << new_state << " is accepting\n";
+                    last_match.length += 1;
+                    last_match.tt = iter->accepted;
+                } else {
+                    std::cerr << "dfa: new state " << new_state << " is NOT accepting\n";
+                }
+            }
+            current_state = new_state;
+        }
+
+    }
 
 /***** verbatim lexer.top ********/
 ## for v in verbatim.lexer_top
@@ -116,25 +213,39 @@ public:
         std::size_t max_len = 0;
 #if defined(YALR_DEBUG)
         if (debug) {
-            std::cerr << "Next few characters: " ;
+            std::cerr << "lexer: Next few characters: " ;
             auto ptr = current;
             for (int i =0 ; i < 10 && ptr != last; ++i) {
                 std::cerr << *ptr;
                 ++ptr;
             }
             std::cerr << "\n";
+
+            std::cerr << "lexer: Trying the dfa\n";
         }
+
 #endif
+
+        auto dfa_res = dfa_match(current, last);
+
+        if (dfa_res.tt != token_type::undef) {
+            ret_type = dfa_res.tt;
+            max_len = dfa_res.length;
+            YALR_LDEBUG( "lexer: matched for tt = " << ret_type << " length = " << max_len << "\n");
+        } else {
+            YALR_LDEBUG( "lexer: no dfa match\n");
+        }
 
         for (const auto &[m, tt, glbl] : patterns) {
             if (not (glbl or !allowed_tokens or (allowed_tokens and allowed_tokens->count(tt) > 0))) {
                 continue;
             }
-            YALR_LDEBUG("Matching for token # " << tt << (glbl? " (global)" : ""));
+            YALR_LDEBUG("lexer: Matching for token # " << tt << (glbl? " (global)" : ""));
             auto [matched, len] = m->try_match(current, last);
             if (matched) {
                 YALR_LDEBUG(" length = " << len << "\n");
-                if ( std::size_t(len) > max_len) {
+                // Override for the same length match if the single matchers came earlier than the dfa match
+                if ( std::size_t(len) > max_len or tt < ret_type) {
                     max_len = len;
                     ret_type = tt;
                 }
@@ -146,7 +257,7 @@ public:
             current = last;
             return token{undef};
         } else if (ret_type == skip) {
-            YALR_LDEBUG("recursing due to skip\n");
+            YALR_LDEBUG("lexer: recursing due to skip\n");
             current += max_len;
             return next_token(allowed_tokens);
         }
@@ -168,7 +279,7 @@ public:
 
         if (debug) {
             std::string lx{current, current+max_len};
-            YALR_LDEBUG( "Returning token = " << ret_type);
+            YALR_LDEBUG( "lexer: Returning token = " << ret_type);
             if (ret_type >= 0) {
                 YALR_LDEBUG(" (" << token_name[ret_type] << ")")
             }

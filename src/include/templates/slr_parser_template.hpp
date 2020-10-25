@@ -97,10 +97,10 @@ private:
         reduce_func_ptr reduce_func;
     };
 
-    static const constexpr action_entry action_error_entry = {0, token_type::undef, state_action::error, 0, nullptr };
+    static constexpr action_entry const action_error_entry = {0, token_type::undef, state_action::error, 0, nullptr };
 
 
-    std::vector<action_entry> state_table = {
+    static inline std::vector<action_entry> state_table = {
 ## for state in states
 ## for action in state.actions
 ## if action.type == "shift"

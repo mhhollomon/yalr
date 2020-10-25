@@ -1,12 +1,22 @@
-# JSON Data structure for the code template
+# JSON Data structure for the code templates
 
 This document describes the layout of the JSON data used in the generating the code.
 
 ## Overview
 
-The [inja](https://pantor.github.io/inja/) templating engine is used to render the final code. Inja uses JSON data - using the [nlohmann/json](https://github.com/nlohmann/json) library - to hold the values that will be inserted into the template.
+The [inja](https://pantor.github.io/inja/) templating engine is used to render
+the final code. Inja uses JSON data - using the
+[nlohmann/json](https://github.com/nlohmann/json) library - to hold the values
+that will be inserted into the template.
 
-The main template resides in src/include/template.hpp.
+The code is broken up into a several different templates. All reside in the
+`src/include/templates` directory.
+
+- preamble  : stuff before the lexer
+- lexer     : The lexer itself
+- parser    : each algorithm (slr, clr, lalr) has its own template.
+- postlude  : Anything that is needed after the parser.
+- main_func : The definition of `main()`. Only applied if the user requested it.
 
 ## Data Layout
 
@@ -31,6 +41,7 @@ The main template resides in src/include/template.hpp.
     - **pattern** : (scalar) The actual thing to match.
     - **token**   : (scalar) The token that owns the match.
     - **is_global** : (scalar) True iff the terminal was marked as 'global'.
+- **pattern_count** : (scalar) Number of patterns.
 
 ### Parser related data
 

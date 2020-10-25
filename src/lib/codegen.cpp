@@ -204,9 +204,60 @@ namespace codegen {
         }
 
         data["patterns"] = patterns;
+        data["pattern_count"] = patterns.size();
 
     }
     /*--------------------------------------------------------------------*/
+
+    void generate_dfa_data(dfa_machine const &dfa, symbol_table const &symtab, json &data) {
+        // ordered_map (the default) returns things in key order - which we want
+
+        int state_count = 0;
+        auto state_info = json::array();
+        int trans_count = 0;
+        auto trans_info = json::array();
+
+        for (auto const &[id, state] :dfa.states_) {
+            if (state.accepting) {
+                for (auto token_id : state.accepted_symbol) {
+                    auto astate = json::object();
+                    astate["id"] = int(id);
+                    auto token_name = std::string{symtab.find(token_id)->token_name()};
+                    astate["accepted"] = "TOK_" + token_name;
+                    ++state_count;
+                    state_info.push_back(astate);
+                }
+            } else {
+                auto astate = json::object();
+                astate["id"] = int(id);
+                astate["accepted"] = "token_type::undef";
+                ++state_count;
+                state_info.push_back(astate);
+            }
+            // look at this states transitions
+
+            for (auto const [input, state_id] : state.transitions_) {
+                auto atrans = json::object();
+                atrans["id"] = int(id);
+
+                std::string char_input = "'" + std::string{input} + "'";
+                atrans["input"] = char_input;
+                atrans["next_state"] = int(state_id);
+                ++trans_count;
+                trans_info.push_back(atrans);
+
+            }
+
+        }
+
+        data["dfa"] = json::object();
+        data["dfa"]["state"] = state_info;
+        data["dfa"]["state_count"] = state_count;
+        data["dfa"]["transitions"] = trans_info;
+        data["dfa"]["trans_count"] = trans_count;
+        data["dfa"]["start_state"] = int(dfa.start_state_);
+
+    }
 
 } // namespace codegen
 
@@ -221,6 +272,8 @@ generate_code(
     auto lexer_dfa = codegen::build_dfa(*lexer_nfa);
 
     codegen::generate_lexer_data(tree, data);
+
+    codegen::generate_dfa_data(*lexer_dfa, tree.symbols, data);
 
     auto cr = code_renderer(strm);
 
