@@ -176,13 +176,10 @@ namespace codegen {
             }
 
             tdata["flags"] = " ";
+            // with dfa - ignore string matches since they are in 
+            // the dfa
             if (pt == pattern_type::string) {
-                if (ct == case_type::fold) {
-                    tdata["matcher"] = "fold_string_matcher";
-                } else {
-                    tdata["matcher"] = "string_matcher";
-                }
-                tdata["pattern"] = "R\"%_^xx(" + pattern + ")%_^xx\"" ;
+                continue;
             } else {
                 tdata["matcher"] = "regex_matcher";
                 tdata["pattern"] = "R\"%_^xx(" + pattern  + ")%_^xx\"" ;

@@ -11,6 +11,14 @@ R"DELIM(
 
 namespace <%namespace%> {  // for the lexer
 
+std::set<token_type> const global_patterns = {
+## for pat in patterns
+## if pat.is_global == "true" or pat.token == "skip"
+    <%pat.token%>, 
+## endif
+## endfor
+};
+
 struct dfa_state_info_t {
     int state_id;
     token_type accepted;
@@ -148,27 +156,32 @@ private:
         }
     }
 
+    // *****************************
     // ret_val.tt == undef if nothing was matched
-    // retval.length will be the number we looked at even for the no match state.
-    dfa_match_results dfa_match(iter_type first, const iter_type last) {
+    // retval.length will be the number of chars we looked at even 
+    // for the no match state.
+    //******************************
+    dfa_match_results dfa_match(iter_type first, const iter_type last, 
+            std::optional<std::set<token_type>> allowed_tokens) {
         dfa_match_results last_match;
         int current_state = dfa_start_state;
 
         while(true) {
             if (first == last) {
-                std::cerr << "dfa : at eoi - bailing out\n";
+                YALR_LDEBUG("dfa : at eoi - bailing out\n");
+                YALR_LDEBUG("dfa : returning {" << last_match.tt << ", " << last_match.length << "}\n");
                 return last_match;
             }
 
             char current_input = *first;
             ++first;
 
-            std::cerr << "dfa : current_state = " << current_state <<
-                " current_input = '" << current_input << "'\n";
+            YALR_LDEBUG( "dfa : current_state = " << current_state <<
+                " current_input = '" << current_input << "'\n");
             int new_state = find_transition(current_state, current_input);
             if (new_state == -1) {
-                std::cerr << "dfa : couldn't find a transition\n";
-                std::cerr << "dfa : returning {" << last_match.tt << ", " << last_match.length << "\n";
+                YALR_LDEBUG("dfa : couldn't find a transition\n");
+                YALR_LDEBUG("dfa : returning {" << last_match.tt << ", " << last_match.length << "}\n");
                 return last_match;
             } else {
                 auto iter = std::lower_bound(dfa_state_info.begin(), dfa_state_info.end(),
@@ -176,13 +189,27 @@ private:
                         [](const dfa_state_info_t lhs, dfa_state_info_t rhs) -> bool {
                             return (lhs.state_id < rhs.state_id);
                         } );
-                if (iter != dfa_state_info.end() and iter->state_id == new_state
-                        and iter->state_id != token_type::undef) {
-                    std::cerr << "dfa: new state " << new_state << " is accepting\n";
+                if (iter != dfa_state_info.end()) {
                     last_match.length += 1;
-                    last_match.tt = iter->accepted;
+                    while ( true) {
+                        if (iter->state_id == new_state and iter->state_id != token_type::undef) {
+                            YALR_LDEBUG( "dfa: new state " << new_state << " is accepting tt = " 
+                                        << iter->accepted << "\n");
+                            if (not allowed_tokens or allowed_tokens->count(iter->accepted) > 0) {
+                                last_match.tt = iter->accepted;
+                                break;
+                            } else {
+                                YALR_LDEBUG( "dfa: but that isn't allowed\n");
+                                ++iter;
+                            }
+                        } else {
+                            YALR_LDEBUG( "dfa: new state " << new_state << " no allowed tokens\n");
+                            break;
+                        }
+                    }
+                        
                 } else {
-                    std::cerr << "dfa: new state " << new_state << " is NOT accepting\n";
+                    YALR_LDEBUG("dfa: new state " << new_state << " is NOT accepting\n");
                 }
             }
             current_state = new_state;
@@ -209,6 +236,10 @@ public:
             return eoi;
         }
 
+        if (allowed_tokens) {
+            allowed_tokens->insert(global_patterns.begin(), global_patterns.end());
+        }
+
         token_type ret_type = undef;
         std::size_t max_len = 0;
 #if defined(YALR_DEBUG)
@@ -226,7 +257,7 @@ public:
 
 #endif
 
-        auto dfa_res = dfa_match(current, last);
+        auto dfa_res = dfa_match(current, last, allowed_tokens);
 
         if (dfa_res.tt != token_type::undef) {
             ret_type = dfa_res.tt;
@@ -237,7 +268,9 @@ public:
         }
 
         for (const auto &[m, tt, glbl] : patterns) {
-            if (not (glbl or !allowed_tokens or (allowed_tokens and allowed_tokens->count(tt) > 0))) {
+            // if there is a token restriction and we're not on the include list,
+            // skip.
+            if (allowed_tokens and allowed_tokens->count(tt) == 0) {
                 continue;
             }
             YALR_LDEBUG("lexer: Matching for token # " << tt << (glbl? " (global)" : ""));
