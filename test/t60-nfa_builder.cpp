@@ -43,6 +43,18 @@ TEST_CASE("[nfa_builder] - simple string") {
     CHECK(state.accepted_symbol == id);
 }
 
+TEST_CASE("[nfa_builder] - back slashes") {
+    auto id = symbol_identifier_t::get_next_id();
+    auto machine = codegen::nfa_machine::build_from_string("\t", id);
+
+    CHECK(machine->states_.size() == 2);
+
+    auto state = machine->states_.at(machine->start_state_);
+    CHECK(state.accepting == false);
+    CHECK(state.transitions_.size() == 1);
+}
+
+
 TEST_CASE("[nfa_builder] - union_in") {
     auto id = symbol_identifier_t::get_next_id();
     auto me = codegen::nfa_machine::build_from_string("a", id);

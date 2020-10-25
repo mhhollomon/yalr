@@ -50,6 +50,13 @@ nfa_machine &nfa_machine::close_in(const nfa_machine &o) {
     return *this;
 }
 
+std::map<char, char> const escape_map = {
+    { 'n', '\n' },
+    { 't', '\t' },
+    { 'r', '\r' },
+};
+
+
 std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view input, 
         symbol_identifier_t sym_id) {
 
@@ -62,14 +69,35 @@ std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view inp
     auto * new_state = &(iter->second);
 
     retval->start_state_ = current_state_id;
+    bool in_slash = false;
 
     for (char c : input) {
+        char translated_char = c;
+
+        if (in_slash) {
+            auto iter = escape_map.find(translated_char);
+            if (iter != escape_map.end()) {
+                translated_char = iter->second;
+            }
+            in_slash = false;
+        } else if (translated_char == '\\') {
+            in_slash = true;
+            continue;
+        }
+
+
         current_state_id = nfa_state_id::get_next_id();
         
         new_state->transitions_.emplace(c, current_state_id);
 
         auto [iter2, _] = retval->states_.emplace(current_state_id, nfa_state{});
         new_state = &(iter2->second);
+    }
+
+    if (in_slash) {
+        // ooof ... need a way for the codegen to signal errors
+        std::cerr << "INVALID nfa pattern - trailing slash\n";
+        return {};
     }
 
     retval->accepting_states_.insert(current_state_id);
