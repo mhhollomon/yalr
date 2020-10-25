@@ -64,7 +64,7 @@ namespace yalr::codegen {
         // resulting machine
         nfa_machine &union_in(const nfa_machine &o);
         nfa_machine &concat_in(const nfa_machine &o);
-        nfa_machine &close_in(const nfa_machine &o);
+        nfa_machine &close_in();
 
         // slightly faster than me.concat_in(nfa_machine{c})
         nfa_machine &concat_char(char c);

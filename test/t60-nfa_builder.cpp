@@ -26,11 +26,12 @@ TEST_CASE("[nfa_builder] - simple string") {
     auto epsilon = std::monostate{};
 
     auto id = symbol_identifier_t::get_next_id();
-    auto machine = codegen::nfa_machine::build_from_string("abc", id);
+    auto machine = codegen::nfa_machine::build_from_string("ab", id);
 
-    CHECK(machine->states_.size() == 6);
+    CHECK(machine->states_.size() == 4);
     CHECK(machine->accepting_states_.size() == 1);
 
+    // --- Start State
     auto state = machine->states_.at(machine->start_state_);
     CHECK(state.accepting_ == false);
     CHECK(state.transitions_.size() == 1);
@@ -39,6 +40,7 @@ TEST_CASE("[nfa_builder] - simple string") {
     CHECK(trans_iter != state.transitions_.end());
     CHECK(std::get<char>(trans_iter->first) == 'a');
 
+    // -- next state the old 'a' aceepting state
     state = machine->states_.at(trans_iter->second);
     CHECK(state.accepting_ == false);
     CHECK(state.transitions_.size() == 1);
@@ -47,6 +49,7 @@ TEST_CASE("[nfa_builder] - simple string") {
     CHECK(trans_iter != state.transitions_.end());
     CHECK(std::get<std::monostate>(trans_iter->first) == epsilon);
 
+    // -- next state : the old b start state
     state = machine->states_.at(trans_iter->second);
     CHECK(state.accepting_ == false);
     CHECK(state.transitions_.size() == 1);
@@ -55,21 +58,7 @@ TEST_CASE("[nfa_builder] - simple string") {
     CHECK(trans_iter != state.transitions_.end());
     CHECK(std::get<char>(trans_iter->first) == 'b');
 
-    state = machine->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
-
-    trans_iter = state.transitions_.find(epsilon);
-    CHECK(trans_iter != state.transitions_.end());
-    CHECK(std::get<std::monostate>(trans_iter->first) == epsilon);
-
-    state = machine->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
-
-    trans_iter = state.transitions_.find('c');
-    CHECK(std::get<char>(trans_iter->first) == 'c');
-
+    // -- last state : the accepting state
     state = machine->states_.at(trans_iter->second);
     CHECK(state.accepting_ == true);
     CHECK(state.transitions_.size() == 0);

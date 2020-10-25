@@ -69,7 +69,16 @@ nfa_machine &nfa_machine::concat_in(const nfa_machine &o) {
     return *this;
 }
 
-nfa_machine &nfa_machine::close_in(const nfa_machine &o) {
+nfa_machine &nfa_machine::close_in() {
+    auto &new_final = append_epsilon_state();
+    new_final.add_epsilon_transition(start_state_);
+
+    auto new_start_state_id = nfa_state_identifier_t::get_next_id();
+    auto new_start_state = nfa_state{new_start_state_id};
+
+    new_start_state.add_epsilon_transition(start_state_);
+    new_start_state.add_epsilon_transition(new_final.id_);
+    start_state_ = new_start_state_id;
     return *this;
 }
 
@@ -94,19 +103,27 @@ nfa_machine &nfa_machine::add_epsilon_transition(nfa_state_identifier_t from_sta
 }
 
 nfa_state &nfa_machine::append_epsilon_state() {
-    auto new_state_id = nfa_state_identifier_t::get_next_id();
-    auto new_state = nfa_state{new_state_id};
-    for( auto final_state_id : accepting_states_ ) {
-        auto &final_state = states_.at(final_state_id);
-        if (partial_) {
-            final_state.accepting_ = false;
+    if (accepting_states_.size() > 1) {
+        auto new_state_id = nfa_state_identifier_t::get_next_id();
+        auto new_state = nfa_state{new_state_id};
+        for( auto final_state_id : accepting_states_ ) {
+            auto &final_state = states_.at(final_state_id);
+            if (partial_) {
+                final_state.accepting_ = false;
+            }
+            final_state.add_epsilon_transition(new_state_id);
         }
-        final_state.add_epsilon_transition(new_state_id);
-    }
-    auto [iter, _] = states_.emplace(new_state_id, std::move(new_state));
-    accepting_states_.clear();
+        auto [iter, _] = states_.emplace(new_state_id, std::move(new_state));
+        accepting_states_.clear();
 
-    return iter->second;
+        return iter->second;
+    } else {
+        auto iter = accepting_states_.begin();
+        auto &final_state = states_.at(*iter);
+        accepting_states_.clear();
+        final_state.accepting_ = false;
+        return final_state;
+    }
 }
 
 nfa_machine &nfa_machine::concat_char(char c) {
@@ -171,7 +188,7 @@ void handle_escape_char(T &first, const T& last, nfa_machine& nfa) {
 }
 
 template< typename T>
-std::unique_ptr<nfa_machine> handle_char_class(T &first, const T& last, nfa_machine& nfa) {
+std::unique_ptr<nfa_machine> handle_char_class(T &first, const T& last ) { 
     std::set<char>class_members;
     bool done = false;
     bool close_seen = false;
@@ -189,6 +206,7 @@ std::unique_ptr<nfa_machine> handle_char_class(T &first, const T& last, nfa_mach
             ++first;
             if (first == last) {
                 done = true;
+                continue;
             } else {
                 char c = *first;
                 auto map_iter = escape_map.find(c);
@@ -229,8 +247,24 @@ std::unique_ptr<nfa_machine> handle_char_class(T &first, const T& last, nfa_mach
     retval->states_.emplace(new_state_id, std::move(new_state));
     retval->states_.emplace(start_state_id, std::move(start_state));
 
+    handle_possible_modifier(first, last, *retval);
+
     return retval;
 
+}
+
+template<typename T>
+void handle_possible_modifier(T &first, const T& last, nfa_machine& nfa) {
+    if (first == last) return ;
+
+    // std::cerr << "*first == " << *first; 
+    if (*first == '*') {
+        ++first;
+        nfa.close_in();
+        // std::cerr << " did something\n";
+    } else {
+        // std::cerr << " did NOthing\n";
+    }
 }
 
 template<typename T>
@@ -244,19 +278,25 @@ void handle_next_char(T &first, const T& last, nfa_machine& nfa) {
             if (map_iter != escape_map.end()) {
                 c = map_iter->second;
             }
-            nfa.concat_char(c);
+            nfa_machine temp;
+            temp.concat_char(c);
+            handle_possible_modifier(first, last, temp);
+            nfa.concat_in(temp);
             in_slash = false;
         } else if (*first == '\\') {
             ++first;
             in_slash = true;
         } else if (*first == '[') {
             ++first;
-            auto mach = handle_char_class(first, last, nfa);
+            auto mach = handle_char_class(first, last);
             nfa.concat_in(*mach);
         } else {
             char c = *first;
             ++first;
-            nfa.concat_char(c);
+            nfa_machine temp;
+            temp.concat_char(c);
+            handle_possible_modifier(first, last, temp);
+            nfa.concat_in(temp);
         }
 
     }
