@@ -13,7 +13,7 @@ std::map<std::string, float> variables;
 
 //
 // "ignore" whitespace. Since it gets seen by the lexer, 
-// whitespace spearates other tokens, but isn't returned as a token.
+// whitespace separates other tokens, but isn't returned as a token.
 //
 // Note the need for the space after the '+' to proerly terminate a regex.
 skip WS   r:\s+ ;
@@ -23,7 +23,7 @@ skip WS   r:\s+ ;
 // This will accept print or PRINT or PrInT, etc.
 //
 // Note that this is a ""void" terminal, it has no semantic value.
-term PRINT 'print' @cfold ;
+term PRINT '[Pp][Rr][Ii][Nn][Tt]' ;
 
 //
 // zero to many underbar followed by a letter followed by as many digits,

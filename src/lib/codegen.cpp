@@ -215,8 +215,8 @@ namespace codegen {
         auto trans_info = json::array();
 
         for (auto const &[id, state] :dfa.states_) {
-            if (state.accepting) {
-                for (auto token_id : state.accepted_symbol) {
+            if (state.accepting_) {
+                for (auto token_id : state.accepted_symbol_) {
                     auto astate = json::object();
                     astate["id"] = int(id);
                     auto token_name = std::string{symtab.find(token_id)->token_name()};

@@ -4,7 +4,7 @@
 
 namespace yalr::codegen {
 
-using nfa_state_set = std::set<nfa_state_id>;
+using nfa_state_set = std::set<nfa_state_identifier_t>;
 
 using nfa_transition = std::map<char, nfa_state_set>;
 
@@ -12,8 +12,8 @@ using nfa_transition = std::map<char, nfa_state_set>;
 // in the given machine
 void epsilon_close(nfa_state_set &states, const nfa_machine &nfa) { 
 
-    std::deque<nfa_state_id>queue{states.begin(), states.end()};
-    std::set<nfa_state_id>seen;
+    std::deque<nfa_state_identifier_t>queue{states.begin(), states.end()};
+    std::set<nfa_state_identifier_t>seen;
 
     while (not queue.empty()) {
         auto current_id = queue.back();
@@ -92,10 +92,10 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
     }
 
     // create a nfa_state_set map to new dfa_states
-    std::map<nfa_state_set, dfa_state_id> dfa_state_map;
+    std::map<nfa_state_set, dfa_state_identifier_t> dfa_state_map;
 
     for (auto [state_set, _] : nfa_transitions) {
-        dfa_state_map.emplace(state_set, dfa_state_id::get_next_id());
+        dfa_state_map.emplace(state_set, dfa_state_identifier_t::get_next_id());
     }
 
     // now iterate through the transitions and
@@ -107,7 +107,7 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
         auto current_dfa_id = dfa_state_map.at(state_set);
 
         dfa_state new_state;
-        new_state.id = current_dfa_id;
+        new_state.id_ = current_dfa_id;
         for (auto [sym, trans_state_set] : trans) {
             auto trans_to_state = dfa_state_map.at(trans_state_set);
             new_state.transitions_.emplace(sym, trans_to_state);
@@ -115,13 +115,13 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
 
         for (auto state_in_set : state_set) {
             auto nfa_state = nfa.states_.at(state_in_set);
-            if (nfa_state.accepting) {
-                new_state.accepted_symbol.insert(nfa_state.accepted_symbol);
+            if (nfa_state.accepting_) {
+                new_state.accepted_symbol_.insert(nfa_state.accepted_symbol_);
             }
         }
 
-        if (new_state.accepted_symbol.size() > 0) {
-            new_state.accepting = true;
+        if (new_state.accepted_symbol_.size() > 0) {
+            new_state.accepting_ = true;
             retval->accepting_states_.insert(current_dfa_id);
         }
 

@@ -59,8 +59,8 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         code_out << "digraph lexer {\n";
 
         for(auto const &[id, state] : nfa->states_) {
-            if (state.accepting) {
-                auto s = gr.symbols.find(state.accepted_symbol);
+            if (state.accepting_) {
+                auto s = gr.symbols.find(state.accepted_symbol_);
                 code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
             }
             for (auto const &[alpha, new_state_id] : state.transitions_) {
@@ -87,7 +87,7 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         code_out << "digraph lexer {\n";
 
         for(auto const &[id, state] : dfa->states_) {
-            if (state.accepting) {
+            if (state.accepting_) {
                 //auto s = gr.symbols.find(state.accepted_symbol);
 
                 //code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
