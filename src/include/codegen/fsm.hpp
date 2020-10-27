@@ -46,10 +46,12 @@ namespace yalr::codegen {
         bool partial_ = false;
 
         nfa_machine(bool p) : partial_(p) {}
-        nfa_machine() = default;
 
-        // build a simple machine that recognizes the char c
-        nfa_machine(char c, bool partial = true);
+        // create a simple partial two state machine
+        // that accepts c.
+        nfa_machine(char c);
+
+        nfa_machine() = default;
 
         nfa_machine & add_transition(nfa_state_identifier_t from_state_id, 
                 nfa_state_identifier_t to_state_id, char c);
@@ -65,6 +67,8 @@ namespace yalr::codegen {
         nfa_machine &union_in(const nfa_machine &o);
         nfa_machine &concat_in(const nfa_machine &o);
         nfa_machine &close_in();
+        nfa_machine &plus_in();
+        nfa_machine &option_in();
 
         // slightly faster than me.concat_in(nfa_machine{c})
         nfa_machine &concat_char(char c);

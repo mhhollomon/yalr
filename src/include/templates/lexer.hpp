@@ -22,12 +22,13 @@ std::set<token_type> const global_patterns = {
 struct dfa_state_info_t {
     int state_id;
     token_type accepted;
+    int rank;
 };
 
 constexpr int dfa_start_state = <%dfa.start_state%>;
 constexpr std::array<dfa_state_info_t const, <%dfa.state_count%>> dfa_state_info = {{
 ## for state in dfa.state
-    { <%state.id%>, <%state.accepted%> },
+    { <%state.id%>, <%state.accepted%>, <%state.rank%> },
 ## endfor
 }};
 
@@ -121,9 +122,9 @@ private:
 
     using match_ptr = const std::shared_ptr<const matcher>;
 
-    static inline const std::array<std::tuple<match_ptr, token_type, bool>, <%pattern_count%>> patterns = {{
+    static inline const std::array<std::tuple<match_ptr, token_type, int>, <%pattern_count%>> patterns = {{
 ## for pat in patterns
-        { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%>, <%pat.is_global%> },
+        { std::make_shared<<%pat.matcher%>>( <%pat.pattern%> <%pat.flags%> ), <%pat.token%>, <%pat.rank%> },
 ##endfor
     }};
 
@@ -133,6 +134,7 @@ private:
     //
     struct dfa_match_results {
         token_type tt = token_type::undef;
+        int rank = -1;
         int length = 0;
     };
 
@@ -197,6 +199,7 @@ private:
                                         << iter->accepted << "\n");
                             if (not allowed_tokens or allowed_tokens->count(iter->accepted) > 0) {
                                 last_match.tt = iter->accepted;
+                                last_match.rank = iter->rank;
                                 break;
                             } else {
                                 YALR_LDEBUG( "dfa: but that isn't allowed\n");
@@ -242,6 +245,7 @@ public:
 
         token_type ret_type = undef;
         std::size_t max_len = 0;
+        int current_match_rank = -1;
 #if defined(YALR_DEBUG)
         if (debug) {
             std::cerr << "lexer: Next few characters: " ;
@@ -262,25 +266,27 @@ public:
         if (dfa_res.tt != token_type::undef) {
             ret_type = dfa_res.tt;
             max_len = dfa_res.length;
-            YALR_LDEBUG( "lexer: matched for tt = " << ret_type << " length = " << max_len << "\n");
+            current_match_rank = dfa_res.rank;
+            YALR_LDEBUG( "lexer: dfa matched for tt = " << ret_type << " length = " << max_len << "\n");
         } else {
             YALR_LDEBUG( "lexer: no dfa match\n");
         }
 
-        for (const auto &[m, tt, glbl] : patterns) {
+        for (const auto &[m, tt, rank] : patterns) {
             // if there is a token restriction and we're not on the include list,
             // skip.
             if (allowed_tokens and allowed_tokens->count(tt) == 0) {
                 continue;
             }
-            YALR_LDEBUG("lexer: Matching for token # " << tt << (glbl? " (global)" : ""));
+            YALR_LDEBUG("lexer: Matching for token # " << tt << " rank = " << rank << "\n");
             auto [matched, len] = m->try_match(current, last);
             if (matched) {
                 YALR_LDEBUG(" length = " << len << "\n");
                 // Override for the same length match if the single matchers came earlier than the dfa match
-                if ( std::size_t(len) > max_len or tt < ret_type) {
+                if ( std::size_t(len) > max_len or (std::size_t(len) == max_len and rank < current_match_rank)) {
                     max_len = len;
                     ret_type = tt;
+                    current_match_rank = rank;
                 }
             } else {
                 YALR_LDEBUG(" - no match\n");

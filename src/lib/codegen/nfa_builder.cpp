@@ -2,6 +2,23 @@
 
 namespace yalr::codegen {
 
+nfa_machine::nfa_machine(char c) : partial_(true) {
+    auto start_state_id = nfa_state_identifier_t::get_next_id();
+
+    auto [start_state_iter, _] = states_.emplace(start_state_id, start_state_id);
+
+    start_state_ = start_state_id;
+
+    auto final_state_id = nfa_state_identifier_t::get_next_id();
+
+    start_state_iter->second.add_transition(c, final_state_id);
+
+    auto [final_state, __] = states_.emplace(final_state_id, final_state_id);
+    final_state->second.accepting_ = true;
+
+    accepting_states_.insert(final_state_id);
+}
+
 nfa_machine &nfa_machine::union_in(const nfa_machine &o) {
 
     auto &their_start_state = copy_in(o);
@@ -79,6 +96,25 @@ nfa_machine &nfa_machine::close_in() {
     new_start_state.add_epsilon_transition(start_state_);
     new_start_state.add_epsilon_transition(new_final.id_);
     start_state_ = new_start_state_id;
+    return *this;
+}
+
+nfa_machine &nfa_machine::plus_in() {
+    auto &new_final = append_epsilon_state();
+    new_final.add_epsilon_transition(start_state_);
+    return *this;
+}
+
+nfa_machine &nfa_machine::option_in() {
+    auto &new_final = append_epsilon_state();
+    auto new_start_state_id = nfa_state_identifier_t::get_next_id();
+    auto new_start_state = nfa_state{new_start_state_id};
+
+    new_start_state.add_epsilon_transition(start_state_);
+    new_start_state.add_epsilon_transition(new_final.id_);
+    start_state_ = new_start_state_id;
+    states_.emplace(new_start_state_id, new_start_state);
+
     return *this;
 }
 
@@ -162,17 +198,20 @@ nfa_machine &nfa_machine::concat_char(char c) {
 }
 
 std::map<char, char> const escape_map = {
+    { 'f', '\f' },
     { 'n', '\n' },
-    { 't', '\t' },
     { 'r', '\r' },
+    { 't', '\t' },
+    { 'v', '\v' },
+    { '0', '\0' },
 };
 
 
 template< typename T>
-void handle_escape_char(T &first, const T& last, nfa_machine& nfa) {
+std::unique_ptr<nfa_machine> parse_escape(T &first, const T& last) {
     if (first == last) {
-        std::cerr << "ERROR: bare back-slash at end of end put\n";
-        return;
+        std::cerr << "ERROR: bare back-slash at end of input\n";
+        return {};
     }
 
     char c = *first;
@@ -183,7 +222,7 @@ void handle_escape_char(T &first, const T& last, nfa_machine& nfa) {
         c = map_iter->second;
     }
 
-    nfa.concat_char(c);
+    return std::make_unique<nfa_machine>(c);
 
 }
 
@@ -257,60 +296,53 @@ template<typename T>
 void handle_possible_modifier(T &first, const T& last, nfa_machine& nfa) {
     if (first == last) return ;
 
-    // std::cerr << "*first == " << *first; 
-    if (*first == '*') {
-        ++first;
+    char c = *first;
+
+    if (c == '*') {
         nfa.close_in();
-        // std::cerr << " did something\n";
+    } else if (c == '+') {
+        nfa.plus_in();
+    } else if (c == '?') {
+        nfa.option_in();
     } else {
-        // std::cerr << " did NOthing\n";
+        // not ours - return wth incrementing.
+        return;
     }
+
+    ++first;
 }
 
 template<typename T>
-void handle_next_char(T &first, const T& last, nfa_machine& nfa) {
-    bool in_slash = false;
+std::unique_ptr<nfa_machine> parse_string(T &first, const T& last) {
+    auto retval = std::make_unique<nfa_machine>(true);
+
+    std::unique_ptr<nfa_machine> sub_mach_ptr;
     while (first != last) {
-        if (in_slash) {
-            char c = *first;
-            ++first;
-            auto map_iter = escape_map.find(c);
-            if (map_iter != escape_map.end()) {
-                c = map_iter->second;
-            }
-            nfa_machine temp;
-            temp.concat_char(c);
-            handle_possible_modifier(first, last, temp);
-            nfa.concat_in(temp);
-            in_slash = false;
-        } else if (*first == '\\') {
-            ++first;
-            in_slash = true;
-        } else if (*first == '[') {
-            ++first;
-            auto mach = handle_char_class(first, last);
-            nfa.concat_in(*mach);
+        char c = *first;
+        ++first;
+        if (c == '\\') {
+            sub_mach_ptr = parse_escape(first, last);
+            handle_possible_modifier(first, last, *sub_mach_ptr);
+        } else if (c == '[') {
+            sub_mach_ptr = handle_char_class(first, last);
         } else {
-            char c = *first;
-            ++first;
-            nfa_machine temp;
-            temp.concat_char(c);
-            handle_possible_modifier(first, last, temp);
-            nfa.concat_in(temp);
+            sub_mach_ptr = std::make_unique<nfa_machine>(c);
+            handle_possible_modifier(first, last, *sub_mach_ptr);
         }
+        retval->concat_in(*sub_mach_ptr);
 
     }
+
+    return retval;
 }
 
 std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view input, 
         symbol_identifier_t sym_id) {
 
-    auto retval = std::make_unique<nfa_machine>(true);
-
     auto current = input.begin();
     auto last    = input.end();
 
-    handle_next_char(current, last, *retval);
+    auto retval = parse_string(current, last);
 
     retval->partial_ = false;
 
@@ -320,25 +352,34 @@ std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view inp
     }
 
 
-
-
     return retval;
 }
 
 std::unique_ptr<nfa_machine> build_nfa(const symbol_table &sym_tab) {
     std::unique_ptr<nfa_machine> retval;
 
+    
+    std::string_view pattern;
+
     for(auto const &[id, x] : sym_tab) {
-        if (not x.isterm()) continue;
+        if (x.isterm()) {
+            auto *data = x.get_data<symbol_type::terminal>();
 
-        auto *data = x.get_data<symbol_type::terminal>();
+            if (data->pat_type != pattern_type::string) continue;
 
-        if (data->pat_type != pattern_type::string) continue;
+            pattern = data->pattern;
 
-        auto pattern = data->pattern;
+        } else if (x.isskip()) {
+            auto *data = x.get_data<symbol_type::skip>();
+
+            if (data->pat_type != pattern_type::string) continue;
+
+            pattern = data->pattern;
+        } else {
+            continue;
+        }
 
         auto temp = nfa_machine::build_from_string(pattern, id);
-
         if (not retval) {
             retval = std::make_unique<nfa_machine>(*temp.release());
         } else {

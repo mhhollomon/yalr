@@ -188,6 +188,7 @@ namespace codegen {
                 }
             }
 
+            tdata["rank"] = int(sym.id());
             if (sym.isterm()) {
                 tdata["token"] = "TOK_" + std::string(info_ptr->token_name);
             } else {
@@ -221,6 +222,7 @@ namespace codegen {
                     astate["id"] = int(id);
                     auto token_name = std::string{symtab.find(token_id)->token_name()};
                     astate["accepted"] = "TOK_" + token_name;
+                    astate["rank"] = int(token_id);
                     ++state_count;
                     state_info.push_back(astate);
                 }
@@ -228,6 +230,7 @@ namespace codegen {
                 auto astate = json::object();
                 astate["id"] = int(id);
                 astate["accepted"] = "token_type::undef";
+                astate["rank"] = -1;
                 ++state_count;
                 state_info.push_back(astate);
             }
