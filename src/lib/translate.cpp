@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <ios>
+#include "utils.hpp"
 
 namespace yalr::translate {
 
@@ -61,15 +62,21 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         for(auto const &[id, state] : nfa->states_) {
             if (state.accepting_) {
                 auto s = gr.symbols.find(state.accepted_symbol_);
-                code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
+                code_out << "S" << id << 
+                    "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
             }
             for (auto const &[alpha, new_state_id] : state.transitions_) {
                 std::string edge_label;
                 if (alpha.index() == 0) {
                     edge_label = "&epsilon;"sv;
                 } else {
-                    edge_label = std::string(1, std::get<1>(alpha));
+                    auto esc_seq = util::escape_char(std::get<1>(alpha));
+                    if (esc_seq[0] == '\\') {
+                        esc_seq = std::string("\\\\") + esc_seq;
+                    }
+                    edge_label = esc_seq;
                 }
+
                 code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << edge_label << "\"];\n";
             }
         }
@@ -94,7 +101,14 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
                 code_out << "S" << id << "[shape=doublecircle];\n";
             }
             for (auto const &[alpha, new_state_id] : state.transitions_) {
-                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << alpha << "\"];\n";
+                    std::string edge_label;
+                    auto esc_seq = util::escape_char(alpha);
+                    if (esc_seq[0] == '\\') {
+                        esc_seq = std::string("\\\\") + esc_seq;
+                    }
+                    edge_label = esc_seq;
+                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << 
+                    esc_seq << "\"];\n";
             }
         }
         

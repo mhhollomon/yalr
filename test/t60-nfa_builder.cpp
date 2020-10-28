@@ -135,4 +135,12 @@ TEST_CASE("[nfa_builder] - build_nfa") {
     CHECK(state.accepting_ == false);
 }
 
+TEST_CASE("[nfa_build] - plus_in" ) {
+    auto id = symbol_identifier_t::get_next_id();
+    auto me = codegen::nfa_machine::build_from_string("a+", id);
 
+    CHECK(me->states_.size() == 2 );
+    CHECK(me->accepting_states_.size() == 1);
+    auto final_state_id = *(me->accepting_states_.begin());
+    CHECK(me->states_.at(final_state_id).transitions_.size() == 1);
+}

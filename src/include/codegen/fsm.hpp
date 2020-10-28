@@ -70,6 +70,9 @@ namespace yalr::codegen {
         nfa_machine &plus_in();
         nfa_machine &option_in();
 
+        // really should be private
+        nfa_state & copy_in(const nfa_machine &o);
+
         // slightly faster than me.concat_in(nfa_machine{c})
         nfa_machine &concat_char(char c);
 
@@ -79,7 +82,6 @@ namespace yalr::codegen {
       private:
         nfa_state &append_epsilon_state();
 
-        nfa_state & copy_in(const nfa_machine &o);
 
     };
 

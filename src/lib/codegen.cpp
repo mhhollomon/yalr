@@ -6,6 +6,7 @@
 #include "templates/lexer.hpp"
 #include "templates/postlude.hpp"
 #include "codegen/fsm_builders.hpp"
+#include "utils.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -240,7 +241,7 @@ namespace codegen {
                 auto atrans = json::object();
                 atrans["id"] = int(id);
 
-                std::string char_input = "'" + std::string{input} + "'";
+                std::string char_input = "'" + util::escape_char(input) + "'";
                 atrans["input"] = char_input;
                 atrans["next_state"] = int(state_id);
                 ++trans_count;

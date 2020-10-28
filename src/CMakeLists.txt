@@ -12,12 +12,34 @@ target_include_directories(lib-include
 ##
 ## lib-src
 ##
+## - Note: this is used by some of the tests to allow
+## pulling in the actual cpp file as if it were a header
+## to get to functions that are not announced in the
+## true header (e.g. t05-parser)
+##
 add_library(lib-src INTERFACE)
 
 target_include_directories(lib-src
     INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 target_link_libraries(lib-src
     INTERFACE lib-include
+    )
+
+##
+## utils_objlib
+##
+add_library(utils_objlib OBJECT)
+
+target_sources(utils_objlib
+    PRIVATE
+        "lib/utils.cpp"
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/utils.hpp"
+    )
+
+target_link_libraries(utils_objlib 
+    PUBLIC
+        lib-include
     )
 
 ##
@@ -141,6 +163,7 @@ add_library(codegen_objlib OBJECT)
 target_sources(codegen_objlib
     PRIVATE
     "lib/codegen.cpp"
+    "lib/codegen/nfa_machine.cpp"
     "lib/codegen/nfa_builder.cpp"
     "lib/codegen/dfa_builder.cpp"
 
@@ -157,6 +180,7 @@ target_link_libraries(codegen_objlib
         lib-include
         inja
         nlohmann-json
+        utils_objlib
     )
 
 ##

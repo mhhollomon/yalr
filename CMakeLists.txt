@@ -62,6 +62,7 @@ target_include_directories(yalr
 target_link_libraries(yalr
     PRIVATE
         lib-include
+        utils_objlib
         translate_objlib
         analyzer_objlib
         parsetree_objlib

@@ -99,6 +99,7 @@ add_executable(t60-nfa_builder)
 target_sources(t60-nfa_builder PRIVATE "t60-nfa_builder.cpp")
 target_link_libraries(t60-nfa_builder
     PRIVATE doctest lib-include
+        utils_objlib
         codegen_objlib
         analyzer_objlib
         sourcetext_objlib
@@ -109,6 +110,7 @@ add_executable(t61-dfa_builder)
 target_sources(t61-dfa_builder PRIVATE "t61-dfa_builder.cpp")
 target_link_libraries(t61-dfa_builder
     PRIVATE doctest lib-include
+        utils_objlib
         codegen_objlib
         analyzer_objlib
         sourcetext_objlib

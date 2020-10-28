@@ -15,8 +15,8 @@ std::map<std::string, float> variables;
 // "ignore" whitespace. Since it gets seen by the lexer, 
 // whitespace separates other tokens, but isn't returned as a token.
 //
-// Note the need for the space after the '+' to proerly terminate a regex.
-skip WS   r:\s+ ;
+// Note the need for the space after the '+' to properly terminate a regex.
+skip WS   '\s+' ;
 
 // basically here so that it is prefered to VARIABLE
 // But, it also gives a chance to show case folding. 
