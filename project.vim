@@ -10,8 +10,8 @@ let g:project_path = expand('<sfile>:p:h')
 " May need to make this a bit smarter.
 " Maybe integrate with on of the cmake-vim
 " modules.
-"
-execute 'set makeprg=' . 'cmake\ --build\ ' . g:project_path. '/build'
+
+execute 'set' 'makeprg=cmake\ --build\' g:project_path. '/build'
 
 let s:puml_make_cmd =  g:project_path . '/scripts/gendiag %'
 "
@@ -26,6 +26,10 @@ augroup filetype_plantuml
     " handling of spaces.
     autocmd FileType plantuml let &l:makeprg = s:puml_make_cmd
 augroup END
+
+let &path = '.,' . g:project_path. '/src/**,' .  g:project_path. '/test/**,,'
+
+"execute 'set' 'path=.,' . g:project_path. '/src/lib,' . g:project_path. '/src/include,' . g:project_path. '/test,,'
 
 
 "

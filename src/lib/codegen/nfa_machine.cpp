@@ -1,4 +1,5 @@
 #include "codegen/fsm_builders.hpp"
+#include <deque>
 
 namespace yalr::codegen {
 
@@ -201,6 +202,114 @@ nfa_machine &nfa_machine::concat_char(char c) {
     states_.emplace(accepting_state_id, new_state);
 
     return *this;
+}
+
+/******************************************************/
+
+void close_over_epsilon(nfa_machine &nfa, std::set<nfa_state_identifier_t> &cs) {
+    std::deque<nfa_state_identifier_t> queue;
+    std::set<nfa_state_identifier_t> seen;
+
+    queue.insert(queue.cend(), cs.begin(), cs.end());
+    while(not queue.empty()) {
+        auto this_state_id = queue.back();
+        queue.pop_back();
+
+        //std::cout << "epsilon processing state = " << this_state_id << "\n";
+
+        if (seen.count(this_state_id) > 0) { continue; }
+        //std::cout << "epsilon not seen state = " << this_state_id << "\n";
+
+        seen.insert(this_state_id);
+
+        auto const & this_state = nfa.states_.at(this_state_id);
+
+        auto [lower, upper] = this_state.transitions_.equal_range(std::monostate{});
+        for(auto iter = lower; iter != upper; ++iter) {
+            //std::cout << "epsilon adding " << iter->second << " to queue\n";
+            cs.insert(iter->second);
+            queue.emplace_front(iter->second);
+        }
+
+    }
+
+    //std::cout << "epsilon queue length = " << queue.size() << "\n";
+}
+
+std::set<nfa_state_identifier_t> compute_new_state(nfa_machine &nfa, std::set<nfa_state_identifier_t> current_state, char input) {
+    std::set<nfa_state_identifier_t> retval;
+
+    for (auto this_state_id : current_state) {
+        if (retval.count(this_state_id) > 0) { continue; }
+        auto const &this_state = nfa.states_.at(this_state_id);
+        auto [lower, upper] = this_state.transitions_.equal_range(input);
+        for(auto iter = lower; iter != upper; ++iter) {
+            if (retval.count(iter->second)< 0) { continue; }
+            retval.insert(iter->second);
+        }
+    }
+
+    return retval;
+        
+
+}
+
+bool is_accepting_state(nfa_machine &nfa, std::set<nfa_state_identifier_t> state_set) {
+    for (auto x : nfa.accepting_states_) {
+        if (state_set.count(x) > 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::ostream &print_state_set(std::ostream &strm, std::set<nfa_state_identifier_t> state_set) {
+    strm << " { ";
+    for (auto id : state_set) {
+        strm << int(id) << ", ";
+    }
+    strm << "}";
+
+    return strm;
+}
+
+nfa_machine::run_results nfa_machine::run(std::string_view input) {
+    int char_count = 0;
+    auto current_iter = input.begin();
+    std::set<nfa_state_identifier_t>current_state;
+
+    current_state.insert(start_state_);
+
+    std::cout << "=================== start ================";
+    while (current_iter != input.end()) {
+        //std::cout << "state = "; print_state_set(std::cout, current_state) << "\n";
+        close_over_epsilon(*this, current_state);
+        std::cout << "state (e) = "; print_state_set(std::cout, current_state) << "\n";
+        auto new_state = compute_new_state(*this, current_state, *current_iter);
+        if (new_state.empty()) {
+            std::cout << "No transition for char = " << util::escape_char(*current_iter) << "\n";
+            // failed to match the char
+            if (is_accepting_state(*this, current_state)) {
+                return { true, char_count };
+            } else {
+                return { false, char_count };
+            }
+        } else {
+            std::cout << "found transition for char = " << util::escape_char(*current_iter) << "\n";
+            ++current_iter;
+            char_count += 1;
+            current_state = new_state;
+        }
+    }
+
+    std::cout << "ran out of input\n";
+    if (is_accepting_state(*this, current_state)) {
+        return { true, char_count };
+    } else {
+        return { false, char_count };
+    }
+
 }
 
 

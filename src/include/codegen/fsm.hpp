@@ -79,6 +79,13 @@ namespace yalr::codegen {
         static std::unique_ptr<nfa_machine> build_from_string(std::string_view input,
                 symbol_identifier_t sym_id);
 
+        struct run_results {
+            bool matched;
+            int length;
+        };
+       
+       run_results run(std::string_view input);
+
       private:
         nfa_state &append_epsilon_state();
 
