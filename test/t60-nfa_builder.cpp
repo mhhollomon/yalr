@@ -21,87 +21,107 @@ TEST_CASE("[nfa_machine] - concat_char") {
     CHECK(machine.accepting_states_.size() == 1);
 }
 
-TEST_CASE("[nfa_builder] - simple string") {
 
-    auto epsilon = std::monostate{};
-
+TEST_CASE("[nfa_machine] - a+") {
     auto id = symbol_identifier_t::get_next_id();
-    auto machine = codegen::nfa_machine::build_from_string("ab", id);
+    auto nfa = codegen::nfa_machine::build_from_string("a+", id);
 
-    CHECK(machine->states_.size() == 4);
-    CHECK(machine->accepting_states_.size() == 1);
+    auto res = nfa->run("aaa");
+    CHECK(res.matched == true);
+    CHECK(res.length == 3);
 
-    // --- Start State
-    auto state = machine->states_.at(machine->start_state_);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
+    res = nfa->run("");
+    CHECK(res.matched == false);
 
-    auto trans_iter = state.transitions_.find('a');
-    CHECK(trans_iter != state.transitions_.end());
-    CHECK(std::get<char>(trans_iter->first) == 'a');
+    res = nfa->run("aab");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
 
-    // -- next state the old 'a' aceepting state
-    state = machine->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
-
-    trans_iter = state.transitions_.find(epsilon);
-    CHECK(trans_iter != state.transitions_.end());
-    CHECK(std::get<std::monostate>(trans_iter->first) == epsilon);
-
-    // -- next state : the old b start state
-    state = machine->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
-
-    trans_iter = state.transitions_.find('b');
-    CHECK(trans_iter != state.transitions_.end());
-    CHECK(std::get<char>(trans_iter->first) == 'b');
-
-    // -- last state : the accepting state
-    state = machine->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == true);
-    CHECK(state.transitions_.size() == 0);
-    CHECK(state.accepted_symbol_ == id);
 }
 
-TEST_CASE("[nfa_builder] - back slashes") {
+TEST_CASE("[nfa_machine] - a+b+") {
     auto id = symbol_identifier_t::get_next_id();
-    auto machine = codegen::nfa_machine::build_from_string("\t", id);
+    auto nfa = codegen::nfa_machine::build_from_string("a+b+", id);
+    auto res = nfa->run("aaa");
+    CHECK(res.matched == false);
 
-    CHECK(machine->states_.size() == 2);
+    res = nfa->run("aaab");
+    CHECK(res.matched == true);
+    CHECK(res.length == 4);
 
-    auto state = machine->states_.at(machine->start_state_);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 1);
+    res = nfa->run("bb");
+    CHECK(res.matched == false);
+} 
+
+TEST_CASE("[nfa_machine] - optional") {
+    auto id = symbol_identifier_t::get_next_id();
+    auto nfa = codegen::nfa_machine::build_from_string("b?a", id);
+
+    auto res = nfa->run("ba");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
+
+    res = nfa->run("b");
+    CHECK(res.matched == false);
+
+    res = nfa->run("a");
+    CHECK(res.matched == true);
+    CHECK(res.length == 1);
+
 }
 
-TEST_CASE("[nfa_builder] - simple char class") {
+TEST_CASE("[nfa_machine] - parens") {
     auto id = symbol_identifier_t::get_next_id();
-    auto machine = codegen::nfa_machine::build_from_string("[bc]", id);
+    auto nfa = codegen::nfa_machine::build_from_string("(ab)+", id);
 
-    CHECK(machine->states_.size() == 2);
+    auto res = nfa->run("ab");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
 
-    auto state = machine->states_.at(machine->start_state_);
-    CHECK(state.accepting_ == false);
-    CHECK(state.transitions_.size() == 2);
+    res = nfa->run("abab");
+    CHECK(res.matched == true);
+    CHECK(res.length == 4);
+
+    nfa = codegen::nfa_machine::build_from_string("c(a(bc)?d)+e", id);
+
+    res = nfa->run("cadabcde");
+    CHECK(res.matched == true);
+    CHECK(res.length == 8);
+}
+
+TEST_CASE("[nfa_machine] - simple union") {
+    auto id = symbol_identifier_t::get_next_id();
+    auto nfa = codegen::nfa_machine::build_from_string("g|h", id);
+
+    auto res = nfa->run("g");
+    CHECK(res.matched == true);
+    CHECK(res.length == 1);
+
+    res = nfa->run("h");
+    CHECK(res.matched == true);
+    CHECK(res.length == 1);
+
+    nfa = codegen::nfa_machine::build_from_string("ag|h+", id);
+
+    res = nfa->run("hhh");
+    CHECK(res.matched == true);
+    CHECK(res.length == 3);
+
+    res = nfa->run("agh");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
+
+    nfa = codegen::nfa_machine::build_from_string("a(g|h)+", id);
+    CHECK(nfa->health_check(std::cout));
+    //nfa->dump(std::cout);
+
+    res = nfa->run("agh");
+    CHECK(res.matched == true);
+    CHECK(res.length == 3);
 }
 
 
-TEST_CASE("[nfa_builder] - union_in") {
-    auto id = symbol_identifier_t::get_next_id();
-    auto me = codegen::nfa_machine::build_from_string("a", id);
-    auto you = codegen::nfa_machine::build_from_string("c", id);
-
-    auto old_start = me->start_state_;
-    me->union_in(*you);
-
-    CHECK(me->start_state_ == old_start);
-    CHECK(me->states_.size() == 4);
-    CHECK(me->accepting_states_.size() == 2);
-    auto trans_iter = me->states_.at(me->start_state_).transitions_.find(std::monostate{});
-    CHECK(trans_iter != me->states_.at(me->start_state_).transitions_.end());
-}
+/*------------------------------------------------------*/
 
 TEST_CASE("[nfa_builder] - build_nfa") {
     symbol_table sym_tab;
@@ -121,75 +141,12 @@ TEST_CASE("[nfa_builder] - build_nfa") {
 
     auto retval = codegen::build_nfa(sym_tab);
 
-    CHECK(retval->states_.size() == 13);
-    CHECK(retval->accepting_states_.size() == 2);
-    CHECK(retval->partial_ == false);
-
-    auto & trans = retval->states_.at(retval->start_state_).transitions_;
-    CHECK(trans.size() == 2);
-    auto trans_iter = trans.find(std::monostate{});
-    CHECK(trans_iter != trans.end());
-
-    INFO( "epsilon state = " << trans_iter->second << "\n");
-    auto &state = retval->states_.at(trans_iter->second);
-    CHECK(state.accepting_ == false);
-}
-
-TEST_CASE("[nfa_build] - plus_in" ) {
-    auto id = symbol_identifier_t::get_next_id();
-    auto me = codegen::nfa_machine::build_from_string("a+", id);
-
-    CHECK(me->states_.size() == 2 );
-    CHECK(me->accepting_states_.size() == 1);
-    auto final_state_id = *(me->accepting_states_.begin());
-    CHECK(me->states_.at(final_state_id).transitions_.size() == 1);
-    CHECK(final_state_id != me->start_state_);
-}
-
-TEST_CASE("[nfa_machine] - runner") {
-    auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("a+", id);
-
-    auto res = nfa->run("aaa");
+    auto res = retval->run("foo");
     CHECK(res.matched == true);
     CHECK(res.length == 3);
 
-    res = nfa->run("");
-    CHECK(res.matched == false);
-
-    res = nfa->run("aab");
+    res = retval->run("bar");
     CHECK(res.matched == true);
-    CHECK(res.length == 2);
-
-}
-
-TEST_CASE("[nfa_machine] - runner") {
-    auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("a+b+", id);
-    auto res = nfa->run("aaa");
-    CHECK(res.matched == false);
-
-    res = nfa->run("aaab");
-    CHECK(res.matched == true);
-    CHECK(res.length == 4);
-
-    res = nfa->run("bb");
-    CHECK(res.matched == false);
-} 
-
-TEST_CASE("[nfa_machine] - runner") {
-    auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("b?a", id);
-
-    auto res = nfa->run("ba");
-    CHECK(res.matched == true);
-    CHECK(res.length == 2);
-
-    res = nfa->run("b");
-    CHECK(res.matched == false);
-
-    res = nfa->run("a");
-    CHECK(res.matched == true);
-    CHECK(res.length == 1);
+    CHECK(res.length == 3);
 
 }

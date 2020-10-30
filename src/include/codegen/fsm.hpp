@@ -84,7 +84,11 @@ namespace yalr::codegen {
             int length;
         };
        
-       run_results run(std::string_view input);
+        run_results run(std::string_view input);
+        bool health_check(std::ostream &strm);
+        void dump(std::ostream &strm);
+
+       friend struct nfa_builder;
 
       private:
         nfa_state &append_epsilon_state();

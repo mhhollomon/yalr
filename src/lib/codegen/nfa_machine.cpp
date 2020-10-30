@@ -257,10 +257,12 @@ std::set<nfa_state_identifier_t> compute_new_state(nfa_machine &nfa, std::set<nf
 bool is_accepting_state(nfa_machine &nfa, std::set<nfa_state_identifier_t> state_set) {
     for (auto x : nfa.accepting_states_) {
         if (state_set.count(x) > 0) {
+            std::cout << "      Yes because of " << x << "\n";
             return true;
         }
     }
 
+    std::cout << "      No\n";
     return false;
 }
 
@@ -280,16 +282,17 @@ nfa_machine::run_results nfa_machine::run(std::string_view input) {
     std::set<nfa_state_identifier_t>current_state;
 
     current_state.insert(start_state_);
+    close_over_epsilon(*this, current_state);
 
-    std::cout << "=================== start ================";
+    std::cout << "=================== start ================\n";
     while (current_iter != input.end()) {
-        //std::cout << "state = "; print_state_set(std::cout, current_state) << "\n";
-        close_over_epsilon(*this, current_state);
-        std::cout << "state (e) = "; print_state_set(std::cout, current_state) << "\n";
+        std::cout << "state = "; print_state_set(std::cout, current_state) << "\n";
         auto new_state = compute_new_state(*this, current_state, *current_iter);
+        close_over_epsilon(*this, new_state);
         if (new_state.empty()) {
             std::cout << "No transition for char = " << util::escape_char(*current_iter) << "\n";
             // failed to match the char
+            std::cout << "  checking for acceptance in " ; print_state_set(std::cout, current_state) << "\n";
             if (is_accepting_state(*this, current_state)) {
                 return { true, char_count };
             } else {
@@ -304,12 +307,80 @@ nfa_machine::run_results nfa_machine::run(std::string_view input) {
     }
 
     std::cout << "ran out of input\n";
+    std::cout << "  checking for acceptance in " ; print_state_set(std::cout, current_state) << "\n";
     if (is_accepting_state(*this, current_state)) {
         return { true, char_count };
     } else {
         return { false, char_count };
     }
 
+}
+
+bool nfa_machine::health_check(std::ostream &strm) {
+    bool success = true;
+
+    try {
+        auto const & start_state = states_.at(start_state_);
+    } catch ( std::out_of_range const &e) {
+        strm << "ERROR  could not find start state with id = " << start_state_ << "\n";
+        success = false;
+    }
+
+    if (accepting_states_.empty()) {
+        strm << "ERROR  no accepting states on the list\n";
+    }
+
+    for ( auto sid : accepting_states_ ) {
+        try {
+            auto s = states_.at(sid);
+            if (s.accepting_ == false) {
+                strm << "ERROR  state " << sid << "in accepting list but not marked as accepting\n";
+                success = false;
+            }
+
+        } catch ( std::out_of_range const &e) {
+            strm << "ERROR  could not find state id = " << sid << "\n";
+            success = false;
+        }
+    }
+
+    for (auto const &[sid, s] : states_) {
+        if (s.accepting_ == true) {
+            if (accepting_states_.count(sid) == 0) {
+                strm << "ERROR  state " << sid << " marked as accepting but not in accepting list\n";
+                success = false;
+
+            }
+        } else if (s.transitions_.empty()) {
+            strm << "ERROR  state " << sid << " is nonaccepting but has no out-bound transitions\n";
+            success = false;
+        }
+    }
+
+    return success;
+
+}
+
+void nfa_machine::dump(std::ostream &strm) {
+    strm << "Start state = " << start_state_ << "\n";
+
+    for (auto const &[sid, s] : states_) {
+        strm << "state " << sid;
+        if (s.accepting_) {
+            strm << " (acc)";
+        }
+        strm << '\n';
+
+        for ( auto const [ symb, new_state_id ] : s.transitions_) {
+            strm << "    ";
+            if (symb.index() == 0) {
+                strm << "<eps>";
+            } else {
+                strm << util::escape_char(std::get<char>(symb));
+            }
+            strm << " --> " << new_state_id << "\n";
+        }
+    }
 }
 
 
