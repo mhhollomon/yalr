@@ -221,8 +221,13 @@ namespace codegen {
                 for (auto token_id : state.accepted_symbol_) {
                     auto astate = json::object();
                     astate["id"] = int(id);
-                    auto token_name = std::string{symtab.find(token_id)->token_name()};
-                    astate["accepted"] = "TOK_" + token_name;
+                    auto symbol = symtab.find(token_id);
+                    if (symbol->isskip()) {
+                        astate["accepted"] = "token_type::skip";
+                    } else {
+                        auto token_name = std::string{symbol->token_name()};
+                        astate["accepted"] = "TOK_" + token_name;
+                    }
                     astate["rank"] = int(token_id);
                     ++state_count;
                     state_info.push_back(astate);

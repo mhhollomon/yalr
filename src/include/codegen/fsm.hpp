@@ -11,29 +11,65 @@ namespace yalr::codegen {
         using util::identifier_t<nfa_state_identifier_t>::identifier_t;
     };
 
+    enum symbol_type_t : char {
+        sym_undef = 0,
+        sym_char,
+        sym_range,
+        sym_class,
+        sym_epsilon = 0x7f
+    };
+
+    struct input_symbol_t {
+        symbol_type_t sym_type_ = sym_undef;
+        char first_ = 0;
+        char last_ = 0;
+
+        bool operator <(const input_symbol_t &lhs) const {
+            return ((sym_type_ < lhs.sym_type_) or 
+                (sym_type_ == lhs.sym_type_ and first_ < lhs.first_) or
+                (sym_type_ == lhs.sym_type_ and first_ == lhs.first_ and 
+                 last_ < lhs.last_));
+        }
+
+        // grumble. Because I want the single parmater constructor,
+        // this struct is no longer an "aggregate". So I have to explicitly
+        // provide the full constructor.
+        //
+        input_symbol_t(symbol_type_t s, char f, char l) :
+            sym_type_(s), first_(f), last_(l) {}
+
+        input_symbol_t(char c) : sym_type_(sym_char), first_(c), last_(0) {}
+        input_symbol_t() = default;
+    };
+
+    extern input_symbol_t epsilon_symbol;
+
     struct nfa_state  {
         nfa_state_identifier_t id_;
         bool accepting_ = false;
         symbol_identifier_t accepted_symbol_;
 
 
-        using input_symbol = std::variant<std::monostate, char>;
-        std::multimap<input_symbol, nfa_state_identifier_t> transitions_;
+        std::multimap<input_symbol_t, nfa_state_identifier_t> transitions_;
 
         nfa_state(nfa_state_identifier_t id) : id_(id) {};
 
+        void add_transition(input_symbol_t symb, nfa_state_identifier_t to_state_id) {
+            transitions_.emplace(symb, to_state_id);
+        }
+
         void add_transition(char c, nfa_state_identifier_t to_state_id) {
-            transitions_.emplace(c, to_state_id);
+            transitions_.emplace(input_symbol_t{sym_char, c, 0}, to_state_id);
         }
 
         void add_epsilon_transition(nfa_state_identifier_t to_state_id) {
-            transitions_.emplace(std::monostate{}, to_state_id);
+            transitions_.emplace(epsilon_symbol, to_state_id);
         }
     };
 
     struct nfa_machine {
         std::map<nfa_state_identifier_t, nfa_state> states_;
-        nfa_state_identifier_t start_state_;
+        nfa_state_identifier_t start_state_id_;
         std::set<nfa_state_identifier_t> accepting_states_;
         // If partial is `true` then the
         // accepting states are simply final states for
@@ -53,17 +89,26 @@ namespace yalr::codegen {
 
         nfa_machine() = default;
 
-        nfa_machine & add_transition(nfa_state_identifier_t from_state_id, 
-                nfa_state_identifier_t to_state_id, char c);
-        // yes, could have overloaded, but this seems clearer
+        // add a new state with a new id and return a reference to it.
+        //
+        nfa_state & add_state();
+
+        // Transition helpers.
+        // These will throw if the from_state_id is invalid.
+        // These will silently work even if the to_stat_id is invalid
+        //
+        nfa_machine & add_transition(input_symbol_t symb, nfa_state_identifier_t from_state_id, 
+                nfa_state_identifier_t to_state_id);
+
+        nfa_machine & add_transition(char c, nfa_state_identifier_t from_state_id, 
+                nfa_state_identifier_t to_state_id);
+
         nfa_machine & add_epsilon_transition(nfa_state_identifier_t from_state_id, 
                 nfa_state_identifier_t to_state_id);
 
         // These modify the base machine
         // These will work even if the same machine is passed in.
-        // If the base machine is partial, then epsilons will be
-        // added as necesary to have one accepting state in the
-        // resulting machine
+        //
         nfa_machine &union_in(const nfa_machine &o);
         nfa_machine &concat_in(const nfa_machine &o);
         nfa_machine &close_in();
@@ -74,6 +119,7 @@ namespace yalr::codegen {
         nfa_state & copy_in(const nfa_machine &o);
 
         // slightly faster than me.concat_in(nfa_machine{c})
+        // and creates fewer epsilons
         nfa_machine &concat_char(char c);
 
         static std::unique_ptr<nfa_machine> build_from_string(std::string_view input,
@@ -89,9 +135,6 @@ namespace yalr::codegen {
         void dump(std::ostream &strm);
 
        friend struct nfa_builder;
-
-      private:
-        nfa_state &append_epsilon_state();
 
 
     };

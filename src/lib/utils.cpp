@@ -4,26 +4,26 @@
 
 namespace yalr::util {
 
-std::string escape_char(char c) {
+std::string escape_char(char c, bool use_char_name) {
     switch (c) {
         case '\0' :
-            return "\\0";
+            return use_char_name ? "{NUL}" : "\\0";
         case '\'' :
             return "\\'";
         case '\a' :
-            return "\\a";
+            return use_char_name ? "{BEL}" : "\\a";
         case '\b' :
-            return "\\b";
+            return use_char_name ? "{BS}" : "\\b";
         case '\f' :
-            return "\\f";
+            return use_char_name ? "{FF}" : "\\f";
         case '\n' :
-            return "\\n";
+            return use_char_name ? "{LF}" : "\\n";
         case '\r' :
-            return "\\r";
+            return use_char_name ? "{CR}" : "\\r";
         case '\t' :
-            return "\\t";
+            return use_char_name ? "{HT}" : "\\t";
         case '\v' :
-            return "\\v";
+            return use_char_name ? "{VT}" : "\\v";
     }
 
     if (isprint(c)) {

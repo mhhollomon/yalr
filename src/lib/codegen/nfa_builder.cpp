@@ -68,10 +68,10 @@ std::map<char, std::set<char>> const class_escape_map = {
         for ( auto c : chars ) {
             if (not retval) {
                 retval = std::make_unique<nfa_machine>(c);
-                start_state_id = retval->start_state_;
+                start_state_id = retval->start_state_id_;
                 final_state_id = *(retval->accepting_states_.begin());
             } else {
-                retval->add_transition(start_state_id, final_state_id, c);
+                retval->add_transition(c, start_state_id, final_state_id);
             }
         }
 
@@ -101,6 +101,7 @@ std::map<char, std::set<char>> const class_escape_map = {
             if (*first_ == ']') {
                 done = true;
                 close_seen = true;
+                ++first_;
             } else if (*first_ == '\\') {
                 auto escaped_chars = parse_escape_to_set();
                 class_members.insert(escaped_chars.begin(), escaped_chars.end());
@@ -124,7 +125,7 @@ std::map<char, std::set<char>> const class_escape_map = {
         auto start_state_id = nfa_state_identifier_t::get_next_id();
         auto start_state = nfa_state{start_state_id};
 
-        retval->start_state_ = start_state_id;
+        retval->start_state_id_ = start_state_id;
 
         auto new_state_id = nfa_state_identifier_t::get_next_id();
         auto new_state = nfa_state{new_state_id};
@@ -150,6 +151,11 @@ std::map<char, std::set<char>> const class_escape_map = {
         }
 
         ++first_;
+        // we want to handle a "bare open" as if it were escaped
+        if (first_ == last_  and level_ < 2) {
+            return std::make_unique<nfa_machine>('(');
+        }
+
         retval = parse_regex();
 
         if (first_ == last_) {
@@ -189,39 +195,61 @@ std::map<char, std::set<char>> const class_escape_map = {
     std::unique_ptr<nfa_machine> parse_alternate() {
         std::unique_ptr<nfa_machine> retval;
 
-        std::unique_ptr<nfa_machine> sub_mach_ptr;
         while (first_ != last_) {
+            std::unique_ptr<nfa_machine> sub_mach_ptr = nullptr;
             char c = *first_;
 
             // hit a stop marker
-            if (c == ')' or c == '|') {
+            if ((c == ')' and level_ > 1) or c == '|') {
                 break;
             }
 
             switch (c) {
                 case '(' :
                     sub_mach_ptr = parse_paren();
+                    handle_possible_modifier(*sub_mach_ptr);
                     break;
 
                 case '\\' :
                     sub_mach_ptr = parse_escape();
+                    handle_possible_modifier(*sub_mach_ptr);
                     break;
 
                 case '[' :
                     sub_mach_ptr = handle_char_class();
+                    handle_possible_modifier(*sub_mach_ptr);
                     break;
 
                 default :
+                    // This is a bit messy trying to be state efficient and
+                    // only generate extra epsilon states if necessary.
+                    // concat_char() doesn't create an epsilon transition at all.
+                    //
+                    // IF we have a bare character match, then
+                    //      if we have no return value yet, make this char the
+                    //      return value.
+                    //      Otherwise, use concat_char to tag it on the end.
+                    // However, if we have a modifier, then we have to go whole hog
+                    // and create a machine and use concat_in() instead.
+                    // 
                     ++first_;
-                    sub_mach_ptr = std::make_unique<nfa_machine>(c);
+                    if (*first_ == '*' or *first_ == '?' or *first_ == '+') {
+                        sub_mach_ptr = std::make_unique<nfa_machine>(c);
+                        handle_possible_modifier(*sub_mach_ptr);
+                    } else if (retval) {
+                        retval->concat_char(c);
+                    } else {
+                        retval = std::make_unique<nfa_machine>(c);
+                    }
                     break;
             }
 
-            handle_possible_modifier(*sub_mach_ptr);
-            if (not retval) {
-                retval = std::move(sub_mach_ptr);
-            } else {
-                retval->concat_in(*sub_mach_ptr);
+            if (sub_mach_ptr) {
+                if (not retval) {
+                    retval = std::move(sub_mach_ptr);
+                } else {
+                    retval->concat_in(*sub_mach_ptr);
+                }
             }
 
         }
@@ -235,7 +263,7 @@ std::map<char, std::set<char>> const class_escape_map = {
             retval->states_.emplace(start_state_id, nfa_state{start_state_id});
             auto const [end_state_iter, _] = retval->states_.emplace(end_state_id, nfa_state{end_state_id});
             retval->add_epsilon_transition(start_state_id, end_state_id);
-            retval->start_state_ = start_state_id;
+            retval->start_state_id_ = start_state_id;
             end_state_iter->second.accepting_ = true;
             retval->accepting_states_.insert(end_state_id);
 
@@ -274,16 +302,22 @@ std::map<char, std::set<char>> const class_escape_map = {
             }
         }
 
-        auto retval = std::make_unique<nfa_machine>(true);
+        std::unique_ptr<nfa_machine> retval;
+        if (machines.size() == 1) {
+            //retval = std::make_unique<nfa_machine>(machines.begin()->release());
+            retval.reset(machines.begin()->release());
+        } else {
+            retval = std::make_unique<nfa_machine>(true);
 
-        auto start_state_id =  nfa_state_identifier_t::get_next_id();
-        auto [ iter, _] = retval->states_.emplace(start_state_id, nfa_state(start_state_id));
-        auto & start_state = iter->second;
-        retval->start_state_ = start_state_id;
+            auto start_state_id =  nfa_state_identifier_t::get_next_id();
+            auto [ iter, _] = retval->states_.emplace(start_state_id, nfa_state(start_state_id));
+            auto & start_state = iter->second;
+            retval->start_state_id_ = start_state_id;
 
-        for ( auto &m : machines) {
-            auto &copied_start = retval->copy_in(*m);
-            start_state.add_epsilon_transition(copied_start.id_);
+            for ( auto &m : machines) {
+                auto &copied_start = retval->copy_in(*m);
+                start_state.add_epsilon_transition(copied_start.id_);
+            }
         }
 
         level_ -= 1;
@@ -365,7 +399,7 @@ std::unique_ptr<nfa_machine> build_nfa(const symbol_table &sym_tab) {
     auto start_state_id =  nfa_state_identifier_t::get_next_id();
     auto [ iter, _] = retval->states_.emplace(start_state_id, nfa_state(start_state_id));
     auto & start_state = iter->second;
-    retval->start_state_ = start_state_id;
+    retval->start_state_id_ = start_state_id;
 
     for ( auto &m : machines) {
         auto &copied_start = retval->copy_in(*m);

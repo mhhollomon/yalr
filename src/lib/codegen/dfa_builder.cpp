@@ -22,7 +22,7 @@ void epsilon_close(nfa_state_set &states, const nfa_machine &nfa) {
             continue;
         }
         auto &current_state = nfa.states_.at(current_id);
-        auto [lower, upper] = current_state.transitions_.equal_range(std::monostate{});
+        auto [lower, upper] = current_state.transitions_.equal_range(epsilon_symbol);
         for(auto iter = lower; iter != upper; ++iter) {
             states.insert(iter->second);
             if (seen.count(iter->second) == 0) {
@@ -37,7 +37,7 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
 
     // create the new start state
     nfa_state_set start_state;
-    start_state.insert(nfa.start_state_);
+    start_state.insert(nfa.start_state_id_);
     epsilon_close(start_state, nfa);
 
     std::map<nfa_state_set, nfa_transition> nfa_transitions;
@@ -65,9 +65,9 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
         for (auto current_id : current_state_set) {
             auto current_state = nfa.states_.at(current_id);
             for (auto &[sym, new_state] : current_state.transitions_) {
-                if (sym.index() == 0) continue;
+                if (sym.sym_type_ == sym_epsilon) continue;
 
-                char c = std::get<1>(sym);
+                char c = sym.first_;
                 auto iter = nt.find(c);
                 if (iter == nt.end() ) {
                     auto new_set = nfa_state_set{};

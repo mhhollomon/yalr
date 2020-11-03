@@ -17,14 +17,40 @@ TEST_CASE("[nfa_machine] - concat_char") {
     CHECK(machine.accepting_states_.size() == 1);
 
     machine.concat_char('b');
-    CHECK(machine.states_.size() == 4);
+    CHECK(machine.states_.size() == 3);
     CHECK(machine.accepting_states_.size() == 1);
 }
 
 
+TEST_CASE("[nfa_machine] - ab") {
+    auto id = symbol_identifier_t::get_next_id();
+
+    std::string input = "ab";
+    std::cout << "*********** starting test for '" << input << "'\n";
+    auto nfa = codegen::nfa_machine::build_from_string(input, id);
+
+    nfa->dump(std::cout);
+    CHECK(nfa->health_check(std::cerr));
+
+    auto res = nfa->run("ab");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
+
+    res = nfa->run("");
+    CHECK(res.matched == false);
+
+    res = nfa->run("abb");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
+
+}
+
 TEST_CASE("[nfa_machine] - a+") {
     auto id = symbol_identifier_t::get_next_id();
     auto nfa = codegen::nfa_machine::build_from_string("a+", id);
+
+    nfa->dump(std::cout);
+    CHECK(nfa->health_check(std::cerr));
 
     auto res = nfa->run("aaa");
     CHECK(res.matched == true);
@@ -37,6 +63,23 @@ TEST_CASE("[nfa_machine] - a+") {
     CHECK(res.matched == true);
     CHECK(res.length == 2);
 
+}
+
+TEST_CASE("[nfa_machine] - a*a*") {
+    auto id = symbol_identifier_t::get_next_id();
+    auto nfa = codegen::nfa_machine::build_from_string("a*a*", id);
+
+    auto res = nfa->run("aa");
+    CHECK(res.matched == true);
+    CHECK(res.length == 2);
+
+    res = nfa->run("a");
+    CHECK(res.matched == true);
+    CHECK(res.length == 1);
+
+    res = nfa->run("b");
+    CHECK(res.matched == true);
+    CHECK(res.length == 0);
 }
 
 TEST_CASE("[nfa_machine] - a+b+") {
@@ -56,6 +99,9 @@ TEST_CASE("[nfa_machine] - a+b+") {
 TEST_CASE("[nfa_machine] - optional") {
     auto id = symbol_identifier_t::get_next_id();
     auto nfa = codegen::nfa_machine::build_from_string("b?a", id);
+
+    nfa->dump(std::cout);
+    CHECK(nfa->health_check(std::cerr));
 
     auto res = nfa->run("ba");
     CHECK(res.matched == true);
@@ -82,11 +128,17 @@ TEST_CASE("[nfa_machine] - parens") {
     CHECK(res.matched == true);
     CHECK(res.length == 4);
 
-    nfa = codegen::nfa_machine::build_from_string("c(a(bc)?d)+e", id);
+    std::string input = "c(a(bc)?d)+e";
+    std::cout << "*********** starting test for '" << input << "'\n";
+    nfa = codegen::nfa_machine::build_from_string(input, id);
+
+    nfa->dump(std::cout);
+    CHECK(nfa->health_check(std::cerr));
 
     res = nfa->run("cadabcde");
     CHECK(res.matched == true);
     CHECK(res.length == 8);
+    std::cout << "*********** end ***********\n";
 }
 
 TEST_CASE("[nfa_machine] - simple union") {

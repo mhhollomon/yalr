@@ -197,7 +197,8 @@ private:
                         if (iter->state_id == new_state and iter->state_id != token_type::undef) {
                             YALR_LDEBUG( "dfa: new state " << new_state << " is accepting tt = " 
                                         << iter->accepted << "\n");
-                            if (not allowed_tokens or allowed_tokens->count(iter->accepted) > 0) {
+                            if (not allowed_tokens or allowed_tokens->count(iter->accepted) > 0 or
+                                    iter->accepted == token_type::skip) {
                                 last_match.tt = iter->accepted;
                                 last_match.rank = iter->rank;
                                 break;
