@@ -1,4 +1,4 @@
-FROM mhhollomon/yalr-ci:alpine
+FROM mhhollomon/yalr-ci:arch
 COPY . /tmp/ci-build
 WORKDIR /tmp/ci-build
 CMD ["./scripts/build.sh", "ci"]

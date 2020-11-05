@@ -1,0 +1,17 @@
+## build image for CI
+
+docker build --file Dockerfile.arch --tag mhhollomon/yalr-ci:arch .
+
+## Tag it for upload (if --tag not used above)
+
+docker tag ${id} mhhollomon/yalr-ci:arch
+
+## upload
+
+docker push mhhollomon/yalr-ci:arch
+
+## Test building in the docker
+# from yalr root
+
+docker build docker/Dockerfile.test
+docker run -it ${id}

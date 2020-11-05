@@ -290,7 +290,8 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
         new_state.id_ = current_dfa_id;
         for (auto [sym, trans_state_set] : trans) {
             auto trans_to_state = dfa_state_map.at(trans_state_set);
-            auto [iter, _] = new_state.transitions_.emplace(sym, trans_to_state);
+            new_state.transitions_.emplace(sym, trans_to_state);
+            //auto [iter, _] = new_state.transitions_.emplace(sym, trans_to_state);
             //std::cout << "dfa : " << current_dfa_id << " { " << iter->first.first_ << ", " << iter->first.last_ << "} --> " << iter->second << "\n";
         }
 
