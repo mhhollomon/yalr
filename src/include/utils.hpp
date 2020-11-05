@@ -110,6 +110,13 @@ namespace yalr::util {
 
     }
 
+    // escape_char
+    //
+    // create string that escapes a character if used inside
+    // single quotes in C++ source code.
+    //
+    std::string escape_char(char c, bool use_char_name = false);
+
 } // namespace yalr::util
 
 #endif

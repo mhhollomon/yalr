@@ -1,8 +1,10 @@
 #include "translate.hpp"
 #include "options.hpp"
+#include "codegen/fsm_builders.hpp"
 
 #include <fstream>
 #include <ios>
+#include "utils.hpp"
 
 namespace yalr::translate {
 
@@ -37,6 +39,96 @@ void grammophone::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         }
     }
 
+}
+//
+//NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) const {
+
+    std::string outfilename_base;
+    if (not clopts.output_file.empty()) {
+        outfilename_base = clopts.output_file;
+    } else {
+        outfilename_base = std::string(gr.options.lexer_class.get());
+    }
+
+    auto nfa = codegen::build_nfa(gr.symbols);
+
+    {
+        std::ofstream code_out(outfilename_base + ".nfa.gv", std::ios_base::out);
+
+
+        code_out << "digraph \"lexer-nfa\" {\n";
+
+        for(auto const &[id, state] : nfa->states_) {
+            if (state.accepting_) {
+                auto s = gr.symbols.find(state.accepted_symbol_);
+                code_out << "S" << id << 
+                    "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
+            }
+            for (auto const &[alpha, new_state_id] : state.transitions_) {
+                std::string edge_label;
+                if (alpha.sym_type_ == codegen::sym_epsilon) {
+                    edge_label = "&epsilon;"sv;
+                } else {
+                    auto esc_seq = util::escape_char(alpha.first_, true);
+                    if (esc_seq[0] == '\\') {
+                        esc_seq = std::string("\\\\") + esc_seq;
+                    }
+                    edge_label = esc_seq;
+                    if (alpha.last_ != alpha.first_) {
+                        esc_seq = util::escape_char(alpha.last_, true);
+                        if (esc_seq[0] == '\\') {
+                            esc_seq = std::string("\\\\") + esc_seq;
+                        }
+                        edge_label = edge_label + '-' + esc_seq;
+                    }
+                }
+
+                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << edge_label << "\"];\n";
+            }
+        }
+        
+
+        code_out << "}";
+    }
+
+    auto dfa = codegen::build_dfa(*nfa);
+
+    {
+        std::ofstream code_out(outfilename_base + ".dfa.gv", std::ios_base::out);
+
+
+        code_out << "digraph \"lexer-dfa\" {\n";
+
+        for(auto const &[id, state] : dfa->states_) {
+            if (state.accepting_) {
+                //auto s = gr.symbols.find(state.accepted_symbol);
+
+                //code_out << "S" << id << "[shape=doublecircle, label=\"TOK_" << s->token_name() << "\"];\n";
+                code_out << "S" << id << "[shape=doublecircle];\n";
+            }
+            for (auto const &[alpha, new_state_id] : state.transitions_) {
+                std::string edge_label;
+                auto esc_seq = util::escape_char(alpha.first_, true);
+                if (esc_seq[0] == '\\') {
+                    esc_seq = std::string("\\\\") + esc_seq;
+                }
+                edge_label = esc_seq;
+                if (alpha.last_ != alpha.first_) {
+                    esc_seq = util::escape_char(alpha.last_, true);
+                    if (esc_seq[0] == '\\') {
+                        esc_seq = std::string("\\\\") + esc_seq;
+                    }
+                    edge_label = edge_label + '-' + esc_seq;
+                }
+                code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << 
+                    edge_label << "\"];\n";
+            }
+        }
+        
+
+        code_out << "}";
+    }
 }
 
 } // namespace yalr::translate

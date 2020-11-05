@@ -10,9 +10,12 @@
 
 #include <set>
 #include <map>
+#include <string>
 
 
 namespace yalr {
+
+using namespace std::literals::string_view_literals;
 
 struct symbol_identifier_t : public util::identifier_t<symbol_identifier_t> {
     using util::identifier_t<symbol_identifier_t>::identifier_t;

@@ -136,11 +136,16 @@ int main(int argc, char* argv[]) {
     }
 
 
+    anatree->version_string = yalr::yalr_version_string;
+
     if (not clopts.translate.empty()) {
         const auto format = clopts.translate;
 
         if (format == "grammophone") {
             yalr::translate::grammophone().output(*anatree, clopts);
+        } else if (format == "lexer") {
+            yalr::translate::lexer_graph().output(*anatree, clopts);
+
         } else {
             std::cerr << "Unknown format '" << format << "'\n";
             return 1;
@@ -149,7 +154,6 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    anatree->version_string = yalr::yalr_version_string;
     auto gen_res = generator->generate_table(*anatree);
 
     std::string outfilename;

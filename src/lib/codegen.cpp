@@ -5,6 +5,8 @@
 #include "templates/preamble.hpp"
 #include "templates/lexer.hpp"
 #include "templates/postlude.hpp"
+#include "codegen/fsm_builders.hpp"
+#include "utils.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -175,13 +177,10 @@ namespace codegen {
             }
 
             tdata["flags"] = " ";
+            // with dfa - ignore string matches since they are in 
+            // the dfa
             if (pt == pattern_type::string) {
-                if (ct == case_type::fold) {
-                    tdata["matcher"] = "fold_string_matcher";
-                } else {
-                    tdata["matcher"] = "string_matcher";
-                }
-                tdata["pattern"] = "R\"%_^xx(" + pattern + ")%_^xx\"" ;
+                continue;
             } else {
                 tdata["matcher"] = "regex_matcher";
                 tdata["pattern"] = "R\"%_^xx(" + pattern  + ")%_^xx\"" ;
@@ -190,6 +189,7 @@ namespace codegen {
                 }
             }
 
+            tdata["rank"] = int(sym.id());
             if (sym.isterm()) {
                 tdata["token"] = "TOK_" + std::string(info_ptr->token_name);
             } else {
@@ -203,9 +203,78 @@ namespace codegen {
         }
 
         data["patterns"] = patterns;
+        data["pattern_count"] = patterns.size();
 
     }
     /*--------------------------------------------------------------------*/
+
+    void generate_dfa_data(dfa_machine const &dfa, symbol_table const &symtab, json &data) {
+        // ordered_map (the default) returns things in key order - which we want
+
+        int state_count = 0;
+        auto state_info = json::array();
+
+        int trans_count = 0;
+        auto trans_info = json::array();
+
+        int token_count = 0;
+        auto token_info = json::array();
+
+        for (auto const &[id, state] :dfa.states_) {
+            auto astate = json::object();
+            astate["id"] = int(id);
+            astate["accepted"] = state.accepting_ ? token_count : -1 ;
+            astate["offset"] = (state.transitions_.size () > 0) ? trans_count : -1;
+            state_info.push_back(astate);
+            ++state_count;
+
+            if (state.accepting_) {
+                for (auto token_id : state.accepted_symbol_) {
+                    auto this_token = json::object();
+                    this_token["id"] = int(id);
+
+                    auto symbol = symtab.find(token_id);
+                    if (symbol->isskip()) {
+                        this_token["token_name"] = "token_type::skip";
+                    } else {
+                        auto token_name = std::string{symbol->token_name()};
+                        this_token["token_name"] = "TOK_" + token_name;
+                    }
+                    this_token["rank"] = int(token_id);
+                    token_info.push_back(this_token);
+                    ++token_count;
+                }
+            }
+
+                    
+            // look at this states transitions
+
+            for (auto const [input, state_id] : state.transitions_) {
+                auto atrans = json::object();
+                atrans["id"] = int(id);
+
+                std::string char_input = "'" + util::escape_char(input.first_) + "'";
+                atrans["input_low"] = char_input;
+                char_input = "'" + util::escape_char(input.last_) + "'";
+                atrans["input_high"] = char_input;
+                atrans["next_state"] = int(state_id);
+                ++trans_count;
+                trans_info.push_back(atrans);
+
+            }
+
+        }
+
+        data["dfa"] = json::object();
+        data["dfa"]["state"] = state_info;
+        data["dfa"]["state_count"] = state_count;
+        data["dfa"]["transitions"] = trans_info;
+        data["dfa"]["trans_count"] = trans_count;
+        data["dfa"]["start_state"] = int(dfa.start_state_);
+        data["dfa"]["token_count"] = token_count;
+        data["dfa"]["tokens"]      = token_info;
+
+    }
 
 } // namespace codegen
 
@@ -215,7 +284,13 @@ generate_code(
 
     auto data = codegen::generate_preamble_data(tree);
 
+    auto lexer_nfa = codegen::build_nfa(tree.symbols);
+
+    auto lexer_dfa = codegen::build_dfa(*lexer_nfa);
+
     codegen::generate_lexer_data(tree, data);
+
+    codegen::generate_dfa_data(*lexer_dfa, tree.symbols, data);
 
     auto cr = code_renderer(strm);
 

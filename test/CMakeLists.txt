@@ -95,6 +95,28 @@ target_link_libraries(t21-termset-analyze
     )
 add_test(NAME t21-termset-analyze COMMAND "t21-termset-analyze")
 
+add_executable(t60-nfa_builder)
+target_sources(t60-nfa_builder PRIVATE "t60-nfa_builder.cpp")
+target_link_libraries(t60-nfa_builder
+    PRIVATE doctest lib-include
+        utils_objlib
+        codegen_objlib
+        analyzer_objlib
+        sourcetext_objlib
+    )
+add_test(NAME t60-nfa_builder COMMAND "t60-nfa_builder")
+
+add_executable(t61-dfa_builder)
+target_sources(t61-dfa_builder PRIVATE "t61-dfa_builder.cpp")
+target_link_libraries(t61-dfa_builder
+    PRIVATE doctest lib-include
+        utils_objlib
+        codegen_objlib
+        analyzer_objlib
+        sourcetext_objlib
+    )
+add_test(NAME t61-dfa_builder COMMAND "t61-dfa_builder")
+
 add_test(NAME t30-yalr-1 COMMAND "test_runner"
     "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.1.cfgfile"
     "yalr='$<TARGET_FILE:yalr>'"

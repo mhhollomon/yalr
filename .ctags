@@ -1,3 +1,4 @@
 --recurse=yes
 --exclude=build/*
 --exclude=extern/*
+--exclude=docs/*

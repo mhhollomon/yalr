@@ -12,12 +12,34 @@ target_include_directories(lib-include
 ##
 ## lib-src
 ##
+## - Note: this is used by some of the tests to allow
+## pulling in the actual cpp file as if it were a header
+## to get to functions that are not announced in the
+## true header (e.g. t05-parser)
+##
 add_library(lib-src INTERFACE)
 
 target_include_directories(lib-src
     INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lib")
 target_link_libraries(lib-src
     INTERFACE lib-include
+    )
+
+##
+## utils_objlib
+##
+add_library(utils_objlib OBJECT)
+
+target_sources(utils_objlib
+    PRIVATE
+        "lib/utils.cpp"
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/utils.hpp"
+    )
+
+target_link_libraries(utils_objlib 
+    PUBLIC
+        lib-include
     )
 
 ##
@@ -134,6 +156,34 @@ target_link_libraries(slr_objlib
 
     )
 ##
+## codegen_objlib
+##
+add_library(codegen_objlib OBJECT)
+
+target_sources(codegen_objlib
+    PRIVATE
+    "lib/codegen.cpp"
+    "lib/codegen/nfa_machine.cpp"
+    "lib/codegen/nfa_builder.cpp"
+    "lib/codegen/dfa_builder.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/preamble.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/main_func.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/lexer.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/postlude.hpp"
+    PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/codegen.hpp"
+    )
+
+target_link_libraries(codegen_objlib 
+    PUBLIC
+        lib-include
+        inja
+        nlohmann-json
+        utils_objlib
+    )
+
+##
 ## translate_objlib
 ##
 add_library(translate_objlib OBJECT)
@@ -148,4 +198,6 @@ target_sources(translate_objlib
 target_link_libraries(translate_objlib 
     PUBLIC
         lib-include
+        codegen_objlib
     )
+
