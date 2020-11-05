@@ -213,41 +213,50 @@ namespace codegen {
 
         int state_count = 0;
         auto state_info = json::array();
+
         int trans_count = 0;
         auto trans_info = json::array();
 
+        int token_count = 0;
+        auto token_info = json::array();
+
         for (auto const &[id, state] :dfa.states_) {
+            auto astate = json::object();
+            astate["id"] = int(id);
+            astate["accepted"] = state.accepting_ ? token_count : -1 ;
+            astate["offset"] = (state.transitions_.size () > 0) ? trans_count : -1;
+            state_info.push_back(astate);
+            ++state_count;
+
             if (state.accepting_) {
                 for (auto token_id : state.accepted_symbol_) {
-                    auto astate = json::object();
-                    astate["id"] = int(id);
+                    auto this_token = json::object();
+                    this_token["id"] = int(id);
+
                     auto symbol = symtab.find(token_id);
                     if (symbol->isskip()) {
-                        astate["accepted"] = "token_type::skip";
+                        this_token["token_name"] = "token_type::skip";
                     } else {
                         auto token_name = std::string{symbol->token_name()};
-                        astate["accepted"] = "TOK_" + token_name;
+                        this_token["token_name"] = "TOK_" + token_name;
                     }
-                    astate["rank"] = int(token_id);
-                    ++state_count;
-                    state_info.push_back(astate);
+                    this_token["rank"] = int(token_id);
+                    token_info.push_back(this_token);
+                    ++token_count;
                 }
-            } else {
-                auto astate = json::object();
-                astate["id"] = int(id);
-                astate["accepted"] = "token_type::undef";
-                astate["rank"] = -1;
-                ++state_count;
-                state_info.push_back(astate);
             }
+
+                    
             // look at this states transitions
 
             for (auto const [input, state_id] : state.transitions_) {
                 auto atrans = json::object();
                 atrans["id"] = int(id);
 
-                std::string char_input = "'" + util::escape_char(input) + "'";
-                atrans["input"] = char_input;
+                std::string char_input = "'" + util::escape_char(input.first_) + "'";
+                atrans["input_low"] = char_input;
+                char_input = "'" + util::escape_char(input.last_) + "'";
+                atrans["input_high"] = char_input;
                 atrans["next_state"] = int(state_id);
                 ++trans_count;
                 trans_info.push_back(atrans);
@@ -262,6 +271,8 @@ namespace codegen {
         data["dfa"]["transitions"] = trans_info;
         data["dfa"]["trans_count"] = trans_count;
         data["dfa"]["start_state"] = int(dfa.start_state_);
+        data["dfa"]["token_count"] = token_count;
+        data["dfa"]["tokens"]      = token_info;
 
     }
 

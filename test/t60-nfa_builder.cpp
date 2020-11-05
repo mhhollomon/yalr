@@ -172,6 +172,24 @@ TEST_CASE("[nfa_machine] - simple union") {
     CHECK(res.length == 3);
 }
 
+TEST_CASE("[nfa_machine] - _*[a-zA-Z][_a-zA-Z0-9]*") {
+    std::string input = R"x(_*[a-zA-Z][_a-zA-Z\d]*)x";
+    auto id = symbol_identifier_t::get_next_id();
+    std::cout << "*********** starting test for '" << input << "'\n";
+    auto nfa = codegen::nfa_machine::build_from_string(input, id);
+
+
+    nfa->dump(std::cout);
+    CHECK(nfa->health_check(std::cerr));
+
+    auto res = nfa->run("cadabcde");
+    CHECK(res.matched == true);
+    CHECK(res.length == 8);
+    res = nfa->run("__3");
+    CHECK(res.matched == false);
+    std::cout << "*********** end ***********\n";
+}
+
 
 /*------------------------------------------------------*/
 

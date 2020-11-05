@@ -14,8 +14,7 @@ nfa_state & nfa_machine::add_state() {
 
 }
 
-nfa_machine::nfa_machine(char c) : partial_(true) {
-
+nfa_machine::nfa_machine(input_symbol_t sym) : partial_(true) {
     auto & start_state = add_state();
 
     start_state_id_ = start_state.id_;
@@ -24,12 +23,14 @@ nfa_machine::nfa_machine(char c) : partial_(true) {
 
     auto final_state_id = final_state.id_;
 
-    start_state.add_transition(c, final_state_id);
+    start_state.add_transition(sym, final_state_id);
 
     final_state.accepting_ = true;
 
     accepting_states_.insert(final_state_id);
 }
+
+
 
 /*-----------------------------------------------------*/
 // union_in
@@ -309,10 +310,13 @@ std::set<nfa_state_identifier_t> compute_new_state(nfa_machine &nfa, std::set<nf
     for (auto this_state_id : current_state) {
         if (retval.count(this_state_id) > 0) { continue; }
         auto const &this_state = nfa.states_.at(this_state_id);
-        auto [lower, upper] = this_state.transitions_.equal_range(input);
-        for(auto iter = lower; iter != upper; ++iter) {
-            if (retval.count(iter->second)< 0) { continue; }
-            retval.insert(iter->second);
+
+        for (auto const &[symb, state_id] : this_state.transitions_) {
+            if (symb.sym_type_ == sym_epsilon) { continue; }
+            if (retval.count(state_id) > 0) { continue; }
+            if (input >= symb.first_ and input <= symb.last_) {
+                retval.insert(state_id);
+            }
         }
     }
 
@@ -442,6 +446,9 @@ void nfa_machine::dump(std::ostream &strm) {
                 strm << "<eps>";
             } else if (symb.sym_type_ == sym_char) {
                 strm << util::escape_char(symb.first_);
+                if (symb.last_ != symb.first_) {
+                    strm << '-' << util::escape_char(symb.last_);
+                }
             }
             strm << " --> " << new_state_id << "\n";
         }

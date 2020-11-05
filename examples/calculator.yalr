@@ -31,7 +31,7 @@ term PRINT '[Pp][Rr][Ii][Nn][Tt]' ;
 // allowed __a___
 // not allowed __3
 //
-term <@lexeme> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]* @cmatch;
+term <@lexeme> VARIABLE '_*[a-zA-Z][_a-zA-Z0-9]*' @cmatch;
 
 term <float>   NUMBER   '-?\d*\.?\d+([eE][-+]?\d+)?' <%{ return atof(lexeme.data()); }%>
 

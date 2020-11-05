@@ -57,7 +57,7 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         std::ofstream code_out(outfilename_base + ".nfa.gv", std::ios_base::out);
 
 
-        code_out << "digraph lexer {\n";
+        code_out << "digraph \"lexer-nfa\" {\n";
 
         for(auto const &[id, state] : nfa->states_) {
             if (state.accepting_) {
@@ -75,6 +75,13 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
                         esc_seq = std::string("\\\\") + esc_seq;
                     }
                     edge_label = esc_seq;
+                    if (alpha.last_ != alpha.first_) {
+                        esc_seq = util::escape_char(alpha.last_, true);
+                        if (esc_seq[0] == '\\') {
+                            esc_seq = std::string("\\\\") + esc_seq;
+                        }
+                        edge_label = edge_label + '-' + esc_seq;
+                    }
                 }
 
                 code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << edge_label << "\"];\n";
@@ -91,7 +98,7 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
         std::ofstream code_out(outfilename_base + ".dfa.gv", std::ios_base::out);
 
 
-        code_out << "digraph lexer {\n";
+        code_out << "digraph \"lexer-dfa\" {\n";
 
         for(auto const &[id, state] : dfa->states_) {
             if (state.accepting_) {
@@ -101,14 +108,21 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
                 code_out << "S" << id << "[shape=doublecircle];\n";
             }
             for (auto const &[alpha, new_state_id] : state.transitions_) {
-                    std::string edge_label;
-                    auto esc_seq = util::escape_char(alpha, true);
+                std::string edge_label;
+                auto esc_seq = util::escape_char(alpha.first_, true);
+                if (esc_seq[0] == '\\') {
+                    esc_seq = std::string("\\\\") + esc_seq;
+                }
+                edge_label = esc_seq;
+                if (alpha.last_ != alpha.first_) {
+                    esc_seq = util::escape_char(alpha.last_, true);
                     if (esc_seq[0] == '\\') {
                         esc_seq = std::string("\\\\") + esc_seq;
                     }
-                    edge_label = esc_seq;
+                    edge_label = edge_label + '-' + esc_seq;
+                }
                 code_out << "S" << id << " -> S"  << new_state_id << "[label=\"" << 
-                    esc_seq << "\"];\n";
+                    edge_label << "\"];\n";
             }
         }
         

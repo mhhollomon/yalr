@@ -13,8 +13,7 @@ namespace yalr::codegen {
 
     enum symbol_type_t : char {
         sym_undef = 0,
-        sym_char,
-        sym_range,
+        sym_char, // char is a range - for single letter first = last
         sym_class,
         sym_epsilon = 0x7f
     };
@@ -38,7 +37,7 @@ namespace yalr::codegen {
         input_symbol_t(symbol_type_t s, char f, char l) :
             sym_type_(s), first_(f), last_(l) {}
 
-        input_symbol_t(char c) : sym_type_(sym_char), first_(c), last_(0) {}
+        input_symbol_t(char c) : sym_type_(sym_char), first_(c), last_(c) {}
         input_symbol_t() = default;
     };
 
@@ -59,7 +58,7 @@ namespace yalr::codegen {
         }
 
         void add_transition(char c, nfa_state_identifier_t to_state_id) {
-            transitions_.emplace(input_symbol_t{sym_char, c, 0}, to_state_id);
+            transitions_.emplace(input_symbol_t{c}, to_state_id);
         }
 
         void add_epsilon_transition(nfa_state_identifier_t to_state_id) {
@@ -83,9 +82,11 @@ namespace yalr::codegen {
 
         nfa_machine(bool p) : partial_(p) {}
 
+        nfa_machine(input_symbol_t sym);
+
         // create a simple partial two state machine
         // that accepts c.
-        nfa_machine(char c);
+        nfa_machine(char c) : nfa_machine(input_symbol_t{c}) {}
 
         nfa_machine() = default;
 
@@ -154,8 +155,7 @@ namespace yalr::codegen {
         // relative position in the original grammar (early wins).
         std::set<symbol_identifier_t> accepted_symbol_;
 
-        using input_symbol = char;
-        std::map<input_symbol, dfa_state_identifier_t> transitions_;
+        std::map<input_symbol_t, dfa_state_identifier_t> transitions_;
     };
 
     struct dfa_machine {

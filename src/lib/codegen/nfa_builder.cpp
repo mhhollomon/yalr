@@ -14,17 +14,15 @@ std::map<char, char> const escape_map = {
     { '0', '\0' },
 };
 
-std::map<char, std::set<char>> const class_escape_map = {
-    {'d', { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' } },
-    //{'s', { '\t', '\v', '\f', ' ', '\xa0', '\n', '\r' } },
-    {'s', { '\t', '\v', '\f', ' ', '\n', '\r' } },
-    // This is really isn't sustainable for the negated classes and "large"
-    // class (such as \w)
+std::map<char, std::set<input_symbol_t>> const class_escape_map = {
+    {'d', { input_symbol_t{sym_char, '0', '9'}, } },
+    {'s', { input_symbol_t{'\t'}, input_symbol_t{'\v'}, input_symbol_t{'\f'}, 
+              input_symbol_t{' '}, input_symbol_t{'\n'}, input_symbol_t{'\r'} } },
 };
 
 
 
-    std::set<char> parse_escape_to_set() {
+    std::set<input_symbol_t> parse_escape_to_set() {
 
         if (*first_ != '\\') {
             std::cerr << "ERROR - expecting back-slash\n";
@@ -33,7 +31,7 @@ std::map<char, std::set<char>> const class_escape_map = {
         ++first_;
 
         if (first_ == last_) {
-            std::cerr << "ERROR- bare balck-slash at end of input\n";
+            std::cerr << "ERROR- bare back-slash at end of input\n";
             return {};
         }
 
@@ -53,7 +51,7 @@ std::map<char, std::set<char>> const class_escape_map = {
 
 
 
-        return { c };
+        return { input_symbol_t{c} };
     }
 
     std::unique_ptr<nfa_machine> parse_escape() {
@@ -88,7 +86,7 @@ std::map<char, std::set<char>> const class_escape_map = {
 
         ++first_;
 
-        std::set<char>class_members;
+        std::set<input_symbol_t>class_members;
         bool done = false;
         bool close_seen = false;
         while (not done) {
@@ -103,11 +101,26 @@ std::map<char, std::set<char>> const class_escape_map = {
                 close_seen = true;
                 ++first_;
             } else if (*first_ == '\\') {
+
                 auto escaped_chars = parse_escape_to_set();
                 class_members.insert(escaped_chars.begin(), escaped_chars.end());
             } else {
-                class_members.insert(*first_);
+                auto letter = *first_;
                 ++first_;
+                input_symbol_t symbol{letter};
+                if (*first_ == '-') {
+                    ++first_;
+                    auto end_letter = *first_;
+                    ++first_;
+
+                    if (end_letter <= letter) {
+                        std::cerr << "ERROR: character class - invalid range - end must be bigger that start\n";
+                        return {};
+                    }
+                    symbol.last_ = end_letter;
+                }
+
+                class_members.emplace(std::move(symbol));
             }
         }
 
@@ -122,21 +135,17 @@ std::map<char, std::set<char>> const class_escape_map = {
 
         auto retval = std::make_unique<nfa_machine>(true);
 
-        auto start_state_id = nfa_state_identifier_t::get_next_id();
-        auto start_state = nfa_state{start_state_id};
+        auto & start_state = retval->add_state();
 
-        retval->start_state_id_ = start_state_id;
+        retval->start_state_id_ = start_state.id_;
 
-        auto new_state_id = nfa_state_identifier_t::get_next_id();
-        auto new_state = nfa_state{new_state_id};
+        auto & new_state = retval->add_state();
+        auto new_state_id = new_state.id_;
         new_state.accepting_ = true;
-        for (char c : class_members) {
+        for (auto c : class_members) {
             start_state.add_transition(c, new_state_id);
         }
         retval->accepting_states_.insert(new_state_id);
-        retval->states_.emplace(new_state_id, std::move(new_state));
-        retval->states_.emplace(start_state_id, std::move(start_state));
-
 
         return retval;
 

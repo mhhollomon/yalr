@@ -19,29 +19,44 @@ std::set<token_type> const global_patterns = {
 ## endfor
 };
 
-struct dfa_state_info_t {
+
+struct dfa_transition_info_t {
+    int state_id;
+    char low;
+    char high;
+    int next_state;
+};
+
+constexpr std::array<dfa_transition_info_t const, <%dfa.trans_count+1%>> dfa_transitions = {{
+## for trans in dfa.transitions
+    { <%trans.id%>, <%trans.input_low%>, <%trans.input_high%>, <%trans.next_state%> },
+## endfor
+    { -9999, '\0', '\0', 0 },
+}};
+
+struct dfa_token_info_t {
     int state_id;
     token_type accepted;
     int rank;
 };
 
+constexpr std::array<dfa_token_info_t const, <%dfa.token_count+1%>> dfa_token_info = {{
+## for symbol in dfa.tokens
+    { <%symbol.id%>, <%symbol.token_name%>, <%symbol.rank%> },
+## endfor
+    { -9999, token_type::undef, 0 },
+}};
+
+struct dfa_state_info_t {
+    int state_id;
+    int tokens;
+    int transitions;
+};
+
 constexpr int dfa_start_state = <%dfa.start_state%>;
 constexpr std::array<dfa_state_info_t const, <%dfa.state_count%>> dfa_state_info = {{
 ## for state in dfa.state
-    { <%state.id%>, <%state.accepted%>, <%state.rank%> },
-## endfor
-}};
-
-
-struct dfa_transition_info_t {
-    int state_id;
-    char input;
-    int next_state;
-};
-
-constexpr std::array<dfa_transition_info_t const, <%dfa.trans_count%>> dfa_transitions = {{
-## for trans in dfa.transitions
-    { <%trans.id%>, <%trans.input%>, <%trans.next_state%> },
+    { <%state.id%>, <%state.accepted%>, <%state.offset%>},
 ## endfor
 }};
 
@@ -58,39 +73,6 @@ private:
         try_match(iter_type first, const iter_type last) const = 0;
 
         virtual ~matcher() {}
-    };
-
-    struct string_matcher : matcher {
-        std::string pattern;
-        string_matcher(std::string p) : pattern{p} {};
-        virtual std::pair<bool, int>
-        try_match(iter_type first, const iter_type last) const override {
-            if (std::size_t(last - first) < pattern.size()) {
-                return std::make_pair(false, 0);
-            } else if (std::equal(pattern.begin(), pattern.end(), first)) {
-                return std::make_pair(true, pattern.size());
-            } else {
-                return std::make_pair(false, 0);
-            }
-        }
-    };
-
-    struct fold_string_matcher : matcher {
-        std::string pattern;
-        fold_string_matcher(std::string p) : pattern{p} {};
-        virtual std::pair<bool, int>
-        try_match(iter_type first, const iter_type last) const override {
-            if (std::size_t(last - first) < pattern.size()) {
-                return std::make_pair(false, 0);
-            } else if (std::equal(pattern.begin(), pattern.end(), first, 
-                    [](char cA, char cB) {
-                            return toupper(cA) == toupper(cB);
-                    })) {
-                return std::make_pair(true, pattern.size());
-            } else {
-                return std::make_pair(false, 0);
-            }
-        }
     };
 
     struct regex_matcher : matcher {
@@ -144,18 +126,21 @@ private:
     //**********************
     int find_transition(int state_id, char input) {
 
-        auto res = std::lower_bound(dfa_transitions.begin(), dfa_transitions.end(), 
-                dfa_transition_info_t{ state_id, input, 0 }, 
-                [](const dfa_transition_info_t lhs, dfa_transition_info_t rhs)->bool {
-                    return ((lhs.state_id < rhs.state_id) || (lhs.state_id == rhs.state_id 
-                                and lhs.input < rhs.input));
-                    });
+        auto offset = dfa_state_info[state_id].transitions;
 
-        if (res != dfa_transitions.end() and (res->state_id == state_id and res->input == input)) {
-            return res->next_state;
-        } else {
-            return -1;
+        // This state has no transitions
+        if (offset < 0) { return -1; }
+
+        auto ptr = &dfa_transitions[offset];
+
+        while (ptr->state_id == state_id) {
+            if (ptr->low <= input and ptr->high >= input) {
+                return ptr->next_state;
+            }
+            ++ptr;
         }
+
+        return -1;
     }
 
     // *****************************
@@ -186,35 +171,28 @@ private:
                 YALR_LDEBUG("dfa : returning {" << last_match.tt << ", " << last_match.length << "}\n");
                 return last_match;
             } else {
-                auto iter = std::lower_bound(dfa_state_info.begin(), dfa_state_info.end(),
-                        dfa_state_info_t{ new_state, token_type::undef },
-                        [](const dfa_state_info_t lhs, dfa_state_info_t rhs) -> bool {
-                            return (lhs.state_id < rhs.state_id);
-                        } );
-                if (iter != dfa_state_info.end()) {
-                    last_match.length += 1;
-                    while ( true) {
-                        if (iter->state_id == new_state and iter->state_id != token_type::undef) {
-                            YALR_LDEBUG( "dfa: new state " << new_state << " is accepting tt = " 
-                                        << iter->accepted << "\n");
-                            if (not allowed_tokens or allowed_tokens->count(iter->accepted) > 0 or
-                                    iter->accepted == token_type::skip) {
-                                last_match.tt = iter->accepted;
-                                last_match.rank = iter->rank;
-                                break;
-                            } else {
-                                YALR_LDEBUG( "dfa: but that isn't allowed\n");
-                                ++iter;
-                            }
-                        } else {
-                            YALR_LDEBUG( "dfa: new state " << new_state << " no allowed tokens\n");
+                last_match.length += 1;
+                auto const token_offset = dfa_state_info[new_state].tokens;
+                if (token_offset >= 0) {
+                    auto const *token_ptr = &dfa_token_info[token_offset];
+                    while (token_ptr->state_id == new_state) {
+                        auto tt = token_ptr->accepted;
+                        YALR_LDEBUG( "dfa: new state " << new_state << " is accepting tt = " << tt << "\n");
+                        if (tt == token_type::skip or not allowed_tokens or allowed_tokens->count(tt)) {
+                            YALR_LDEBUG( "dfa: which IS allowed\n");
+                            last_match.tt = tt;
+                            last_match.rank = token_ptr->rank;
                             break;
+                        } else {
+                            YALR_LDEBUG( "dfa: but that isn't allowed\n");
+                            ++token_ptr;
                         }
                     }
-                        
+
                 } else {
                     YALR_LDEBUG("dfa: new state " << new_state << " is NOT accepting\n");
                 }
+
             }
             current_state = new_state;
         }
