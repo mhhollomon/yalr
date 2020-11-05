@@ -16,8 +16,27 @@ std::map<char, char> const escape_map = {
 
 std::map<char, std::set<input_symbol_t>> const class_escape_map = {
     {'d', { input_symbol_t{sym_char, '0', '9'}, } },
-    {'s', { input_symbol_t{'\t'}, input_symbol_t{'\v'}, input_symbol_t{'\f'}, 
-              input_symbol_t{' '}, input_symbol_t{'\n'}, input_symbol_t{'\r'} } },
+    {'D', { input_symbol_t{sym_char, '\0', '0'-1, },
+              input_symbol_t{sym_char, '9'+1, '\x7F'}, }, },
+
+    {'s', { input_symbol_t{sym_char, '\t', '\r'},
+              input_symbol_t{' '}, }, },
+    {'S', { input_symbol_t{sym_char, '\0', '\t'-1},
+              input_symbol_t{sym_char, '\r'+1, ' '-1},
+              input_symbol_t{sym_char, ' '+1, '\x7F'}, }, },
+
+    {'w', { input_symbol_t{sym_char, '0', '9'},
+              input_symbol_t{sym_char, 'A', 'Z' },
+              input_symbol_t{sym_char, 'a', 'z' },
+              input_symbol_t{'_'}, }, },
+    {'W', { input_symbol_t{sym_char, '\0', '0'-1, },
+              input_symbol_t{sym_char, '9'+1, 'A'-1 },
+              input_symbol_t{sym_char, 'Z'+1, 'a'-1 },
+              input_symbol_t{sym_char, 'z'+1, '_'-1},
+              input_symbol_t{sym_char, '_'+1, '\x7f' }, }, },
+
+    {'.', { input_symbol_t{sym_char, '\0', '\n'-1},
+              input_symbol_t{sym_char, '\n'+1, '\x7F'}, }, },
 };
 
 
@@ -182,6 +201,27 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
         return retval;
     }
 
+    std::unique_ptr<nfa_machine> handle_dot() {
+        std::unique_ptr<nfa_machine> retval;
+
+        auto ranges = class_escape_map.at('.');
+
+        nfa_state_identifier_t start_state_id;
+        nfa_state_identifier_t final_state_id;
+
+        for ( auto c : ranges ) {
+            if (not retval) {
+                retval = std::make_unique<nfa_machine>(c);
+                start_state_id = retval->start_state_id_;
+                final_state_id = *(retval->accepting_states_.begin());
+            } else {
+                retval->add_transition(c, start_state_id, final_state_id);
+            }
+        }
+
+        return retval;
+    }
+
     void handle_possible_modifier(nfa_machine& nfa) {
         if (first_ == last_) return ;
 
@@ -226,6 +266,11 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
 
                 case '[' :
                     sub_mach_ptr = handle_char_class();
+                    handle_possible_modifier(*sub_mach_ptr);
+                    break;
+
+                case '.' :
+                    sub_mach_ptr = handle_dot();
                     handle_possible_modifier(*sub_mach_ptr);
                     break;
 

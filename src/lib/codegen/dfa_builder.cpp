@@ -193,7 +193,7 @@ auto compute_diced_transitions(nfa_state_set const &states, const nfa_machine &n
 
     auto retval = std::make_unique<std::multimap<input_symbol_t, nfa_state_identifier_t>>();
     for (auto const &t : finished_list) {
-        std::cout << "diced : " << t.low << " - " << t.high << " --> " << t.to_state_id << "\n";
+        //std::cout << "diced : " << t.low << " - " << t.high << " --> " << t.to_state_id << "\n";
         retval->emplace(input_symbol_t{t.sym_type, t.low, t.high}, t.to_state_id);
     }
 
@@ -291,7 +291,7 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
         for (auto [sym, trans_state_set] : trans) {
             auto trans_to_state = dfa_state_map.at(trans_state_set);
             auto [iter, _] = new_state.transitions_.emplace(sym, trans_to_state);
-            std::cout << "dfa : " << current_dfa_id << " { " << iter->first.first_ << ", " << iter->first.last_ << "} --> " << iter->second << "\n";
+            //std::cout << "dfa : " << current_dfa_id << " { " << iter->first.first_ << ", " << iter->first.last_ << "} --> " << iter->second << "\n";
         }
 
         for (auto state_in_set : state_set) {
