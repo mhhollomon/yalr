@@ -51,4 +51,5 @@ esac
 mkdir $DIR || exit 1
 CC=$CC CXX=$CXX cmake -S . -B $DIR $BTARG || exit 1
 
-cmake --build $DIR $ARGS && (cd $DIR; ctest $ARGS )
+(cd $DIR ; make -j2 ) && ( cd $DIR; ctest $ARGS )
+#cmake --build $DIR $ARGS && (cd $DIR; ctest $ARGS )

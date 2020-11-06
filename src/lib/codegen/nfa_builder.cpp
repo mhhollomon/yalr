@@ -271,6 +271,7 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
 
                 case '.' :
                     sub_mach_ptr = handle_dot();
+                    ++first_;
                     handle_possible_modifier(*sub_mach_ptr);
                     break;
 
@@ -399,7 +400,7 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
 std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view input, 
         symbol_identifier_t sym_id) {
 
-    std::cout << "build nfa from string " << input << "\n";
+    //std::cout << "build nfa from string " << input << "\n";
     auto first = input.begin();
     auto last    = input.end();
 
