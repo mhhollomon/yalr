@@ -8,14 +8,14 @@ namespace yalr::codegen {
 struct nfa_builder {
 
 
-std::map<char, char> const escape_map = {
-    { 'f', '\f' },
-    { 'n', '\n' },
-    { 'r', '\r' },
-    { 't', '\t' },
-    { 'v', '\v' },
-    { '0', '\0' },
-};
+    std::map<char, char> const escape_map = {
+        { 'f', '\f' },
+        { 'n', '\n' },
+        { 'r', '\r' },
+        { 't', '\t' },
+        { 'v', '\v' },
+        { '0', '\0' },
+    };
 
 std::map<char, std::set<input_symbol_t>> const class_escape_map = {
     {'d', { input_symbol_t{sym_char, '0', '9'}, } },
@@ -38,10 +38,13 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
               input_symbol_t{sym_char, 'z'+1, '_'-1},
               input_symbol_t{sym_char, '_'+1, '\x7f' }, }, },
 
-    {'.', { input_symbol_t{sym_char, '\0', '\n'-1},
-              input_symbol_t{sym_char, '\n'+1, '\x7F'}, }, },
 };
 
+
+std::set<input_symbol_t> const dot_ranges = {
+    { input_symbol_t{sym_char, '\0', '\n'-1},
+      input_symbol_t{sym_char, '\n'+1, '\x7F'}, }, 
+};
 
 
     std::set<input_symbol_t> parse_escape_to_set() {
@@ -266,12 +269,10 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
     std::unique_ptr<nfa_machine> handle_dot() {
         std::unique_ptr<nfa_machine> retval;
 
-        auto ranges = class_escape_map.at('.');
-
         nfa_state_identifier_t start_state_id;
         nfa_state_identifier_t final_state_id;
 
-        for ( auto c : ranges ) {
+        for ( auto c : dot_ranges ) {
             if (not retval) {
                 retval = std::make_unique<nfa_machine>(c);
                 start_state_id = retval->start_state_id_;

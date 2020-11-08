@@ -8,6 +8,8 @@ std::string escape_char(char c, bool use_char_name) {
     switch (c) {
         case '\0' :
             return use_char_name ? "{NUL}" : "\\0";
+        case ' ' :
+            return use_char_name ? "{SPC}" : " ";
         case '\'' :
             return "\\'";
         case '\a' :
