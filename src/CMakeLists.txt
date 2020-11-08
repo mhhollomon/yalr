@@ -166,6 +166,7 @@ target_sources(codegen_objlib
     "lib/codegen/nfa_machine.cpp"
     "lib/codegen/nfa_builder.cpp"
     "lib/codegen/dfa_builder.cpp"
+    "lib/codegen/dice_trans.cpp"
 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/preamble.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/templates/main_func.hpp"

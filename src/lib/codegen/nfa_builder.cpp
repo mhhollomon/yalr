@@ -1,5 +1,8 @@
 #include "codegen/fsm_builders.hpp"
 
+#include "codegen/dice_trans.hpp"
+#include <algorithm>
+
 namespace yalr::codegen {
 
 struct nfa_builder {
@@ -95,6 +98,9 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
         return retval;
 
     }
+    
+    // ------------------------------------------------------
+    // Parse a character class. Handle negation.
 
     std::unique_ptr<nfa_machine> handle_char_class() { 
 
@@ -104,6 +110,14 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
         }
 
         ++first_;
+        
+        bool negated_class = false;
+        
+        if (*first_ == '^') {
+            negated_class = true;
+            ++first_;
+        }
+            
 
         std::set<input_symbol_t>class_members;
         bool done = false;
@@ -165,6 +179,54 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
             start_state.add_transition(c, new_state_id);
         }
         retval->accepting_states_.insert(new_state_id);
+        
+        // negate the class.
+        // Use dice_trans to make sure there arre no overlaps.
+        //
+        if (negated_class) {
+            std::set<diced_trans_t> wood_pile;
+            for (auto iter = start_state.transitions_.begin(); iter != start_state.transitions_.end(); ) {
+                auto const &[sym, to_id] = *iter;
+                if (sym.sym_type_ == sym_epsilon) {
+                    ++iter;
+                    continue;
+                }
+                wood_pile.emplace(sym.first_, sym.last_, to_id);
+                iter = start_state.transitions_.erase(iter);
+            }
+                
+            auto results = dice_transitions(wood_pile);
+            
+            // Can't sort a set, so transfer to a vector.
+            std::vector<diced_trans_t> new_trans{results.begin(), results.end()};
+            
+            // sort the return so that it is in char order. rather than
+            // length order.
+            std::sort(new_trans.begin(), new_trans.end(), 
+                [](diced_trans_t const &l, diced_trans_t const &r) {
+                    return (l.low < r.low or
+                        (l.low == r.low and l.high < r.high));
+                    }
+                );
+            
+            char current_char = '\0';
+            bool has_trailer = true;
+            
+            for (auto const &t : new_trans) {
+                if (current_char < t.low) {
+                    start_state.transitions_.emplace(input_symbol_t{t.sym_type, current_char, static_cast<char>(t.low-1)}, t.to_state_id);
+                    if (t.high == '\x7f') {
+                        has_trailer = false;
+                    } else {
+                        current_char = t.high+1;
+                    }
+                }
+            }
+            
+            if (has_trailer) {
+                start_state.transitions_.emplace(input_symbol_t{sym_char, current_char, '\x7f'}, new_state_id);
+            }
+        }
 
         return retval;
 
@@ -327,7 +389,9 @@ std::map<char, std::set<input_symbol_t>> const class_escape_map = {
         return retval;
     }
 
-
+    // --------------------------------------------------------
+    // Top level parse routine
+    //
     std::unique_ptr<nfa_machine> parse_regex() {
 
         level_ += 1;

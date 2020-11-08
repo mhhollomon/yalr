@@ -2,6 +2,8 @@
 
 #include <deque>
 
+#include "codegen/dice_trans.hpp"
+
 namespace yalr::codegen {
 
 // A set of states in the nfa machine. each such set will become
@@ -14,7 +16,7 @@ using nfa_transition = std::map<input_symbol_t, nfa_state_set>;
 // ------------------------------------------------------------------
 // updates the given state to be the closure over epsilon
 // in the given machine
-void epsilon_close(nfa_state_set &states, const nfa_machine &nfa) { 
+void epsilon_close(nfa_state_set &states, const nfa_machine &nfa) {
 
     std::deque<nfa_state_identifier_t>queue{states.begin(), states.end()};
     std::set<nfa_state_identifier_t>seen;
@@ -37,36 +39,10 @@ void epsilon_close(nfa_state_set &states, const nfa_machine &nfa) {
     }
 }
 
-// ------------------------------------------------------------------
-struct diced_trans_t {
-    nfa_state_identifier_t to_state_id;
-    int length;
-    symbol_type_t sym_type;
-    char low;
-    char high;
-
-    diced_trans_t(char l, char h, nfa_state_identifier_t id) :
-        to_state_id(id), length(h-l),
-        sym_type(sym_char), 
-        low(l), high(h) {}
-
-    bool operator <(diced_trans_t const &r) const {
-        return ( (length < r.length) or
-                (length == r.length and low < r.low ) or
-                (length == r.length and low == r.low and high < r.high) or
-                (length == r.length and low == r.low and high == r.high and to_state_id < r.to_state_id));
-    }
-};
-
 auto compute_diced_transitions(nfa_state_set const &states, const nfa_machine &nfa) {
-    // using a set because of the ordering guarantees.
-    // work_list.begin() will be no longer than any other.
-    //
     std::set<diced_trans_t> wood_pile;
 
-    std::set<diced_trans_t>finished_list;
-
-    // pull all the transitions available to this set of states into 
+    // pull all the transitions available to this set of states into
     // our set.
     for (auto state_id : states) {
         auto const & state = nfa.states_.at(state_id);
@@ -77,122 +53,10 @@ auto compute_diced_transitions(nfa_state_set const &states, const nfa_machine &n
         }
     }
 
-    // Now, walk through th list (possibly multiple times)
-    // split overlapping ranges so that if e.g.
-    //      b --> 1
-    //      a..d --> 2
-    //  becomes
-    //      b --> 1
-    //      a --> 2
-    //      b --> 2
-    //      c..d --> 2
-    //
-    // yes this is O(n^^2)
-    //
-
-    while (not wood_pile.empty()) {
-        auto iter = wood_pile.begin();
-        auto axe = *iter;
-        wood_pile.erase(iter);
-
-        std::set<diced_trans_t> things_to_add;
-        std::set<diced_trans_t> things_to_erase;
-
-        bool made_it_to_the_end = true;
-        for (auto wood_iter = wood_pile.begin(); wood_iter != wood_pile.end();) {
-            // axe will be no longer than wood.
-            auto const &wood = *wood_iter;
-            if (axe.low < wood.low) {
-                if (axe.high < wood.high) {
-                    // no overlap
-                    ++wood_iter;
-                } else {
-                    // axe.high must be less than wood.high
-                    // so, there will be up to four pieces. 
-                    // axe.low - wood.low-1 - with axe.state
-                    // wood.low - axe.high - with axe.state
-                    // wood.low - axe.high - with wood.state
-                    // axe.high+1 - wood.high - with wood.state
-                    wood_pile.emplace(axe.low, wood.low-1, axe.to_state_id);
-                    wood_pile.emplace(wood.low, axe.high, axe.to_state_id);
-                    if (wood.to_state_id != axe.to_state_id) {
-                        wood_pile.emplace(wood.low, axe.high, wood.to_state_id);
-                    }
-                    wood_pile.emplace(axe.high+1, wood.high, wood.to_state_id);
-
-                    // delete the original wood (axe is already out)
-                    wood_iter = wood_pile.erase(wood_iter);
-
-                    // we shattered the axe so need to go back to the top
-                    made_it_to_the_end = false;
-                    break; // out of the wood loop
-                }
-            } else if (axe.low == wood.low) {
-                if (axe.high == wood.high) {
-                    // the ranges are the same, but the states must be different.
-                    // nothing to do.
-                    ++wood_iter;
-                } else {
-                    // axe is contained totally in wood
-                    // wood.low - axe.high - with wood.state
-                    // axe.high+1 - wood.high - with wood.state
-                    if (wood.to_state_id != axe.to_state_id) {
-                        wood_pile.emplace(wood.low, axe.high, wood.to_state_id);
-                    }
-                    wood_pile.emplace(axe.high+1, wood.high, wood.to_state_id);
-                    
-                    // delete the original wood
-                    wood_iter = wood_pile.erase(wood_iter);
-                }
-            } else if (axe.low <= wood.high) {
-                if (axe.high <= wood.high) {
-                    // wood.low - axe.low-1 - wood.state
-                    // axe.low - axe.high - wood.state
-                    // axe.high+1 - wood.high - wood.state (may be empty)
-                    wood_pile.emplace(wood.low, axe.low-1, wood.to_state_id);
-                    if (wood.to_state_id != axe.to_state_id) {
-                        wood_pile.emplace(axe.low, axe.high, wood.to_state_id);
-                    }
-                    if (axe.high < wood.high) {
-                        wood_pile.emplace(axe.high+1, wood.high,  wood.to_state_id);
-                    }
-                    
-                    // delete the original wood
-                    wood_iter = wood_pile.erase(wood_iter);
-                } else {
-                    // shattering the axe.
-                    // wood.low - axe.low-1 - wood.state
-                    // axe.low - wood.high - axe.state
-                    // axe.low - wood.high - wood.state
-                    // wood.high+1, axe.high - axe.state
-                    wood_pile.emplace(wood.low, axe.low-1, wood.to_state_id);
-                    wood_pile.emplace(axe.low, wood.high, axe.to_state_id);
-                    if (wood.to_state_id != axe.to_state_id) {
-                        wood_pile.emplace(axe.low, wood.high,  wood.to_state_id);
-                    }
-                    wood_pile.emplace(wood.high+1, axe.high, axe.to_state_id);
-                    
-                    // delete the original wood
-                    wood_iter = wood_pile.erase(wood_iter);
-                    
-                    // we shattered the axe so need to go back to the top
-                    made_it_to_the_end = false;
-                    break; // out of the wood loop
-                }
-            } else {
-                // no overlap. nothing to do
-                ++wood_iter;
-            }
-
-        }
-
-        if (made_it_to_the_end) {
-            finished_list.insert(axe);
-        }
-    }
+    auto results = dice_transitions(wood_pile);
 
     auto retval = std::make_unique<std::multimap<input_symbol_t, nfa_state_identifier_t>>();
-    for (auto const &t : finished_list) {
+    for (auto const &t : results) {
         //std::cout << "diced : " << t.low << " - " << t.high << " --> " << t.to_state_id << "\n";
         retval->emplace(input_symbol_t{t.sym_type, t.low, t.high}, t.to_state_id);
     }
@@ -200,7 +64,6 @@ auto compute_diced_transitions(nfa_state_set const &states, const nfa_machine &n
     return retval;
 
 }
-
 
 
 // -------------------------------------------------------------
@@ -313,7 +176,7 @@ std::unique_ptr<dfa_machine> build_dfa(const nfa_machine &nfa) {
 
     retval->start_state_ = dfa_state_map.at(start_state);
 
-        
+
 
     return retval;
 };
