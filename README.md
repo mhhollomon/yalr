@@ -7,7 +7,7 @@
 
 ## Release Highlights
 
-**WARNING** This release is mildly incompatible with previous version.
+**WARNING** This release has incompatiblities with the previous version.
 
 - Switch to Context Sensitive Lexical Analysis. This will potentailly change
     the actual language that is recognized for a given grammar. See
@@ -17,6 +17,12 @@
     defined before use. Rules may still be referenced before they are defined.
 
 - the `rf:` and `rm:` regex prefixes have been removed.
+
+- the 'r:' regex prefix now refers to the built-in regex engine rather than C++
+    ECMAScript regexes. Those are now specified using the 'e:' prefix.
+
+- the generated lexer now uses a DFA to to find matches. Single quted strings
+    and 'r:' regexes participate. The new 'e:' regex does not.
 
 - Addition of a new `termset` statement for easy addition of enum style
     identifiers.
@@ -129,7 +135,6 @@ The available options are:
 
 option-id | setting
 ----------|---------
-lexer.case| default case matching. Setting is `cfold` and `cmatch`
 code.main | When set to true, will cause the generator to include a simple main() function (See below).
 
 ### Terminals
@@ -162,14 +167,20 @@ The `ID` is the name for the terminal that will be used in the grammar and will
 be returned in error messages. It will also be a part of the enumeration
 constant for the token type in the generated code.
 
-The pattern can be specified two different ways.
+The pattern can be specified three different ways.
 
 1. As a single-quote delimited string.
 Patterns in this format are matched in the lexer as simple string compares.
 The pattern can be used for the term in rules.
 
-2. std::regex regular expression.
+2. Built-in regex engine regular expression
 The starting delimiter is the literal `r:`. The pattern extends to the next
+unescape space-like character. Note, this means that the semi-colon at the end
+of the definition must be separated from the pattern by at least one space (or
+tab, or newline). See below for the language recognized.
+
+3. std::regex regular expression.
+The starting delimiter is the literal `e:`. The pattern extends to the next
 unescape space-like character. Note, this means that the semi-colon at the end
 of the definition must be separated from the pattern by at least one space (or
 tab, or newline).
@@ -180,22 +191,6 @@ angle brackets afte the keyword term :
 
 ```
 term <int> INTEGER r:[-+]?[0-9]+ ;
-```
-
-The handling of case can be shifted using the `@cfold` and `@cmatch` modifiers.
-They have the following affect on the pattern.
-
-modifier | effect
----------|-------
-`@cfold` | Fold case when checking for match.
-`@cmatch`| Match case "as-is" (This is the default).
-
-The case modifier goes between the pattern and the action or closing
-semi-colon.
-
-```
-// match print or PRINT or PrInT, etc
-term PRINT_KEYWORD 'print' @cfold ;
 ```
 
 The computation is given as an action encased in `<%{ ... }%>` . If an action
@@ -215,7 +210,41 @@ then some efficency can be gained by doing so as a move:
 term <std::string> ID r:[a-z]+ <%{ return std::move(lexeme); }%>
 ```
 
-##### More about regex patterns
+##### More about Single Quote patterns
+
+Since these are matched as simple strings, there is no need to escape any
+meta-characters (e.g '.' or '+', etc).
+
+##### More about `r:` regex patterns
+
+The built-in regex engine is built around a DFA construction. As a result, the
+usable language contrstructs are more limited that a full back tracking engine
+would allow. The allowable constructs are:
+
+if `a` and `b` are regular expressions then:
+
+- `ab` recognizes `a` followed by `b`
+- `a|b` recognizes either 'a' or 'b' at that position.
+- `(a)` recognizes the same as `a`.
+- `a*` recongizes zero or one or more `a`
+- `a+` recognizes one or more `a`
+- `a?` recognizes zero or one `a`
+- `[..]` recognizes one character from the given list - ranges may also be given
+    ([A-Z] for instance).
+- `[^..]` recognizes one character NOT on the given list.
+- '.' recognizes any character except linefeed.
+- `\xnn` recognizes one character whose hex value is 0xnn.
+- `\s`,`\S`, `\w`, `\W`, `\r`, `\n`, `\t` - work similar to the perl
+    equivalents.
+
+All operators (`+*?`) are greedy.
+
+Backreferences are not supported. Counted repetition is not (yet) supported.
+
+Since `yalr` parses and builds the DFA for these, errors in the regular
+expressions are caught during `yalr` run time.
+
+##### More about `e:` regex patterns
 
 The regex patterns are interpreted according to the rules of [modified
 ECMAScript](https://en.cppreference.com/w/cpp/regex/ecmascript). It is
@@ -688,10 +717,25 @@ rule, move to the given new state.
 
 ## Generated Code
 
-Pre-pre-alpha. Subject to change.
+### Generated Lexer
 
-*TODO:* Add info about the generated code. longest match rule, first match as
-tie-breaker.
+The generated lexer is a simple DFA state machine. All Single Quote terminals
+and r-prefix regexes are encoded into the machine and are matched in parallel.
+The state machine is designed so that the longest match wins. If two matches of
+equal length result, then the terminal that is defined earlier in the the
+grammar file wins.
+
+After running the DFA, if there are any e-prefix regular expressions, an
+attempt is made to match those. If one of those results in a longer match or a
+match against a terminal defined earlier in the grammar, that match is prefered.
+
+As a result of the above, any use of e-prefix regexes will cause the
+entire lexer to significantly slow down as additional matching attempts must be
+made.
+
+### Generated Parser
+
+Something.
 
 ### Sample Driver
 

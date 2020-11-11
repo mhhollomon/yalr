@@ -16,14 +16,14 @@ std::map<std::string, float> variables;
 // whitespace separates other tokens, but isn't returned as a token.
 //
 // Note the need for the space after the '+' to properly terminate a regex.
-skip WS   '\s+' ;
+skip WS   r:\s+ ;
 
 // basically here so that it is prefered to VARIABLE
 // But, it also gives a chance to show case folding. 
 // This will accept print or PRINT or PrInT, etc.
 //
 // Note that this is a ""void" terminal, it has no semantic value.
-term PRINT '[Pp][Rr][Ii][Nn][Tt]' ;
+term PRINT r:[Pp][Rr][Ii][Nn][Tt] ;
 
 //
 // zero to many underbar followed by a letter followed by as many digits,
@@ -31,9 +31,9 @@ term PRINT '[Pp][Rr][Ii][Nn][Tt]' ;
 // allowed __a___
 // not allowed __3
 //
-term <@lexeme> VARIABLE '_*[a-zA-Z][_a-zA-Z0-9]*' @cmatch;
+term <@lexeme> VARIABLE r:_*[a-zA-Z][_a-zA-Z0-9]*  @cmatch;
 
-term <float>   NUMBER   '-?\d*\.?\d+([eE][-+]?\d+)?' <%{ return atof(lexeme.data()); }%>
+term <float>   NUMBER   r:-?\d*\.?\d+([eE][-+]?\d+)? <%{ return atof(lexeme.data()); }%>
 
 //
 // associativity will define the terminals for us.

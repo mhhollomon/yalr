@@ -29,7 +29,7 @@ namespace yalr {
     // Types of patterns in terminals
     //
     enum class pattern_type {
-        undef, string, regex
+        undef, string, regex, ecma
     };
 
     //

@@ -1047,7 +1047,7 @@ struct parser_guts {
      *****************************************************/
     optional_text_fragment match_regex() {
         int count = 0;
-        if (check_string("r:")) {
+        if (check_string("r:") or check_string("e:")) {
             count = 1;
         } else if (check_string("rm:") or check_string("rf:")){
             count = 2;

@@ -55,6 +55,9 @@ struct pass_ii_visitor {
         } else if (!x.pattern.compare(0, 2, "r:")) {
             x.pattern = x.pattern.substr(2, full_pattern.size()-1);
             x.pat_type = pattern_type::regex;
+        } else if (!x.pattern.compare(0, 2, "e:")) {
+            x.pattern = x.pattern.substr(2, full_pattern.size()-1);
+            x.pat_type = pattern_type::ecma;
         } else {
             yfail("Could not deduce pattern type from string start");
         }

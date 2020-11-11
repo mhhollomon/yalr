@@ -459,13 +459,47 @@ std::set<input_symbol_t> const dot_ranges = {
 }; // nfa_builder
 
 
-// note that this is in this file so it can reference nfa_builder class
-// without have to actually define it in the header
+// 
+// note that these are in this file so they can reference nfa_builder class
+// without having to actually define it in the header
+//
+//
+// Build from a simple string - the string matches literally.
+// "a*[x]+" matches exactly the character sequence 'a', '*', '[' 'x' ']', '+'
 //
 std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view input, 
         symbol_identifier_t sym_id) {
 
-    //std::cout << "build nfa from string " << input << "\n";
+    std::cout << "build nfa from string " << input << "(" << sym_id << ")\n";
+
+    std::unique_ptr<nfa_machine> retval;
+    for (auto c : input) {
+        if (retval) {
+            retval->concat_char(c);
+        } else {
+            retval = std::make_unique<nfa_machine>(c);
+        }
+    }
+
+    retval->partial_ = false;
+
+    // should only be one state. but meh.
+    for (auto state_id : retval->accepting_states_) {
+        auto &state = retval->states_.at(state_id);
+        state.accepted_symbol_ = sym_id;
+    }
+
+
+    return retval;
+}
+
+//
+// Build for a regular expression with much of the trappings
+//
+std::unique_ptr<nfa_machine> nfa_machine::build_from_regex(std::string_view input, 
+        symbol_identifier_t sym_id) {
+
+    std::cout << "build nfa from regex " << input << "(" << sym_id << ")\n";
     auto first = input.begin();
     auto last    = input.end();
 
@@ -489,6 +523,7 @@ std::unique_ptr<nfa_machine> build_nfa(const symbol_table &sym_tab) {
 
     
     std::string_view pattern;
+    pattern_type pat_type;
 
     std::vector<std::unique_ptr<nfa_machine>> machines;
 
@@ -496,21 +531,29 @@ std::unique_ptr<nfa_machine> build_nfa(const symbol_table &sym_tab) {
         if (x.isterm()) {
             auto *data = x.get_data<symbol_type::terminal>();
 
-            if (data->pat_type != pattern_type::string) continue;
+            if (data->pat_type == pattern_type::ecma) continue;
+            // eoi
+            if (data->pattern.empty()) continue;
 
             pattern = data->pattern;
+            pat_type = data->pat_type;
 
         } else if (x.isskip()) {
             auto *data = x.get_data<symbol_type::skip>();
 
-            if (data->pat_type != pattern_type::string) continue;
+            if (data->pat_type == pattern_type::ecma) continue;
 
             pattern = data->pattern;
+            pat_type = data->pat_type;
         } else {
             continue;
         }
 
-        machines.emplace_back(nfa_machine::build_from_string(pattern, id));
+        if (pat_type == pattern_type::string) {
+            machines.emplace_back(nfa_machine::build_from_string(pattern, id));
+        } else {
+            machines.emplace_back(nfa_machine::build_from_regex(pattern, id));
+        }
 
     }
 

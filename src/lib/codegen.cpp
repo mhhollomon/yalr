@@ -177,16 +177,15 @@ namespace codegen {
             }
 
             tdata["flags"] = " ";
-            // with dfa - ignore string matches since they are in 
-            // the dfa
-            if (pt == pattern_type::string) {
-                continue;
-            } else {
+            // ecma needs to use regex_matcher. string and regex use the dfa
+            if (pt == pattern_type::ecma) {
                 tdata["matcher"] = "regex_matcher";
                 tdata["pattern"] = "R\"%_^xx(" + pattern  + ")%_^xx\"" ;
                 if (ct == case_type::fold) {
                     tdata["flags"] = ", std::regex::icase";
                 }
+            } else {
+                continue;
             }
 
             tdata["rank"] = int(sym.id());

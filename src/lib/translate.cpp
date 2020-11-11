@@ -71,7 +71,9 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
                     edge_label = "&epsilon;"sv;
                 } else {
                     auto esc_seq = util::escape_char(alpha.first_, true);
-                    if (esc_seq[0] == '\\') {
+                    if (esc_seq == "\\") {
+                        esc_seq = std::string("&#92;");
+                    } else if (esc_seq[0] == '\\') {
                         esc_seq = std::string("\\\\") + esc_seq;
                     }
                     edge_label = esc_seq;
@@ -110,7 +112,9 @@ void lexer_graph::output(const yalr::analyzer_tree& gr, cli_options &clopts) con
             for (auto const &[alpha, new_state_id] : state.transitions_) {
                 std::string edge_label;
                 auto esc_seq = util::escape_char(alpha.first_, true);
-                if (esc_seq[0] == '\\') {
+                if (esc_seq == "\\") {
+                    esc_seq = std::string("&#92;");
+                } else if (esc_seq[0] == '\\') {
                     esc_seq = std::string("\\\\") + esc_seq;
                 }
                 edge_label = esc_seq;

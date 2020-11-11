@@ -27,7 +27,7 @@ TEST_CASE("[nfa_machine] - ab") {
 
     std::string input = "ab";
     std::cout << "*********** starting test for '" << input << "'\n";
-    auto nfa = codegen::nfa_machine::build_from_string(input, id);
+    auto nfa = codegen::nfa_machine::build_from_regex(input, id);
 
     nfa->dump(std::cout);
     CHECK(nfa->health_check(std::cerr));
@@ -47,7 +47,7 @@ TEST_CASE("[nfa_machine] - ab") {
 
 TEST_CASE("[nfa_machine] - a+") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("a+", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("a+", id);
 
     nfa->dump(std::cout);
     CHECK(nfa->health_check(std::cerr));
@@ -67,7 +67,7 @@ TEST_CASE("[nfa_machine] - a+") {
 
 TEST_CASE("[nfa_machine] - a*a*") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("a*a*", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("a*a*", id);
 
     auto res = nfa->run("aa");
     CHECK(res.matched == true);
@@ -84,7 +84,7 @@ TEST_CASE("[nfa_machine] - a*a*") {
 
 TEST_CASE("[nfa_machine] - a+b+") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("a+b+", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("a+b+", id);
     auto res = nfa->run("aaa");
     CHECK(res.matched == false);
 
@@ -98,7 +98,7 @@ TEST_CASE("[nfa_machine] - a+b+") {
 
 TEST_CASE("[nfa_machine] - optional") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("b?a", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("b?a", id);
 
     nfa->dump(std::cout);
     CHECK(nfa->health_check(std::cerr));
@@ -118,7 +118,7 @@ TEST_CASE("[nfa_machine] - optional") {
 
 TEST_CASE("[nfa_machine] - parens") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("(ab)+", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("(ab)+", id);
 
     auto res = nfa->run("ab");
     CHECK(res.matched == true);
@@ -130,7 +130,7 @@ TEST_CASE("[nfa_machine] - parens") {
 
     std::string input = "c(a(bc)?d)+e";
     std::cout << "*********** starting test for '" << input << "'\n";
-    nfa = codegen::nfa_machine::build_from_string(input, id);
+    nfa = codegen::nfa_machine::build_from_regex(input, id);
 
     nfa->dump(std::cout);
     CHECK(nfa->health_check(std::cerr));
@@ -143,7 +143,7 @@ TEST_CASE("[nfa_machine] - parens") {
 
 TEST_CASE("[nfa_machine] - simple union") {
     auto id = symbol_identifier_t::get_next_id();
-    auto nfa = codegen::nfa_machine::build_from_string("g|h", id);
+    auto nfa = codegen::nfa_machine::build_from_regex("g|h", id);
 
     auto res = nfa->run("g");
     CHECK(res.matched == true);
@@ -153,7 +153,7 @@ TEST_CASE("[nfa_machine] - simple union") {
     CHECK(res.matched == true);
     CHECK(res.length == 1);
 
-    nfa = codegen::nfa_machine::build_from_string("ag|h+", id);
+    nfa = codegen::nfa_machine::build_from_regex("ag|h+", id);
 
     res = nfa->run("hhh");
     CHECK(res.matched == true);
@@ -163,7 +163,7 @@ TEST_CASE("[nfa_machine] - simple union") {
     CHECK(res.matched == true);
     CHECK(res.length == 2);
 
-    nfa = codegen::nfa_machine::build_from_string("a(g|h)+", id);
+    nfa = codegen::nfa_machine::build_from_regex("a(g|h)+", id);
     CHECK(nfa->health_check(std::cout));
     //nfa->dump(std::cout);
 
@@ -176,7 +176,7 @@ TEST_CASE("[nfa_machine] - _*[a-zA-Z][_a-zA-Z0-9]*") {
     std::string input = R"x(_*[a-zA-Z][_a-zA-Z\d]*)x";
     auto id = symbol_identifier_t::get_next_id();
     std::cout << "*********** starting test for '" << input << "'\n";
-    auto nfa = codegen::nfa_machine::build_from_string(input, id);
+    auto nfa = codegen::nfa_machine::build_from_regex(input, id);
 
 
     nfa->dump(std::cout);
