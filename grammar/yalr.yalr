@@ -1,0 +1,107 @@
+option code.main true;
+skip WS       r:\s+     ;
+skip LINECOM  r://.*\n  ; // dot doesn't match EOL
+skip BLOCKCOM r:/\*(.|\n)*\*/ ; // not even close, but it will do for POC
+
+term OPTION  'option'  ;
+term PARSER  'parser'  ;
+term LEXER   'lexer'   ;
+term NAMESP  'namespace' ;
+term CLASS   'class'   ;
+term RULE    'rule'    ;
+term GOAL    'goal'    ;
+term TERM    'term'    ;
+term SKIP    'skip'    ;
+term<std::string> ID r:_*[a-zA-Z]\w* <%{ return std::move(lexeme); }%>
+term ARROW   '=>'      ;
+term LBRACE  '{'       ;
+term RBRACE  '}'       ;
+term SEMI    ';'       ;
+/* These two aren't quite correct (I don't think) */
+term<std::string> SQUOTE r:'(?:[^'\\]*(\\\\|\\'|\\)*)*' <%{ return std::move(lexeme); }%>
+term<std::string> REGEX  r:r:[^\s]*  // Note that this does not capture the closing space.
+    <%{ return std::move(lexeme); }%>
+term<std::string> TYPE   e:<(?!%).*?>          <%{ return lexeme.substr(1, lexeme.size()-2); }%>
+term<std::string> ACTION r:<%{(([^>%}]*})+%)+> <%{ return lexeme.substr(3, lexeme.size()-4); }%>
+
+
+rule DottedID {
+    => ID '.' ID ;
+}
+
+rule DottedIDFull {
+    => DottedID ;
+    => DottedID '.' ID ;
+}
+
+rule OptionStmt {
+    => OPTION DottedID ID ';' ;
+}
+
+rule ParserClass {
+    => PARSER CLASS ID ';' ;
+}
+
+rule LexerClass {
+    => 'lexer' 'class' ID ';' ;
+}
+
+rule Namespace {
+    => 'namespace' ID ';' ;
+}
+
+rule Pattern {
+    => SQUOTE ;
+    => REGEX ;
+}
+
+rule Term {
+    => 'term' ID SEMI ;
+    => 'term' ID Pattern SEMI ;
+    => 'term' TYPE ID Pattern SEMI ;
+    => 'term' TYPE ID Pattern ACTION ;
+}
+
+rule Skip {
+    => 'skip' ID Pattern SEMI ;
+}
+
+rule Symbol { => ID ; => SQUOTE ; }
+
+/* A Possibly empty list of symbols (terms and rules) */
+rule SymbolList {
+    => SymbolList Symbol;
+    =>  ;
+}
+
+rule Alt {
+    => ARROW SymbolList SEMI ;
+}
+
+/* An AltList cannot be empty */
+rule AltList {
+    => Alt ;
+    => AltList Alt ;
+}
+
+rule Rule {
+    => 'goal' 'rule' TYPE ID '{' AltList '}' ;
+    => 'goal' 'rule'      ID '{' AltList '}' ;
+    =>        'rule' TYPE ID '{' AltList '}' ;
+    =>        'rule'      ID '{' AltList '}' ;
+}
+
+rule Statement {
+    => Namespace ;
+    => ParserClass ;
+    => LexerClass ;
+    => Skip ;
+    => Term ;
+    => Rule ;
+    => OptionStmt ;
+}
+
+goal rule YalrSpec {
+    => Statement ;
+    => YalrSpec Statement ;
+}

@@ -1,0 +1,1159 @@
+============= TOKENS ========================
+
+   [ 22] DottedID      
+   [ 24] DottedIDFull  
+   [ 26] OptionStmt    
+   [ 28] ParserClass   
+   [ 30] LexerClass    
+   [ 32] Namespace     
+   [ 34] Pattern       
+   [ 36] Term          
+   [ 38] Skip          
+   [ 40] Symbol        
+   [ 42] SymbolList    
+   [ 44] Alt           
+   [ 46] AltList       
+   [ 48] Rule          
+   [ 50] Statement     
+   [ 52] YalrSpec      
+   [ 56] OPTION                        
+   [ 57] PARSER                        
+   [ 58] LEXER                         
+   [ 59] NAMESP                        
+   [ 60] CLASS                         
+   [ 61] RULE                          
+   [ 62] GOAL                          
+   [ 63] TERM                          
+   [ 64] SKIP                          
+   [ 65] ID                             std::string
+   [ 66] ARROW                         
+   [ 67] LBRACE                        
+   [ 68] RBRACE                        
+   [ 69] SEMI                          
+   [ 70] SQUOTE                         std::string
+   [ 71] REGEX                          std::string
+   [ 72] TYPE                           std::string
+   [ 73] ACTION                         std::string
+   [ 74] '.'                           
+   [ 75] YalrSpec_prime
+   [ 76] $                             
+
+============= PRODUCTIONS ===================
+
+   [  0]       DottedID =>  ID '.' ID
+   [  1]   DottedIDFull =>  DottedID
+   [  2]   DottedIDFull =>  DottedID '.' ID
+   [  3]     OptionStmt =>  OPTION DottedID ID SEMI
+   [  4]    ParserClass =>  PARSER CLASS ID SEMI
+   [  5]     LexerClass =>  LEXER CLASS ID SEMI
+   [  6]      Namespace =>  NAMESP ID SEMI
+   [  7]        Pattern =>  SQUOTE
+   [  8]        Pattern =>  REGEX
+   [  9]           Term =>  TERM ID SEMI
+   [ 10]           Term =>  TERM ID Pattern SEMI
+   [ 11]           Term =>  TERM TYPE ID Pattern SEMI
+   [ 12]           Term =>  TERM TYPE ID Pattern ACTION
+   [ 13]           Skip =>  SKIP ID Pattern SEMI
+   [ 14]         Symbol =>  ID
+   [ 15]         Symbol =>  SQUOTE
+   [ 16]     SymbolList =>  SymbolList Symbol
+   [ 17]     SymbolList => 
+   [ 18]            Alt =>  ARROW SymbolList SEMI
+   [ 19]        AltList =>  Alt
+   [ 20]        AltList =>  AltList Alt
+   [ 21]           Rule =>  GOAL RULE TYPE ID LBRACE AltList RBRACE
+   [ 22]           Rule =>  GOAL RULE ID LBRACE AltList RBRACE
+   [ 23]           Rule =>  RULE TYPE ID LBRACE AltList RBRACE
+   [ 24]           Rule =>  RULE ID LBRACE AltList RBRACE
+   [ 25]      Statement =>  Namespace
+   [ 26]      Statement =>  ParserClass
+   [ 27]      Statement =>  LexerClass
+   [ 28]      Statement =>  Skip
+   [ 29]      Statement =>  Term
+   [ 30]      Statement =>  Rule
+   [ 31]      Statement =>  OptionStmt
+   [ 32]       YalrSpec =>  Statement
+   [ 33]       YalrSpec =>  YalrSpec Statement
+   [ 34] YalrSpec_prime =>  YalrSpec
+
+============= STATES ========================
+
+--------- State 0 Initial
+
+Items:
+   [  3] OptionStmt =>  |*| OPTION DottedID ID SEMI
+   [  4] ParserClass =>  |*| PARSER CLASS ID SEMI
+   [  5] LexerClass =>  |*| LEXER CLASS ID SEMI
+   [  6] Namespace =>  |*| NAMESP ID SEMI
+   [  9] Term =>  |*| TERM ID SEMI
+   [ 10] Term =>  |*| TERM ID Pattern SEMI
+   [ 11] Term =>  |*| TERM TYPE ID Pattern SEMI
+   [ 12] Term =>  |*| TERM TYPE ID Pattern ACTION
+   [ 13] Skip =>  |*| SKIP ID Pattern SEMI
+   [ 21] Rule =>  |*| GOAL RULE TYPE ID LBRACE AltList RBRACE
+   [ 22] Rule =>  |*| GOAL RULE ID LBRACE AltList RBRACE
+   [ 23] Rule =>  |*| RULE TYPE ID LBRACE AltList RBRACE
+   [ 24] Rule =>  |*| RULE ID LBRACE AltList RBRACE
+   [ 25] Statement =>  |*| Namespace
+   [ 26] Statement =>  |*| ParserClass
+   [ 27] Statement =>  |*| LexerClass
+   [ 28] Statement =>  |*| Skip
+   [ 29] Statement =>  |*| Term
+   [ 30] Statement =>  |*| Rule
+   [ 31] Statement =>  |*| OptionStmt
+   [ 32] YalrSpec =>  |*| Statement
+   [ 33] YalrSpec =>  |*| YalrSpec Statement
+   [ 34] YalrSpec_prime =>  |*| YalrSpec
+
+Actions:
+  OPTION => shift and move to state 10
+  PARSER => shift and move to state 11
+  LEXER => shift and move to state 12
+  NAMESP => shift and move to state 13
+  RULE => shift and move to state 14
+  GOAL => shift and move to state 15
+  TERM => shift and move to state 16
+  SKIP => shift and move to state 17
+
+Gotos:
+  OptionStmt => state 1
+  ParserClass => state 2
+  LexerClass => state 3
+  Namespace => state 4
+  Term => state 5
+  Skip => state 6
+  Rule => state 7
+  Statement => state 8
+  YalrSpec => state 9
+
+--------- State 1 
+
+Items:
+   [ 31] Statement =>  OptionStmt |*|
+
+Actions:
+  OPTION => reduce by production 31
+  PARSER => reduce by production 31
+  LEXER => reduce by production 31
+  NAMESP => reduce by production 31
+  RULE => reduce by production 31
+  GOAL => reduce by production 31
+  TERM => reduce by production 31
+  SKIP => reduce by production 31
+  $ => reduce by production 31
+
+Gotos:
+
+--------- State 2 
+
+Items:
+   [ 26] Statement =>  ParserClass |*|
+
+Actions:
+  OPTION => reduce by production 26
+  PARSER => reduce by production 26
+  LEXER => reduce by production 26
+  NAMESP => reduce by production 26
+  RULE => reduce by production 26
+  GOAL => reduce by production 26
+  TERM => reduce by production 26
+  SKIP => reduce by production 26
+  $ => reduce by production 26
+
+Gotos:
+
+--------- State 3 
+
+Items:
+   [ 27] Statement =>  LexerClass |*|
+
+Actions:
+  OPTION => reduce by production 27
+  PARSER => reduce by production 27
+  LEXER => reduce by production 27
+  NAMESP => reduce by production 27
+  RULE => reduce by production 27
+  GOAL => reduce by production 27
+  TERM => reduce by production 27
+  SKIP => reduce by production 27
+  $ => reduce by production 27
+
+Gotos:
+
+--------- State 4 
+
+Items:
+   [ 25] Statement =>  Namespace |*|
+
+Actions:
+  OPTION => reduce by production 25
+  PARSER => reduce by production 25
+  LEXER => reduce by production 25
+  NAMESP => reduce by production 25
+  RULE => reduce by production 25
+  GOAL => reduce by production 25
+  TERM => reduce by production 25
+  SKIP => reduce by production 25
+  $ => reduce by production 25
+
+Gotos:
+
+--------- State 5 
+
+Items:
+   [ 29] Statement =>  Term |*|
+
+Actions:
+  OPTION => reduce by production 29
+  PARSER => reduce by production 29
+  LEXER => reduce by production 29
+  NAMESP => reduce by production 29
+  RULE => reduce by production 29
+  GOAL => reduce by production 29
+  TERM => reduce by production 29
+  SKIP => reduce by production 29
+  $ => reduce by production 29
+
+Gotos:
+
+--------- State 6 
+
+Items:
+   [ 28] Statement =>  Skip |*|
+
+Actions:
+  OPTION => reduce by production 28
+  PARSER => reduce by production 28
+  LEXER => reduce by production 28
+  NAMESP => reduce by production 28
+  RULE => reduce by production 28
+  GOAL => reduce by production 28
+  TERM => reduce by production 28
+  SKIP => reduce by production 28
+  $ => reduce by production 28
+
+Gotos:
+
+--------- State 7 
+
+Items:
+   [ 30] Statement =>  Rule |*|
+
+Actions:
+  OPTION => reduce by production 30
+  PARSER => reduce by production 30
+  LEXER => reduce by production 30
+  NAMESP => reduce by production 30
+  RULE => reduce by production 30
+  GOAL => reduce by production 30
+  TERM => reduce by production 30
+  SKIP => reduce by production 30
+  $ => reduce by production 30
+
+Gotos:
+
+--------- State 8 
+
+Items:
+   [ 32] YalrSpec =>  Statement |*|
+
+Actions:
+  OPTION => reduce by production 32
+  PARSER => reduce by production 32
+  LEXER => reduce by production 32
+  NAMESP => reduce by production 32
+  RULE => reduce by production 32
+  GOAL => reduce by production 32
+  TERM => reduce by production 32
+  SKIP => reduce by production 32
+  $ => reduce by production 32
+
+Gotos:
+
+--------- State 9 
+
+Items:
+   [  3] OptionStmt =>  |*| OPTION DottedID ID SEMI
+   [  4] ParserClass =>  |*| PARSER CLASS ID SEMI
+   [  5] LexerClass =>  |*| LEXER CLASS ID SEMI
+   [  6] Namespace =>  |*| NAMESP ID SEMI
+   [  9] Term =>  |*| TERM ID SEMI
+   [ 10] Term =>  |*| TERM ID Pattern SEMI
+   [ 11] Term =>  |*| TERM TYPE ID Pattern SEMI
+   [ 12] Term =>  |*| TERM TYPE ID Pattern ACTION
+   [ 13] Skip =>  |*| SKIP ID Pattern SEMI
+   [ 21] Rule =>  |*| GOAL RULE TYPE ID LBRACE AltList RBRACE
+   [ 22] Rule =>  |*| GOAL RULE ID LBRACE AltList RBRACE
+   [ 23] Rule =>  |*| RULE TYPE ID LBRACE AltList RBRACE
+   [ 24] Rule =>  |*| RULE ID LBRACE AltList RBRACE
+   [ 25] Statement =>  |*| Namespace
+   [ 26] Statement =>  |*| ParserClass
+   [ 27] Statement =>  |*| LexerClass
+   [ 28] Statement =>  |*| Skip
+   [ 29] Statement =>  |*| Term
+   [ 30] Statement =>  |*| Rule
+   [ 31] Statement =>  |*| OptionStmt
+   [ 33] YalrSpec =>  YalrSpec |*| Statement
+   [ 34] YalrSpec_prime =>  YalrSpec |*|
+
+Actions:
+  OPTION => shift and move to state 10
+  PARSER => shift and move to state 11
+  LEXER => shift and move to state 12
+  NAMESP => shift and move to state 13
+  RULE => shift and move to state 14
+  GOAL => shift and move to state 15
+  TERM => shift and move to state 16
+  SKIP => shift and move to state 17
+  $ => accept
+
+Gotos:
+  OptionStmt => state 1
+  ParserClass => state 2
+  LexerClass => state 3
+  Namespace => state 4
+  Term => state 5
+  Skip => state 6
+  Rule => state 7
+  Statement => state 18
+
+--------- State 10 
+
+Items:
+   [  0] DottedID =>  |*| ID '.' ID
+   [  3] OptionStmt =>  OPTION |*| DottedID ID SEMI
+
+Actions:
+  ID => shift and move to state 20
+
+Gotos:
+  DottedID => state 19
+
+--------- State 11 
+
+Items:
+   [  4] ParserClass =>  PARSER |*| CLASS ID SEMI
+
+Actions:
+  CLASS => shift and move to state 21
+
+Gotos:
+
+--------- State 12 
+
+Items:
+   [  5] LexerClass =>  LEXER |*| CLASS ID SEMI
+
+Actions:
+  CLASS => shift and move to state 22
+
+Gotos:
+
+--------- State 13 
+
+Items:
+   [  6] Namespace =>  NAMESP |*| ID SEMI
+
+Actions:
+  ID => shift and move to state 23
+
+Gotos:
+
+--------- State 14 
+
+Items:
+   [ 23] Rule =>  RULE |*| TYPE ID LBRACE AltList RBRACE
+   [ 24] Rule =>  RULE |*| ID LBRACE AltList RBRACE
+
+Actions:
+  ID => shift and move to state 24
+  TYPE => shift and move to state 25
+
+Gotos:
+
+--------- State 15 
+
+Items:
+   [ 21] Rule =>  GOAL |*| RULE TYPE ID LBRACE AltList RBRACE
+   [ 22] Rule =>  GOAL |*| RULE ID LBRACE AltList RBRACE
+
+Actions:
+  RULE => shift and move to state 26
+
+Gotos:
+
+--------- State 16 
+
+Items:
+   [  9] Term =>  TERM |*| ID SEMI
+   [ 10] Term =>  TERM |*| ID Pattern SEMI
+   [ 11] Term =>  TERM |*| TYPE ID Pattern SEMI
+   [ 12] Term =>  TERM |*| TYPE ID Pattern ACTION
+
+Actions:
+  ID => shift and move to state 27
+  TYPE => shift and move to state 28
+
+Gotos:
+
+--------- State 17 
+
+Items:
+   [ 13] Skip =>  SKIP |*| ID Pattern SEMI
+
+Actions:
+  ID => shift and move to state 29
+
+Gotos:
+
+--------- State 18 
+
+Items:
+   [ 33] YalrSpec =>  YalrSpec Statement |*|
+
+Actions:
+  OPTION => reduce by production 33
+  PARSER => reduce by production 33
+  LEXER => reduce by production 33
+  NAMESP => reduce by production 33
+  RULE => reduce by production 33
+  GOAL => reduce by production 33
+  TERM => reduce by production 33
+  SKIP => reduce by production 33
+  $ => reduce by production 33
+
+Gotos:
+
+--------- State 19 
+
+Items:
+   [  3] OptionStmt =>  OPTION DottedID |*| ID SEMI
+
+Actions:
+  ID => shift and move to state 30
+
+Gotos:
+
+--------- State 20 
+
+Items:
+   [  0] DottedID =>  ID |*| '.' ID
+
+Actions:
+  '.' => shift and move to state 31
+
+Gotos:
+
+--------- State 21 
+
+Items:
+   [  4] ParserClass =>  PARSER CLASS |*| ID SEMI
+
+Actions:
+  ID => shift and move to state 32
+
+Gotos:
+
+--------- State 22 
+
+Items:
+   [  5] LexerClass =>  LEXER CLASS |*| ID SEMI
+
+Actions:
+  ID => shift and move to state 33
+
+Gotos:
+
+--------- State 23 
+
+Items:
+   [  6] Namespace =>  NAMESP ID |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 34
+
+Gotos:
+
+--------- State 24 
+
+Items:
+   [ 24] Rule =>  RULE ID |*| LBRACE AltList RBRACE
+
+Actions:
+  LBRACE => shift and move to state 35
+
+Gotos:
+
+--------- State 25 
+
+Items:
+   [ 23] Rule =>  RULE TYPE |*| ID LBRACE AltList RBRACE
+
+Actions:
+  ID => shift and move to state 36
+
+Gotos:
+
+--------- State 26 
+
+Items:
+   [ 21] Rule =>  GOAL RULE |*| TYPE ID LBRACE AltList RBRACE
+   [ 22] Rule =>  GOAL RULE |*| ID LBRACE AltList RBRACE
+
+Actions:
+  ID => shift and move to state 37
+  TYPE => shift and move to state 38
+
+Gotos:
+
+--------- State 27 
+
+Items:
+   [  7] Pattern =>  |*| SQUOTE
+   [  8] Pattern =>  |*| REGEX
+   [  9] Term =>  TERM ID |*| SEMI
+   [ 10] Term =>  TERM ID |*| Pattern SEMI
+
+Actions:
+  SEMI => shift and move to state 40
+  SQUOTE => shift and move to state 41
+  REGEX => shift and move to state 42
+
+Gotos:
+  Pattern => state 39
+
+--------- State 28 
+
+Items:
+   [ 11] Term =>  TERM TYPE |*| ID Pattern SEMI
+   [ 12] Term =>  TERM TYPE |*| ID Pattern ACTION
+
+Actions:
+  ID => shift and move to state 43
+
+Gotos:
+
+--------- State 29 
+
+Items:
+   [  7] Pattern =>  |*| SQUOTE
+   [  8] Pattern =>  |*| REGEX
+   [ 13] Skip =>  SKIP ID |*| Pattern SEMI
+
+Actions:
+  SQUOTE => shift and move to state 41
+  REGEX => shift and move to state 42
+
+Gotos:
+  Pattern => state 44
+
+--------- State 30 
+
+Items:
+   [  3] OptionStmt =>  OPTION DottedID ID |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 45
+
+Gotos:
+
+--------- State 31 
+
+Items:
+   [  0] DottedID =>  ID '.' |*| ID
+
+Actions:
+  ID => shift and move to state 46
+
+Gotos:
+
+--------- State 32 
+
+Items:
+   [  4] ParserClass =>  PARSER CLASS ID |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 47
+
+Gotos:
+
+--------- State 33 
+
+Items:
+   [  5] LexerClass =>  LEXER CLASS ID |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 48
+
+Gotos:
+
+--------- State 34 
+
+Items:
+   [  6] Namespace =>  NAMESP ID SEMI |*|
+
+Actions:
+  OPTION => reduce by production 6
+  PARSER => reduce by production 6
+  LEXER => reduce by production 6
+  NAMESP => reduce by production 6
+  RULE => reduce by production 6
+  GOAL => reduce by production 6
+  TERM => reduce by production 6
+  SKIP => reduce by production 6
+  $ => reduce by production 6
+
+Gotos:
+
+--------- State 35 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 19] AltList =>  |*| Alt
+   [ 20] AltList =>  |*| AltList Alt
+   [ 24] Rule =>  RULE ID LBRACE |*| AltList RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+
+Gotos:
+  Alt => state 49
+  AltList => state 50
+
+--------- State 36 
+
+Items:
+   [ 23] Rule =>  RULE TYPE ID |*| LBRACE AltList RBRACE
+
+Actions:
+  LBRACE => shift and move to state 52
+
+Gotos:
+
+--------- State 37 
+
+Items:
+   [ 22] Rule =>  GOAL RULE ID |*| LBRACE AltList RBRACE
+
+Actions:
+  LBRACE => shift and move to state 53
+
+Gotos:
+
+--------- State 38 
+
+Items:
+   [ 21] Rule =>  GOAL RULE TYPE |*| ID LBRACE AltList RBRACE
+
+Actions:
+  ID => shift and move to state 54
+
+Gotos:
+
+--------- State 39 
+
+Items:
+   [ 10] Term =>  TERM ID Pattern |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 55
+
+Gotos:
+
+--------- State 40 
+
+Items:
+   [  9] Term =>  TERM ID SEMI |*|
+
+Actions:
+  OPTION => reduce by production 9
+  PARSER => reduce by production 9
+  LEXER => reduce by production 9
+  NAMESP => reduce by production 9
+  RULE => reduce by production 9
+  GOAL => reduce by production 9
+  TERM => reduce by production 9
+  SKIP => reduce by production 9
+  $ => reduce by production 9
+
+Gotos:
+
+--------- State 41 
+
+Items:
+   [  7] Pattern =>  SQUOTE |*|
+
+Actions:
+  SEMI => reduce by production 7
+  ACTION => reduce by production 7
+
+Gotos:
+
+--------- State 42 
+
+Items:
+   [  8] Pattern =>  REGEX |*|
+
+Actions:
+  SEMI => reduce by production 8
+  ACTION => reduce by production 8
+
+Gotos:
+
+--------- State 43 
+
+Items:
+   [  7] Pattern =>  |*| SQUOTE
+   [  8] Pattern =>  |*| REGEX
+   [ 11] Term =>  TERM TYPE ID |*| Pattern SEMI
+   [ 12] Term =>  TERM TYPE ID |*| Pattern ACTION
+
+Actions:
+  SQUOTE => shift and move to state 41
+  REGEX => shift and move to state 42
+
+Gotos:
+  Pattern => state 56
+
+--------- State 44 
+
+Items:
+   [ 13] Skip =>  SKIP ID Pattern |*| SEMI
+
+Actions:
+  SEMI => shift and move to state 57
+
+Gotos:
+
+--------- State 45 
+
+Items:
+   [  3] OptionStmt =>  OPTION DottedID ID SEMI |*|
+
+Actions:
+  OPTION => reduce by production 3
+  PARSER => reduce by production 3
+  LEXER => reduce by production 3
+  NAMESP => reduce by production 3
+  RULE => reduce by production 3
+  GOAL => reduce by production 3
+  TERM => reduce by production 3
+  SKIP => reduce by production 3
+  $ => reduce by production 3
+
+Gotos:
+
+--------- State 46 
+
+Items:
+   [  0] DottedID =>  ID '.' ID |*|
+
+Actions:
+  ID => reduce by production 0
+  '.' => reduce by production 0
+
+Gotos:
+
+--------- State 47 
+
+Items:
+   [  4] ParserClass =>  PARSER CLASS ID SEMI |*|
+
+Actions:
+  OPTION => reduce by production 4
+  PARSER => reduce by production 4
+  LEXER => reduce by production 4
+  NAMESP => reduce by production 4
+  RULE => reduce by production 4
+  GOAL => reduce by production 4
+  TERM => reduce by production 4
+  SKIP => reduce by production 4
+  $ => reduce by production 4
+
+Gotos:
+
+--------- State 48 
+
+Items:
+   [  5] LexerClass =>  LEXER CLASS ID SEMI |*|
+
+Actions:
+  OPTION => reduce by production 5
+  PARSER => reduce by production 5
+  LEXER => reduce by production 5
+  NAMESP => reduce by production 5
+  RULE => reduce by production 5
+  GOAL => reduce by production 5
+  TERM => reduce by production 5
+  SKIP => reduce by production 5
+  $ => reduce by production 5
+
+Gotos:
+
+--------- State 49 
+
+Items:
+   [ 19] AltList =>  Alt |*|
+
+Actions:
+  ARROW => reduce by production 19
+  RBRACE => reduce by production 19
+
+Gotos:
+
+--------- State 50 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 20] AltList =>  AltList |*| Alt
+   [ 24] Rule =>  RULE ID LBRACE AltList |*| RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+  RBRACE => shift and move to state 59
+
+Gotos:
+  Alt => state 58
+
+--------- State 51 
+
+Items:
+   [ 16] SymbolList =>  |*| SymbolList Symbol
+   [ 17] SymbolList =>  |*|
+   [ 18] Alt =>  ARROW |*| SymbolList SEMI
+
+Actions:
+  ID => reduce by production 17
+  SEMI => reduce by production 17
+  SQUOTE => reduce by production 17
+
+Gotos:
+  SymbolList => state 60
+
+--------- State 52 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 19] AltList =>  |*| Alt
+   [ 20] AltList =>  |*| AltList Alt
+   [ 23] Rule =>  RULE TYPE ID LBRACE |*| AltList RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+
+Gotos:
+  Alt => state 49
+  AltList => state 61
+
+--------- State 53 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 19] AltList =>  |*| Alt
+   [ 20] AltList =>  |*| AltList Alt
+   [ 22] Rule =>  GOAL RULE ID LBRACE |*| AltList RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+
+Gotos:
+  Alt => state 49
+  AltList => state 62
+
+--------- State 54 
+
+Items:
+   [ 21] Rule =>  GOAL RULE TYPE ID |*| LBRACE AltList RBRACE
+
+Actions:
+  LBRACE => shift and move to state 63
+
+Gotos:
+
+--------- State 55 
+
+Items:
+   [ 10] Term =>  TERM ID Pattern SEMI |*|
+
+Actions:
+  OPTION => reduce by production 10
+  PARSER => reduce by production 10
+  LEXER => reduce by production 10
+  NAMESP => reduce by production 10
+  RULE => reduce by production 10
+  GOAL => reduce by production 10
+  TERM => reduce by production 10
+  SKIP => reduce by production 10
+  $ => reduce by production 10
+
+Gotos:
+
+--------- State 56 
+
+Items:
+   [ 11] Term =>  TERM TYPE ID Pattern |*| SEMI
+   [ 12] Term =>  TERM TYPE ID Pattern |*| ACTION
+
+Actions:
+  SEMI => shift and move to state 64
+  ACTION => shift and move to state 65
+
+Gotos:
+
+--------- State 57 
+
+Items:
+   [ 13] Skip =>  SKIP ID Pattern SEMI |*|
+
+Actions:
+  OPTION => reduce by production 13
+  PARSER => reduce by production 13
+  LEXER => reduce by production 13
+  NAMESP => reduce by production 13
+  RULE => reduce by production 13
+  GOAL => reduce by production 13
+  TERM => reduce by production 13
+  SKIP => reduce by production 13
+  $ => reduce by production 13
+
+Gotos:
+
+--------- State 58 
+
+Items:
+   [ 20] AltList =>  AltList Alt |*|
+
+Actions:
+  ARROW => reduce by production 20
+  RBRACE => reduce by production 20
+
+Gotos:
+
+--------- State 59 
+
+Items:
+   [ 24] Rule =>  RULE ID LBRACE AltList RBRACE |*|
+
+Actions:
+  OPTION => reduce by production 24
+  PARSER => reduce by production 24
+  LEXER => reduce by production 24
+  NAMESP => reduce by production 24
+  RULE => reduce by production 24
+  GOAL => reduce by production 24
+  TERM => reduce by production 24
+  SKIP => reduce by production 24
+  $ => reduce by production 24
+
+Gotos:
+
+--------- State 60 
+
+Items:
+   [ 14] Symbol =>  |*| ID
+   [ 15] Symbol =>  |*| SQUOTE
+   [ 16] SymbolList =>  SymbolList |*| Symbol
+   [ 18] Alt =>  ARROW SymbolList |*| SEMI
+
+Actions:
+  ID => shift and move to state 67
+  SEMI => shift and move to state 68
+  SQUOTE => shift and move to state 69
+
+Gotos:
+  Symbol => state 66
+
+--------- State 61 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 20] AltList =>  AltList |*| Alt
+   [ 23] Rule =>  RULE TYPE ID LBRACE AltList |*| RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+  RBRACE => shift and move to state 70
+
+Gotos:
+  Alt => state 58
+
+--------- State 62 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 20] AltList =>  AltList |*| Alt
+   [ 22] Rule =>  GOAL RULE ID LBRACE AltList |*| RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+  RBRACE => shift and move to state 71
+
+Gotos:
+  Alt => state 58
+
+--------- State 63 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 19] AltList =>  |*| Alt
+   [ 20] AltList =>  |*| AltList Alt
+   [ 21] Rule =>  GOAL RULE TYPE ID LBRACE |*| AltList RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+
+Gotos:
+  Alt => state 49
+  AltList => state 72
+
+--------- State 64 
+
+Items:
+   [ 11] Term =>  TERM TYPE ID Pattern SEMI |*|
+
+Actions:
+  OPTION => reduce by production 11
+  PARSER => reduce by production 11
+  LEXER => reduce by production 11
+  NAMESP => reduce by production 11
+  RULE => reduce by production 11
+  GOAL => reduce by production 11
+  TERM => reduce by production 11
+  SKIP => reduce by production 11
+  $ => reduce by production 11
+
+Gotos:
+
+--------- State 65 
+
+Items:
+   [ 12] Term =>  TERM TYPE ID Pattern ACTION |*|
+
+Actions:
+  OPTION => reduce by production 12
+  PARSER => reduce by production 12
+  LEXER => reduce by production 12
+  NAMESP => reduce by production 12
+  RULE => reduce by production 12
+  GOAL => reduce by production 12
+  TERM => reduce by production 12
+  SKIP => reduce by production 12
+  $ => reduce by production 12
+
+Gotos:
+
+--------- State 66 
+
+Items:
+   [ 16] SymbolList =>  SymbolList Symbol |*|
+
+Actions:
+  ID => reduce by production 16
+  SEMI => reduce by production 16
+  SQUOTE => reduce by production 16
+
+Gotos:
+
+--------- State 67 
+
+Items:
+   [ 14] Symbol =>  ID |*|
+
+Actions:
+  ID => reduce by production 14
+  SEMI => reduce by production 14
+  SQUOTE => reduce by production 14
+
+Gotos:
+
+--------- State 68 
+
+Items:
+   [ 18] Alt =>  ARROW SymbolList SEMI |*|
+
+Actions:
+  ARROW => reduce by production 18
+  RBRACE => reduce by production 18
+
+Gotos:
+
+--------- State 69 
+
+Items:
+   [ 15] Symbol =>  SQUOTE |*|
+
+Actions:
+  ID => reduce by production 15
+  SEMI => reduce by production 15
+  SQUOTE => reduce by production 15
+
+Gotos:
+
+--------- State 70 
+
+Items:
+   [ 23] Rule =>  RULE TYPE ID LBRACE AltList RBRACE |*|
+
+Actions:
+  OPTION => reduce by production 23
+  PARSER => reduce by production 23
+  LEXER => reduce by production 23
+  NAMESP => reduce by production 23
+  RULE => reduce by production 23
+  GOAL => reduce by production 23
+  TERM => reduce by production 23
+  SKIP => reduce by production 23
+  $ => reduce by production 23
+
+Gotos:
+
+--------- State 71 
+
+Items:
+   [ 22] Rule =>  GOAL RULE ID LBRACE AltList RBRACE |*|
+
+Actions:
+  OPTION => reduce by production 22
+  PARSER => reduce by production 22
+  LEXER => reduce by production 22
+  NAMESP => reduce by production 22
+  RULE => reduce by production 22
+  GOAL => reduce by production 22
+  TERM => reduce by production 22
+  SKIP => reduce by production 22
+  $ => reduce by production 22
+
+Gotos:
+
+--------- State 72 
+
+Items:
+   [ 18] Alt =>  |*| ARROW SymbolList SEMI
+   [ 20] AltList =>  AltList |*| Alt
+   [ 21] Rule =>  GOAL RULE TYPE ID LBRACE AltList |*| RBRACE
+
+Actions:
+  ARROW => shift and move to state 51
+  RBRACE => shift and move to state 73
+
+Gotos:
+  Alt => state 58
+
+--------- State 73 
+
+Items:
+   [ 21] Rule =>  GOAL RULE TYPE ID LBRACE AltList RBRACE |*|
+
+Actions:
+  OPTION => reduce by production 21
+  PARSER => reduce by production 21
+  LEXER => reduce by production 21
+  NAMESP => reduce by production 21
+  RULE => reduce by production 21
+  GOAL => reduce by production 21
+  TERM => reduce by production 21
+  SKIP => reduce by production 21
+  $ => reduce by production 21
+
+Gotos:
+

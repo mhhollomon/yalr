@@ -1,0 +1,8 @@
+option code.main true ;
+
+goal rule P { => 'a' LIST 'c' ; }
+
+rule LIST {
+    => LIST 'b' ;
+    => ;
+}

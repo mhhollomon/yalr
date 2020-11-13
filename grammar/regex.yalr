@@ -1,0 +1,28 @@
+term LITERAL r:\w ;
+
+goal rule regex {
+    => alternate '|' regex ;
+    => alternate ;
+}
+
+rule alternate {
+    => item alternate ;
+    => ;
+}
+
+rule item {
+    => atom ;
+    => closure ;
+    => plus    ;
+    => optional ;
+}
+
+rule closure { => atom '*' ; }
+rule plus    { => atom '+' ; }
+rule optional { => atom '?' ; }
+
+rule atom {
+    => LITERAL ;
+    => '(' regex ')' ;
+}
+

@@ -131,3 +131,11 @@ add_test(NAME t30-yalr-3 COMMAND "test_runner"
     "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.3.cfgfile"
     "yalr='$<TARGET_FILE:yalr>'"
     )
+
+add_executable(tff-regex)
+target_sources(tff-regex PRIVATE "tff-regex.cpp")
+target_link_libraries(tff-regex
+    PRIVATE doctest lib-include
+        utils_objlib
+    )
+add_test(NAME tff-regex COMMAND "tff-regex")
