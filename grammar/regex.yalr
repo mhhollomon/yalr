@@ -1,4 +1,32 @@
+/*
+ * This is the grammar that yalr accepts for regular expressions.
+ *
+ * ../build/yalr -S regex.state regex.yalr -o regex.cpp
+ * g++ -std=c++17 regex.cpp -o regex
+ * ./regex -b "xy(z)*\\xff"
+ *
+ * ../build/yalr --translate=lexer -o regex regex.yalr
+ * dot -Tsvg -oregex.nfa.svg regex.nfa.gv
+ * dot -Tsvg -oregex.dfa.svg regex.dfa.gv
+ *
+ */
+
+option code.main true ;
+
+
 term LITERAL r:\w ;
+
+// Single characte escapes that turn into single characters
+term SIMPLE_ESC r:[fnrtv0] ;
+
+// Single character escapes that turn into multiple ranges
+term RANGE_ESC r:[dDsSwW] ;
+
+// Characters that turn into themselves when escaped
+term IGNORED_ESC r:[^dDsSwWfnrtv0x] ;
+
+term HEXDIGIT r:[0-9a-fA-F] ;
+
 
 goal rule regex {
     => alternate '|' regex ;
@@ -17,12 +45,38 @@ rule item {
     => optional ;
 }
 
-rule closure { => atom '*' ; }
-rule plus    { => atom '+' ; }
-rule optional { => atom '?' ; }
+rule closure { 
+    => atom '*' ;
+    => atom '*' '?' ;
+}
+
+rule plus    { 
+    => atom '+' ; 
+    => atom '+' '?'; 
+}
+
+rule optional { 
+    => atom '?' ; 
+    => atom '?' '?' ; 
+}
 
 rule atom {
+    => escape_char ;
+    => '.' ;
     => LITERAL ;
     => '(' regex ')' ;
+}
+
+rule escape_char {
+    => '\\' SIMPLE_ESC ;
+    => '\\' RANGE_ESC ;
+    => '\\' IGNORED_ESC ;
+    => hex_escape ;
+}
+
+rule hex_escape {
+    => '\\' 'x' HEXDIGIT ;
+    => '\\' 'x' HEXDIGIT HEXDIGIT ;
+    => '\\' 'x' ; // treated as a simple 'x'
 }
 

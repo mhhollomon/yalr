@@ -12,12 +12,53 @@ std::string escape_char(char c) {
     return yalr::util::escape_char(c, false);
 }
 
+std::map<char, char> const escape_map = {
+    { 'f', '\f' },
+    { 'n', '\n' },
+    { 'r', '\r' },
+    { 't', '\t' },
+    { 'v', '\v' },
+    { '0', '\0' },
+};
+
+std::map<char, std::set<std::pair<char, char>>> const class_escape_map = {
+    {'d', { {'0', '9'}, } },
+    {'D', { {'\0', '0'-1, },
+            {'9'+1, '\x7F'}, }, },
+
+    {'s', { {'\t', '\r'},
+            {' ',  ' ' }, }, },
+    {'S', { {'\0', '\t'-1},
+            {'\r'+1, ' '-1},
+            {' '+1, '\x7F'}, }, },
+
+    {'w', { {'0', '9'},
+            {'A', 'Z' },
+            {'a', 'z' },
+            {'_', '\0'}, }, },
+    {'W', { {'\0', '0'-1, },
+            {'9'+1, 'A'-1 },
+            {'Z'+1, 'a'-1 },
+            {'z'+1, '_'-1 },
+            {'_'+1, '\x7f' }, }, },
+
+};
+
+std::set<std::pair<char, char>> const dot_ranges = {
+    { { '\0', '\n'-1},
+      { '\n'+1, '\x7F'}, }, 
+};
+
 enum class operator_t {
     noop,       //        compile
     literal,    // parse, compile
+    range,      // parse, compile
     close,      // parse
+    nclose,     // parse
     plus,       // parse
+    nplus,      // parse
     optn,       // parse
+    noptn,      // parse
     concat,     // parse
     runion,     // parse
     split,      //        compile
@@ -52,21 +93,35 @@ struct regex_parser {
 
     regex_parser(std::string_view s) : regex_parser(s.begin(), s.end()) {}
 
+    //-----------------------------------------------------------------
     void dump_list(std::ostream &strm) {
         strm << "--------\n";
         for (auto const &oper : oper_list_) {
             switch (oper.oper) {
                 case operator_t::literal :
-                    strm << "litrl  " << escape_char(static_cast<char>(oper.op1)) << "\n";
+                    strm << "litrl  '" << escape_char(static_cast<char>(oper.op1)) << "'\n";
+                    break;
+                case operator_t::range :
+                    strm << "range  '" << escape_char(static_cast<char>(oper.op1)) << "', '";
+                    strm << escape_char(static_cast<char>(oper.op2)) << "'\n";
                     break;
                 case operator_t::close :
                     strm << "close\n";
                     break;
+                case operator_t::nclose :
+                    strm << "nclose\n";
+                    break;
                 case operator_t::plus :
                     strm << "plus\n";
                     break;
+                case operator_t::nplus :
+                    strm << "nplus\n";
+                    break;
                 case operator_t::optn :
                     strm << "optn\n";
+                    break;
+                case operator_t::noptn :
+                    strm << "noptn\n";
                     break;
                 case operator_t::concat :
                     strm << "concat\n";
@@ -81,6 +136,7 @@ struct regex_parser {
         strm << "--------\n";
     }
 
+    //-----------------------------------------------------------------
     void parse_parens() {
         char c = *first_;
 
@@ -100,6 +156,88 @@ struct regex_parser {
         ++first_;
     }
 
+    //-----------------------------------------------------------------
+    void add_ranges(std::set<std::pair<char,char>> const &ranges) {
+        bool first = true;
+        for (auto const &[l, h] : ranges) {
+            add_oper(operator_t::range, l, h);
+            if (first) {
+                first = false;
+            } else {
+                add_oper(operator_t::runion);
+            }
+        }
+    }
+    //-----------------------------------------------------------------
+    void parse_hex_esc() {
+        char value = 0;
+
+        bool value_computed = false;
+        for (int i = 0 ; i < 2; ++ i) {
+            value <<= 4;
+            char c = *first_;
+            if (c >= '0' and c <= '9') {
+                value += c -'0';
+            } else if ( c >= 'A' and c <= 'F') {
+                value += c - 'A' + '\xA';
+            } else if ( c >= 'a' and c <= 'f') {
+                value += c - 'a' + '\xA';
+            } else {
+                // don't increment
+                break;
+            }
+            ++first_;
+            value_computed = true;
+        }
+
+        if (value_computed) {
+            add_oper(operator_t::literal, value);
+        } else {
+            add_oper(operator_t::literal, 'x');
+        }
+
+    }
+    //-----------------------------------------------------------------
+    bool parse_esc() {
+        ++first_;
+        if (first_ == last_) {
+            add_oper(operator_t::literal, '\\');
+            return true;
+        }
+
+        auto siter = escape_map.find(*first_);
+        if (siter != escape_map.end()) {
+            add_oper(operator_t::literal, siter->second);
+            ++first_;
+            return true;
+        }
+
+        auto miter = class_escape_map.find(*first_);
+        if (miter != class_escape_map.end()) {
+            add_ranges(miter->second);
+            ++first_;
+            return true;
+        }
+
+        if (*first_ == 'x') {
+            ++first_;
+            parse_hex_esc();
+            return true;
+        };
+
+        add_oper(operator_t::literal, *first_);
+        ++first_;
+        return true;
+    }
+
+    //-----------------------------------------------------------------
+    void parse_dot() {
+        ++first_;
+
+        add_ranges(dot_ranges);
+    }
+
+    //-----------------------------------------------------------------
     bool parse_atom() {
         if (first_ == last_) { return false; }
 
@@ -115,6 +253,14 @@ struct regex_parser {
                 return false;
                 break;
 
+            case '\\' :
+                parse_esc();
+                break;
+
+            case '.' :
+                parse_dot();
+                break;
+
             default :
                 add_oper(operator_t::literal, c);
                 ++first_;
@@ -123,7 +269,10 @@ struct regex_parser {
         return true;
     }
 
+    // --------------------------------------------------------
     bool parse_item() {
+
+        static std::set<char> operators{ '*', '+', '?' };
 
         if (not parse_atom()) { return false; }
 
@@ -131,24 +280,33 @@ struct regex_parser {
 
         char c = *first_;
 
+        bool minimal;
+        if (operators.count(c) > 0) {
+            ++first_;
+            if (*first_ == '?') {
+                minimal = true;
+                ++first_;
+            }
+        } else {
+            return true;
+        }
+
         switch(c) {
             case '*' :
-                add_oper(operator_t::close);
-                ++first_;
+                add_oper(minimal ? operator_t::nclose : operator_t::close);
                 break;
             case '?' :
-                add_oper(operator_t::optn);
-                ++first_;
+                add_oper(minimal ? operator_t::noptn : operator_t::optn);
                 break;
             case '+' :
-                add_oper(operator_t::plus);
-                ++first_;
+                add_oper(minimal ? operator_t::nplus : operator_t::plus);
                 break;
         }
 
         return true;
     }
 
+    // --------------------------------------------------------
     bool parse_alternate() {
         // alternate can be empty
         // e.g. 'a|' or '|a' is a weird but valid way
@@ -244,20 +402,9 @@ struct regex_compiler {
                 case operator_t::literal :
                     strm << "litrl  '" << escape_char(static_cast<char>(oper.op1)) << "'\n";
                     break;
-                case operator_t::close :
-                    strm << "close\n";
-                    break;
-                case operator_t::plus :
-                    strm << "plus\n";
-                    break;
-                case operator_t::optn :
-                    strm << "optn\n";
-                    break;
-                case operator_t::concat :
-                    strm << "concat\n";
-                    break;
-                case operator_t::runion :
-                    strm << "union\n";
+                case operator_t::range :
+                    strm << "range  '" << escape_char(static_cast<char>(oper.op1)) << "', '";
+                    strm << escape_char(static_cast<char>(oper.op2)) << "'\n";
                     break;
                 case operator_t::split :
                     strm << "split  " << oper.op1 << ", " << oper.op2 << "\n";
@@ -279,6 +426,11 @@ struct regex_compiler {
         for (auto const &oper : parse) {
             switch(oper.oper) {
                 case operator_t::literal : {
+                    auto &iter = stack_.emplace_back();
+                    iter.emplace_back(oper);
+                    }
+                    break;
+                case operator_t::range : {
                     auto &iter = stack_.emplace_back();
                     iter.emplace_back(oper);
                     }
@@ -320,6 +472,7 @@ struct regex_compiler {
                     stack_.emplace_back(std::move(first));
                     }
                     break;
+                case operator_t::nclose :
                 case operator_t::close : {
                     // e1* :
                     //      1 : split 2, 3
@@ -331,8 +484,13 @@ struct regex_compiler {
                     int e1_label = ++last_label_;
                     int noop_label = ++last_label_;
                     first.begin()->label = e1_label;
-                    auto & split = first.emplace_front(operator_t::split, e1_label, noop_label);
-                    split.label = split_label;
+                    if (oper.oper == operator_t::close) {
+                        auto & split = first.emplace_front(operator_t::split, e1_label, noop_label);
+                        split.label = split_label;
+                    } else {
+                        auto & split = first.emplace_front(operator_t::split, noop_label, e1_label);
+                        split.label = split_label;
+                    }
                     first.emplace_back(operator_t::jump, split_label);
                     auto & noop_instr = first.emplace_back(operator_t::noop);
                     noop_instr.label = noop_label;
@@ -341,6 +499,7 @@ struct regex_compiler {
                     }
 
                     break;
+                case operator_t::nplus :
                 case operator_t::plus : {
                     // e1+ :
                     //      1: e1
@@ -350,12 +509,17 @@ struct regex_compiler {
                     int e1_label = ++last_label_;
                     int noop_label = ++last_label_;
                     first.begin()->label = e1_label;
-                    first.emplace_back(operator_t::split, e1_label, noop_label);
+                    if (oper.oper == operator_t::plus) {
+                        first.emplace_back(operator_t::split, e1_label, noop_label);
+                    } else {
+                        first.emplace_back(operator_t::split, noop_label, e1_label);
+                    }
                     first.emplace_back(operator_t::noop).label = noop_label;
 
                     stack_.emplace_back(std::move(first));
                     }
                     break;
+                case operator_t::noptn :
                 case operator_t::optn : {
                     // e1? :
                     //         split 1, 2
@@ -366,7 +530,11 @@ struct regex_compiler {
                     int noop_label = ++last_label_;
 
                     first.front().label = e1_label;
-                    first.emplace_front(operator_t::split, e1_label, noop_label);
+                    if (oper.oper == operator_t::optn) {
+                        first.emplace_front(operator_t::split, e1_label, noop_label);
+                    } else {
+                        first.emplace_front(operator_t::split, noop_label, e1_label);
+                    }
                     first.emplace_back(operator_t::noop).label = noop_label;
 
                     stack_.emplace_back(std::move(first));
@@ -516,6 +684,7 @@ struct regex_compiler {
              * process one thread for the current character each iteration
              */
             for (auto const & state : current_state->threads) {
+                bool stop_the_loop = false;
 
                 int pc = state.pc;
                 auto const & current_instr = program_[pc];
@@ -526,25 +695,32 @@ struct regex_compiler {
                             add_thread(pc+1, state.length+1, next_state);
                         }
                         break;
+                    case operator_t::range :
+                        if (*current_char_ptr >= static_cast<char>(current_instr.op1) and
+                            *current_char_ptr <= static_cast<char>(current_instr.op2)) {
+                            add_thread(pc+1, state.length+1, next_state);
+                        }
+                        break;
                     case operator_t::match :
                         if (state.length > match_length) {
                             match_length = state.length;
                         }
+                        // lower priority threads get the shaft
+                        stop_the_loop = true;
                         break;
                     case operator_t::jump :
-                        add_thread(current_instr.op1, state.length, next_state);
-                        break;
                     case operator_t::split :
-                        add_thread(current_instr.op1, state.length, next_state);
-                        add_thread(current_instr.op2, state.length, next_state);
-                        break;
                     case operator_t::noop :
-                        std::cerr << "saw a noop - why didn't add_thread adsorb it?\n";
+                        std::cerr << "saw an epsilon instruction - why didn't add_thread absorb it?\n";
                         return false;
                         break;
                     default :
                         std::cerr << "unkown instruction at pc = " << state.pc << "\n";
                         return false;
+                }
+
+                if (stop_the_loop) {
+                    break;
                 }
 
             } // threads
@@ -680,7 +856,7 @@ TEST_CASE("[runner] - 'abc'") {
     CHECK(comp.run("abcd"));
     CHECK_FALSE(comp.run("abf"));
 }
-TEST_CASE("[runner] - '((a|b)?c+)*") {
+TEST_CASE("[runner] - '((a|b)?c+)+") {
     auto p = regex_parser{"((a|b)?c+)+"};
 
     p.parse_regex();
@@ -691,7 +867,47 @@ TEST_CASE("[runner] - '((a|b)?c+)*") {
     comp.dump_output(std::cout);
 
     CHECK(comp.run("acbcc"));
-    //CHECK(comp.run(""));
-    //CHECK(comp.run("ccccacbc"));
+    CHECK(comp.run("ccccacbc"));
 
+}
+TEST_CASE("[runner] - '<.*>'") {
+    auto p = regex_parser{"<.*>"};
+
+    p.parse_regex();
+
+    auto comp = regex_compiler{};
+    comp.compile_regex(p.oper_list_);
+
+    comp.dump_output(std::cout);
+
+    CHECK(comp.run("<html>"));
+    CHECK(comp.run("<html></html>"));
+
+}
+TEST_CASE("[runner] - '<.*?>'") {
+    auto p = regex_parser{"<.*?>"};
+
+    p.parse_regex();
+
+    auto comp = regex_compiler{};
+    comp.compile_regex(p.oper_list_);
+
+    comp.dump_output(std::cout);
+
+    CHECK(comp.run("<html>"));
+    CHECK(comp.run("<html></html>"));
+    CHECK(comp.match_length == 6);
+}
+TEST_CASE("[runner] - '\'\\\x23\\xg\\x'") {
+    auto p = regex_parser{R"x(\'\\\x23\xg\x)x"};
+
+    p.parse_regex();
+    p.dump_list(std::cout);
+
+    auto comp = regex_compiler{};
+    comp.compile_regex(p.oper_list_);
+
+    comp.dump_output(std::cout);
+
+    CHECK(comp.run("'\\#xgx"));
 }

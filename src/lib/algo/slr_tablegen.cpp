@@ -383,7 +383,7 @@ void compute_first_and_follow(slr_parse_table& lt) {
 
                                     auto term_precedence = term_ptr->precedence ? *(term_ptr->precedence) : low_prec;
                                     auto prod_precedence = prod.precedence ? *prod.precedence : low_prec;
-                                    std::cerr << "Shift/Reduce conflict between shift " <<  trans_symbol.name() << " and production " << prod.prod_id << "\n";
+                                    //std::cerr << "Shift/Reduce conflict between shift " <<  trans_symbol.name() << " and production " << prod.prod_id << "\n";
 
                                     bool will_shift = (term_precedence > prod_precedence) || 
                                         ((term_precedence == prod_precedence) &&
@@ -393,9 +393,9 @@ void compute_first_and_follow(slr_parse_table& lt) {
                                              (term_ptr->associativity == assoc_type::left));
 
                                     if (not will_shift and not will_reduce) {
-                                        std::cerr << "Shift/reduce conflict in state " << state.id <<
-                                            " between term " << trans_symbol.name() << " and "
-                                            << "production = " << item.prod_id << "\n";
+                                        //std::cerr << "Shift/reduce conflict in state " << state.id <<
+                                        //    " between term " << trans_symbol.name() << " and "
+                                        //    << "production = " << item.prod_id << "\n";
                                         error_count += 1;
 
                                         old_action.conflict = conflict_action(action_type::reduce,
@@ -407,7 +407,7 @@ void compute_first_and_follow(slr_parse_table& lt) {
                                                 item.prod_id);
 
                                     } else if (will_reduce) {
-                                        std::cerr << "Deciding to reduce\n";
+                                        //std::cerr << "Deciding to reduce\n";
                                         action new_act{action_type::reduce, item.prod_id};
                                         // TODO - clean this up by putting some of the constructors
                                         // in a separate cpp file along with the pretty printing stuff.
@@ -423,22 +423,22 @@ void compute_first_and_follow(slr_parse_table& lt) {
                                     // Reduce/Reduce conflict
                                     //
                                     auto const &old_prod = lrtable->productions.find(new_iter->second.production_id)->second;
-                                    std::cerr << "Reduce/Reduce conflict between " << old_prod.prod_id << " and " << item.prod_id << "\n";
+                                    //std::cerr << "Reduce/Reduce conflict between " << old_prod.prod_id << " and " << item.prod_id << "\n";
                                     auto orig_precedence = old_prod.precedence ? *old_prod.precedence : low_prec;
                                     auto new_precedence = prod.precedence ? *prod.precedence : low_prec;
 
-                                    std::cerr << "orig prec = " << orig_precedence << "\n";
-                                    std::cerr << "new  prec = " << new_precedence << "\n";
+                                    //std::cerr << "orig prec = " << orig_precedence << "\n";
+                                    //std::cerr << "new  prec = " << new_precedence << "\n";
 
                                     if (new_precedence > orig_precedence) {
-                                        std::cerr << "choosing new\n";
+                                        //std::cerr << "choosing new\n";
                                         action new_act{action_type::reduce, item.prod_id};
                                         new_act.conflict = conflict_action(action_base(old_action));
                                         state.actions.erase(sym);
                                         auto [ act, placed ] = state.actions.try_emplace(sym,new_act);
                                         yassert(placed, "Could not place new action on reduce/reduce conflict resolution");
                                     } else {
-                                        std::cerr << "choosing old\n";
+                                        //std::cerr << "choosing old\n";
                                         old_action.conflict = conflict_action{action_type::reduce, prod.prod_id};
 
                                     }

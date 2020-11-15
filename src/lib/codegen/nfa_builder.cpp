@@ -467,17 +467,37 @@ std::set<input_symbol_t> const dot_ranges = {
 // Build from a simple string - the string matches literally.
 // "a*[x]+" matches exactly the character sequence 'a', '*', '[' 'x' ']', '+'
 //
+// BUt we do have to deal with the two esacpe sequences \\ and \'
+//
 std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view input, 
         symbol_identifier_t sym_id) {
 
-    std::cout << "build nfa from string " << input << "(" << sym_id << ")\n";
+    //std::cout << "build nfa from string '" << input << "' (" << sym_id << ")\n";
 
     std::unique_ptr<nfa_machine> retval;
-    for (auto c : input) {
+
+    auto add_char = [&retval](char x) -> void {
         if (retval) {
-            retval->concat_char(c);
+            retval->concat_char(x);
         } else {
-            retval = std::make_unique<nfa_machine>(c);
+            retval = std::make_unique<nfa_machine>(x);
+        }
+    };
+
+    bool in_esc = false;
+    for (auto c : input) {
+        if (in_esc) {
+            if (c == '\\' or c == '\'') {
+                add_char(c);
+            } else {
+                add_char('\\');
+                add_char(c);
+            }
+            in_esc = false;
+        } else if (c == '\\') {
+            in_esc = true;
+        } else {
+            add_char(c);
         }
     }
 
