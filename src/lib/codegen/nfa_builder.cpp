@@ -519,7 +519,7 @@ std::unique_ptr<nfa_machine> nfa_machine::build_from_string(std::string_view inp
 std::unique_ptr<nfa_machine> nfa_machine::build_from_regex(std::string_view input, 
         symbol_identifier_t sym_id) {
 
-    std::cout << "build nfa from regex " << input << "(" << sym_id << ")\n";
+    //std::cout << "build nfa from regex " << input << " (" << sym_id << ")\n";
     auto first = input.begin();
     auto last    = input.end();
 

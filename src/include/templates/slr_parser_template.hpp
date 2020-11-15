@@ -66,7 +66,7 @@ private:
 ## endfor
         {% if length(func.itemtypes) == 0 -%} retval.state = current_state; {%- endif %}
 ## if func.hassemaction == "Y"
-        auto block = [&]() {
+        auto block = [&]() {% if func.rule_type != "void"%}-> <%func.rule_type%> {%- endif %} {
             <%func.block%>
         };
 ##   if func.rule_type != "void"
