@@ -115,6 +115,10 @@ namespace codegen {
                 // rules only go in the enum
                 enum_entries.push_back(json::object({ 
                         { "name" , tok_name }, {"value", ++enum_value }, {"debugname", sym.name() } }));
+                const auto* info_ptr = sym.get_data<symbol_type::rule>();
+                if (info_ptr->type_str != "void") {
+                    type_names.insert(std::string(info_ptr->type_str));
+                }
             } else if (sym.isskip()) {
                 // Skips only go in the term list
                 terms.push_back(sym);
