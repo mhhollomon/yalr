@@ -1,0 +1,216 @@
+/*
+ * This is the grammar that yalr accepts for regular expressions.
+ *
+ * ../build/yalr -S regex.state regex.yalr -o regex.cpp
+ * g++ -std=c++17 regex.cpp -o regex
+ * ./regex -b "xy(z)*\\xff"
+ *
+ * ../build/yalr --translate=lexer -o regex regex.yalr
+ * dot -Tsvg -oregex.nfa.svg regex.nfa.gv
+ * dot -Tsvg -oregex.dfa.svg regex.dfa.gv
+ *
+ */
+
+//#option code.main true ;
+
+
+// Single characte escapes that turn into single characters
+term<char> SIMPLE_ESC r:[fnrtv0] <%{ return lexeme[0]; }%>
+
+// Single character escapes that turn into multiple ranges
+term<char> RANGE_ESC r:[dDsSwW] <%{ return lexeme[0]; }%>
+
+// Characters that turn into themselves when escaped
+term<char> IGNORED_ESC r:[^dDsSwWfnrtv0x] <%{ return lexeme[0]; }%>
+
+term<char> HEXDIGIT r:[0-9a-fA-F] <%{ return lexeme[0]; }%>
+
+term<char> LITERAL r:[\w\d~:] <%{ return lexeme[0]; }%>
+
+goal rule <rpn_ptr> regex {
+    => regex '|' alternate <%{ _v1->splice(_v1->end(), *_v3); add_oper(_v1, rpn_opcode_t::join); return _v1; }%>
+    => alternate           <%{ return _v1; }%>
+}
+
+rule <rpn_ptr> alternate {
+    => alternate item  <%{ 
+        bool need_concat = (_v1->size() > 0) and (_v2->size() > 0);
+        _v1->splice(_v1->end(), *_v2); 
+        if (need_concat) {add_oper(_v1, rpn_opcode_t::concat); }
+        return _v1; }%>
+
+    => <%{ return std::make_shared<rpn>(); }%>
+}
+
+rule <rpn_ptr> item {
+    => atom     <%{ return _v1; }%>
+    => closure  <%{ return _v1; }%>
+    => plus     <%{ return _v1; }%>
+    => optional <%{ return _v1; }%>
+}
+
+rule <rpn_ptr> closure { 
+    => atom '*'     <%{ _v1->emplace_back(operation{rpn_opcode_t::close, 0, 0}); return _v1; }%> 
+    => atom '*' '?' <%{ _v1->emplace_back(operation{rpn_opcode_t::nclose, 0, 0}); return _v1; }%> 
+}
+
+rule <rpn_ptr> plus    { 
+    => atom '+'     <%{ _v1->emplace_back(operation{rpn_opcode_t::plus, 0, 0}); return _v1; }%> 
+    => atom '+' '?' <%{ _v1->emplace_back(operation{rpn_opcode_t::nplus, 0, 0}); return _v1; }%>
+}
+
+rule <rpn_ptr> optional { 
+    => atom '?'      <%{ _v1->emplace_back(operation{rpn_opcode_t::optn, 0, 0}); return _v1; }%> 
+    => atom '?' '?'  <%{ _v1->emplace_back(operation{rpn_opcode_t::noptn, 0, 0}); return _v1; }%> 
+
+}
+
+rule <rpn_ptr> atom {
+    => escape_char     <%{ return create_rpn_list_from_range_set(_v1); }%>
+    => '.'             <%{ return create_rpn_list_from_range_set(dot_ranges); }%>
+    => LITERAL         <%{ return create_rpn_list_from_literal(_v1); }%>
+    => character_class <%{ return _v1; }%>
+    => '(' regex ')'   <%{ return _v2; }%>
+}
+
+rule <std::set<char_range>> escape_char {
+    => simple_escape <%{ return { { _v1, _v1 }, }; }%>
+    => range_escape  <%{ return _v1; }%> 
+}
+
+// These all map to a single character
+rule <char> simple_escape {
+    => '\\' SIMPLE_ESC  <%{ return escape_map.at(_v2); }%>
+    => '\\' IGNORED_ESC <%{ return _v2; }%> 
+    => hex_escape       <%{ return _v1; }%>
+}
+
+rule <std::set<char_range>> range_escape {
+    => '\\' RANGE_ESC   <%{ return class_escape_map.at(_v2); }%>
+}
+
+// These all map to a single character
+rule <char> hex_escape {
+    => '\\' 'x' high:HEXDIGIT     @prec=20 <%{ return hex_to_value(high); }%>
+    => '\\' 'x' high:HEXDIGIT low:HEXDIGIT @prec=30 
+                                  <%{ return (hex_to_value(high) << 4 + hex_to_value(low)); }%>
+    => '\\' 'x'                   <%{ return 'x'; }%>
+}
+
+rule <rpn_ptr> character_class {
+    => '[' cc_members ']'  <%{ return create_rpn_list_from_range_set(_v2); }%>
+}
+
+rule <std::set<char_range>> cc_members {
+    => cc_members one_cc_member <%{ _v1.insert(_v2.begin(), _v2.end()); return _v1; }%>
+    => one_cc_member            <%{ return _v1; }%>
+}
+
+rule <std::set<char_range>> one_cc_member {
+    => one_letter   <%{ return { {_v1, _v1}, }; }%>
+    => range_escape <%{ return _v1; }%>
+    => cc_range     <%{ return _v1; }%>
+}
+
+rule <char> one_letter {
+    => simple_escape <%{ return _v1; }%>
+    => LITERAL       <%{ return _v1; }%>
+
+}
+
+rule <std::set<char_range>> cc_range {
+    => one_letter '-' one_letter <%{ return { {_v1, _v3}, }; }%>
+}
+
+verbatim file.top <%{
+
+#include "rpn.hpp"
+
+char hex_to_value(char c) {
+    if (c >= 0 and c <= 9) {
+        return c - '0';
+    } else if (c >= 'A' and c <= 'Z') {
+        return (c - 'A' + '\xA');
+    } else {
+        return (c - 'a' + '\xA');
+    }
+}
+
+std::map<char, char> const escape_map = {
+    { 'f', '\f' },
+    { 'n', '\n' },
+    { 'r', '\r' },
+    { 't', '\t' },
+    { 'v', '\v' },
+    { '0', '\0' },
+};
+
+std::map<char, std::set<char_range>> const class_escape_map = {
+    {'d', { {'0', '9'}, } },
+    {'D', { {'\0', '0'-1, },
+            {'9'+1, '\x7F'}, }, },
+
+    {'s', { {'\t', '\r'},
+            {' ',  ' ' }, }, },
+    {'S', { {'\0', '\t'-1},
+            {'\r'+1, ' '-1},
+            {' '+1, '\x7F'}, }, },
+
+    {'w', { {'0', '9'},
+            {'A', 'Z' },
+            {'a', 'z' },
+            {'_', '_'}, }, },
+    {'W', { {'\0', '0'-1, },
+            {'9'+1, 'A'-1 },
+            {'Z'+1, 'a'-1 },
+            {'z'+1, '_'-1 },
+            {'_'+1, '\x7f' }, }, },
+
+};
+
+std::set<char_range> const dot_ranges = {
+    { { '\0', '\n'-1},
+      { '\n'+1, '\x7F'}, }, 
+};
+
+std::ostream &operator<<(std::ostream &strm, std::set<char_range> o) {
+    strm << "set of " << o.size() << " char_ranges";
+    return strm;
+}
+
+std::ostream &operator<<(std::ostream &strm, rpn r) {
+    strm << "list of " << r.size() << " rpn opcodes";
+    return strm;
+}
+
+void add_oper(rpn_ptr ptr, rpn_opcode_t oc, int o1, int o2) {
+    ptr->emplace_back(operation{oc, o1, o2});
+}
+
+void add_oper(rpn_ptr ptr, rpn_opcode_t oc) {
+    add_oper(ptr, oc, 0, 0);
+}
+
+rpn_ptr create_rpn_list_from_range_set(std::set<char_range> ranges) {
+    rpn_ptr retval = std::make_shared<rpn>();
+
+    bool first = true;
+    for ( auto const &[l,h] : ranges ) {
+        retval->emplace_back(operation{rpn_opcode_t::range, l, h});
+        if (first) {
+            first = false;
+        } else {
+            retval->emplace_back(operation{rpn_opcode_t::join, 0, 0});
+        }
+    }
+
+    return retval;
+}
+
+rpn_ptr create_rpn_list_from_literal(char c) {
+    return create_rpn_list_from_range_set( { { c, c }, } );
+}
+
+// -------------------
+}%>
+

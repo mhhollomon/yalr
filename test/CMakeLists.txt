@@ -136,6 +136,7 @@ add_executable(tff-regex)
 target_sources(tff-regex PRIVATE "tff-regex.cpp")
 target_link_libraries(tff-regex
     PRIVATE doctest lib-include
+        lib-src
         utils_objlib
     )
 add_test(NAME tff-regex COMMAND "tff-regex")

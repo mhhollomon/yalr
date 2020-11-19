@@ -20,3 +20,5 @@ target_sources(calculator
 add_dependencies(calculator gen_calc)
 
 add_subdirectory(replcalc)
+
+add_subdirectory(yalr_regex)

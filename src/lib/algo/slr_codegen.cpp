@@ -169,6 +169,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
 
     const slr_parse_table &lt = *lrtable;
 
+    std::string goal_type;
     json data;
     data["namespace"] = std::string(lt.options.code_namespace.get());
     data["parserclass"] = std::string(lt.options.parser_class.get());
@@ -223,6 +224,10 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
             // rules only go in the enum
             enum_entries.push_back(json::object({ 
                     { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
+            auto const * rule_ptr = sym.get_data<symbol_type::rule>();
+            if (rule_ptr->isgoal) {
+                goal_type = rule_ptr->type_str;
+            }
         } else if (sym.isskip()) {
             // Skips only go in the term list
             terms.push_back(sym);
@@ -231,7 +236,7 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
                         { "name" , tok_name }, {"value", int(sym.id()) }, {"debugname", sym.name() } }));
 
         } else {
-            yfail("Unknown symobl type");
+            yfail("Unknown symbol type");
         }
     }
 
@@ -325,6 +330,8 @@ std::unique_ptr<gen_results> slr_generator::generate_code(yalr::code_renderer &c
     data["reducefuncs"] = generate_reduce_functions(lt);
 
     data["verbatim"] = generate_verbatim(lt);
+
+    data["goal_type"] = goal_type;
 
 /*    std::cout << "----------------------------\n";
     std::cout << data.dump(4) << std::endl;

@@ -261,6 +261,12 @@ public:
         return false;
     }
 
+## if goal_type != "void"
+    <%goal_type%> get_semantic_value() {
+        return std::get<<%goal_type%>>(tokstack.back().tv.v);
+    }
+## endif
+
 /***** verbatim parser.bottom start ********/
 ## for v in verbatim.parser_bottom
 <% v %>
