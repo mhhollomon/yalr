@@ -79,6 +79,8 @@ target_link_libraries(t20-analyzer
     PRIVATE doctest lib-include
         parser_objlib
         analyzer_objlib
+        utils_objlib
+        regex_objlib
         sourcetext_objlib
         errorinfo_objlib
     )
@@ -90,10 +92,25 @@ target_link_libraries(t21-termset-analyze
     PRIVATE doctest lib-include
         parser_objlib
         analyzer_objlib
+        utils_objlib
+        regex_objlib
         sourcetext_objlib
         errorinfo_objlib
     )
 add_test(NAME t21-termset-analyze COMMAND "t21-termset-analyze")
+
+add_executable(t22-parse-regex)
+target_sources(t22-parse-regex PRIVATE "t22-parse-regex.cpp")
+target_link_libraries(t22-parse-regex
+    PRIVATE doctest lib-include
+        parser_objlib
+        analyzer_objlib
+        utils_objlib
+        regex_objlib
+        sourcetext_objlib
+        errorinfo_objlib
+    )
+add_test(NAME t22-parse-regex COMMAND "t22-parse-regex")
 
 add_executable(t60-nfa_builder)
 target_sources(t60-nfa_builder PRIVATE "t60-nfa_builder.cpp")
@@ -102,6 +119,7 @@ target_link_libraries(t60-nfa_builder
         utils_objlib
         codegen_objlib
         analyzer_objlib
+        regex_objlib
         sourcetext_objlib
     )
 add_test(NAME t60-nfa_builder COMMAND "t60-nfa_builder")
@@ -113,6 +131,7 @@ target_link_libraries(t61-dfa_builder
         utils_objlib
         codegen_objlib
         analyzer_objlib
+        regex_objlib
         sourcetext_objlib
     )
 add_test(NAME t61-dfa_builder COMMAND "t61-dfa_builder")

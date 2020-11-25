@@ -54,10 +54,13 @@ changes in associativity, precedence, match type, and other options.
 - Register name (and maybe pattern) as terminal symbol
     - check if unique and warn
 - Do `@lexeme` processing
+- Attempt to parse the pattern using the appropriate parser.
+- Check that non-void symbols have an action.
 
 ### skip
 - Register name (and maybe pattern) as terminal symbol
     - check if unique and warn
+- Attempt to parse the pattern using the appropriate parser.
 
 ### assoc
 - Update terms as needed with appropriate guards

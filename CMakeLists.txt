@@ -65,6 +65,7 @@ target_link_libraries(yalr
         utils_objlib
         translate_objlib
         analyzer_objlib
+        regex_objlib
         parsetree_objlib
         parser_objlib
         slr_objlib

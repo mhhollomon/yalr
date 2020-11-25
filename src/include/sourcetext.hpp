@@ -17,7 +17,7 @@ namespace yalr {
 
     //
     // Simple struct to pass info
-    // back to the user. Easier that a 4-tuple
+    // back to the user. Easier than a 4-tuple
     //
     struct line_info_t {
         int line_num;

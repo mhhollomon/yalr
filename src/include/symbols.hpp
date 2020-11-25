@@ -4,6 +4,7 @@
 #include "parse_tree.hpp"
 #include "utils.hpp"
 #include "overload.hpp"
+#include "rpn.hpp"
 
 #include "constants.hpp"
 #include "yassert.hpp"
@@ -36,6 +37,7 @@ struct terminal_symbol {
     std::optional<int>  precedence = std::nullopt;
     case_type           case_match = case_type::undef;
     pattern_type        pat_type = pattern_type::undef;
+    rpn_ptr             pat_rpn;
 
     terminal_symbol(const terminal_stmt& t) :
         is_global(t.is_global), name(t.name.text), type_str(t.type_str ? t.type_str->text : "void"sv),
@@ -52,6 +54,7 @@ struct skip_symbol {
     // These will need to be computed in the analyzer
     case_type           case_match = case_type::undef;
     pattern_type        pat_type = pattern_type::undef;
+    rpn_ptr             pat_rpn;
 
     skip_symbol(const skip_stmt& s): 
         name(s.name.text), 

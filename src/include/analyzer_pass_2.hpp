@@ -4,6 +4,10 @@
 #include <unordered_set>
 #include "yassert.hpp"
 
+#include "regex_parse.hpp"
+
+#include <regex>
+
 namespace yalr {
 
 std::unordered_set<std::string_view> verbatim_locations = {
@@ -60,6 +64,24 @@ struct pass_ii_visitor {
             x.pat_type = pattern_type::ecma;
         } else {
             yfail("Could not deduce pattern type from string start");
+        }
+    }
+    //
+    // Helper to parse regex patterns
+    //
+    template <class T>
+    void parse_pattern(T& ts, text_location location) {
+        if (ts.pat_type == pattern_type::ecma) {
+            try {
+                auto _ = std::regex{std::string(ts.pattern), std::regex_constants::ECMAScript};
+            } catch (std::regex_error e) {
+                out.record_error(text_fragment{ts.pattern, location}, 
+                        "error in ECMAScript regex : " , e.what());
+            }
+        } else {
+            ts.pat_rpn  = regex2rpn(text_fragment{ts.pattern, location}, 
+                    (ts.pat_type == pattern_type::string)? rpn_mode::simple_string : rpn_mode::full_regex,
+                    out.errors);
         }
     }
 
@@ -191,6 +213,8 @@ struct pass_ii_visitor {
             auto [ inserted, new_sym ] = out.symbols.add(ts.name, ts);
             yassert(inserted, "Failed to insert new inline symbol");
 
+            parse_pattern(ts, t.pattern.location);
+
         } else {
             ts.token_name = ts.name;
             // insert the name
@@ -206,7 +230,9 @@ struct pass_ii_visitor {
             if (ts.pat_type == pattern_type::string) {
                 auto [ inserted, pattsym ] = out.symbols.register_key(full_pattern, new_sym);
 
-                if (! inserted ) {
+                if (inserted ) {
+                    parse_pattern(ts, t.pattern.location);
+                } else {
                     out.record_error(t.pattern, "pattern '", full_pattern,
                         "' has already been defined by ",
                         pattsym.type_name(), " ", pattsym.name());
@@ -245,7 +271,9 @@ struct pass_ii_visitor {
 
         auto [ inserted, new_sym ] = out.symbols.add(ss.name, ss);
 
-        if (! inserted ) {
+        if (inserted ) {
+            parse_pattern(ss, s.pattern.location);
+        } else {
             out.record_error(s.name, "'" , ss.name ,
                 "' has already been defined as a " ,
                 new_sym.type_name());

@@ -115,6 +115,25 @@ target_link_libraries(parser_objlib
 
 
 ##
+## regex_objlib
+##
+add_library(regex_objlib OBJECT)
+
+target_sources(regex_objlib
+    PRIVATE
+        "lib/regex_parse.cpp"
+    PUBLIC
+        "include/rpn.hpp"
+        "include/regex_parse.hpp"
+    )
+
+target_link_libraries(regex_objlib 
+    PUBLIC
+        lib-include
+        errorinfo_objlib
+        utils_objlib
+    )
+##
 ## analyzer_objlib
 ##
 add_library(analyzer_objlib OBJECT)
@@ -132,6 +151,7 @@ target_link_libraries(analyzer_objlib
     PUBLIC
         lib-include
         errorinfo_objlib
+        regex_objlib
     )
 
 ##
