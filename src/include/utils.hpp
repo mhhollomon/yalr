@@ -117,6 +117,8 @@ namespace yalr::util {
     //
     std::string escape_char(char c, bool use_char_name = false);
 
+    std::string escape_string(std::string_view v, bool use_char_name = false);
+
 } // namespace yalr::util
 
 #endif

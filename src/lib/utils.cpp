@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include <cctype>
 #include <iomanip>
+#include <sstream>
+#include <ostream>
 
 namespace yalr::util {
 
@@ -39,6 +41,16 @@ std::string escape_char(char c, bool use_char_name) {
         return ss.str();
     }
 
+}
+
+std::string escape_string(std::string_view v, bool use_char_name) {
+    std::ostringstream ss;
+
+    for (auto const x : v) {
+        ss << escape_char(x);
+    }
+
+    return ss.str();
 }
 
 

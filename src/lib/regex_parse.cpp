@@ -1,5 +1,7 @@
 #include "regex_parse.hpp"
 
+#include "unlap_char_ranges.hpp"
+#include "char_range.hpp"
 #include "utils.hpp"
 #include <deque>
 #include <list>
@@ -22,19 +24,6 @@ std::map<char, char> const escape_map = {
     { 't', '\t' },
     { 'v', '\v' },
     { '0', '\0' },
-};
-
-struct char_range {
-    char low;
-    char high;
-
-    char_range(char c) : low(c), high(c) {};
-    char_range() = default;
-    char_range(char l, char h) : low(l), high(h) {};
-
-    bool operator<(char_range const & o) const {
-        return (low < o.low or (low == o.low and high < o.high));
-    }
 };
 
 std::map<char, std::set<char_range>> const class_escape_map = {
@@ -95,48 +84,6 @@ struct regex_parser {
         oper_list_ = std::make_shared<rpn_list>();
     }
 
-    //-----------------------------------------------------------------
-    void dump_list(std::ostream &strm) {
-        strm << "--------\n";
-        for (auto const &oper : *oper_list_) {
-            switch (oper.opcode) {
-                case rpn_opcode_t::literal :
-                    strm << "litrl  '" << escape_char(static_cast<char>(oper.op1)) << "'\n";
-                    break;
-                case rpn_opcode_t::range :
-                    strm << "range  '" << escape_char(static_cast<char>(oper.op1)) << "', '";
-                    strm << escape_char(static_cast<char>(oper.op2)) << "'\n";
-                    break;
-                case rpn_opcode_t::close :
-                    strm << "close\n";
-                    break;
-                case rpn_opcode_t::nclose :
-                    strm << "nclose\n";
-                    break;
-                case rpn_opcode_t::plus :
-                    strm << "plus\n";
-                    break;
-                case rpn_opcode_t::nplus :
-                    strm << "nplus\n";
-                    break;
-                case rpn_opcode_t::option :
-                    strm << "options\n";
-                    break;
-                case rpn_opcode_t::noption :
-                    strm << "noption\n";
-                    break;
-                case rpn_opcode_t::concat :
-                    strm << "concat\n";
-                    break;
-                case rpn_opcode_t::join :
-                    strm << "union\n";
-                    break;
-                default :
-                    strm << "unkown " << oper.op1 << " " << oper.op2 << "\n";
-            }
-        }
-        strm << "--------\n";
-    }
 
     //-----------------------------------------------------------------
     void parse_parens() {
@@ -296,6 +243,22 @@ struct regex_parser {
         if (ranges.empty()) {
             add_error("empty character class not supported");
             return;
+        }
+
+        ranges = unlap_char_ranges(ranges);
+        if (negated_class) {
+            std::set<char_range> temp;
+            int last_lowest = 0;
+            for (auto const &x : ranges) {
+                if (last_lowest < x.low) {
+                    temp.emplace(char(last_lowest), x.low-1);
+                }
+                last_lowest = int(x.high)+1;
+            }
+            if (last_lowest < 0x80) {
+                temp.emplace(char(last_lowest), '\x7f');
+            }
+            std::swap(ranges, temp);
         }
 
         add_ranges(ranges);
@@ -467,4 +430,48 @@ rpn_ptr regex2rpn(yalr::text_fragment const &regex, rpn_mode mode, yalr::error_l
     } else {
         return nullptr;
     }
+}
+
+
+/*******************************************************************************/
+void dump_rpn(std::ostream &strm, rpn_ptr oper_list_) {
+    strm << "--------\n";
+    for (auto const &oper : *oper_list_) {
+        switch (oper.opcode) {
+            case rpn_opcode_t::literal :
+                strm << "litrl  '" << escape_char(static_cast<char>(oper.op1)) << "'\n";
+                break;
+            case rpn_opcode_t::range :
+                strm << "range  '" << escape_char(static_cast<char>(oper.op1)) << "', '";
+                strm << escape_char(static_cast<char>(oper.op2)) << "'\n";
+                break;
+            case rpn_opcode_t::close :
+                strm << "close\n";
+                break;
+            case rpn_opcode_t::nclose :
+                strm << "nclose\n";
+                break;
+            case rpn_opcode_t::plus :
+                strm << "plus\n";
+                break;
+            case rpn_opcode_t::nplus :
+                strm << "nplus\n";
+                break;
+            case rpn_opcode_t::option :
+                strm << "option\n";
+                break;
+            case rpn_opcode_t::noption :
+                strm << "noption\n";
+                break;
+            case rpn_opcode_t::concat :
+                strm << "concat\n";
+                break;
+            case rpn_opcode_t::join :
+                strm << "join\n";
+                break;
+            default :
+                strm << "unkown " << oper.op1 << " " << oper.op2 << "\n";
+        }
+    }
+    strm << "--------\n";
 }

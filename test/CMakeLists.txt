@@ -136,6 +136,17 @@ target_link_libraries(t61-dfa_builder
     )
 add_test(NAME t61-dfa_builder COMMAND "t61-dfa_builder")
 
+add_executable(t62-regex)
+target_sources(t62-regex PRIVATE "t62-regex.cpp")
+target_link_libraries(t62-regex
+    PRIVATE doctest lib-include
+        utils_objlib
+        regex_objlib
+        sourcetext_objlib
+        errorinfo_objlib
+    )
+add_test(NAME t62-regex COMMAND "t62-regex")
+
 add_test(NAME t30-yalr-1 COMMAND "test_runner"
     "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.1.cfgfile"
     "yalr='$<TARGET_FILE:yalr>'"
@@ -150,12 +161,3 @@ add_test(NAME t30-yalr-3 COMMAND "test_runner"
     "${CMAKE_CURRENT_SOURCE_DIR}/runner_configs/t30.3.cfgfile"
     "yalr='$<TARGET_FILE:yalr>'"
     )
-
-add_executable(tff-regex)
-target_sources(tff-regex PRIVATE "tff-regex.cpp")
-target_link_libraries(tff-regex
-    PRIVATE doctest lib-include
-        lib-src
-        utils_objlib
-    )
-add_test(NAME tff-regex COMMAND "tff-regex")

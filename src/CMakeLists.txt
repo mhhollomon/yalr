@@ -122,9 +122,16 @@ add_library(regex_objlib OBJECT)
 target_sources(regex_objlib
     PRIVATE
         "lib/regex_parse.cpp"
+        "lib/regex_compile.cpp"
+        "lib/regex_run.cpp"
+        "lib/unlap_char_ranges.cpp"
     PUBLIC
         "include/rpn.hpp"
+        "include/vm.hpp"
         "include/regex_parse.hpp"
+        "include/regex_compile.hpp"
+        "include/regex_run.hpp"
+        "include/unlap_char_ranges.hpp"
     )
 
 target_link_libraries(regex_objlib 
