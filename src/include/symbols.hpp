@@ -66,7 +66,7 @@ struct rule_symbol {
     symbol_identifier_t id;
     std::string_view    name;
     std::string_view    type_str;
-    bool                isgoal;
+    bool                isgoal = false;
 
     rule_symbol(const rule_stmt& r) : name(r.name.text),
         type_str(r.type_str? (*r.type_str).text : "void"sv),

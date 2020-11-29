@@ -47,7 +47,7 @@ namespace yalr {
     };
 
     struct rule_stmt {
-        bool isgoal;
+        bool isgoal = false;
         text_fragment name;
         optional_text_fragment type_str;
         std::vector<alternative> alternatives;
